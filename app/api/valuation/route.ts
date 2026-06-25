@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getSiteSettings } from "@/lib/site-settings";
 
 type ValuationRequest = {
   name?: string;
@@ -13,12 +14,13 @@ type ValuationRequest = {
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const resendApiKey = process.env.RESEND_API_KEY;
-const resendFromEmail = process.env.RESEND_FROM_EMAIL || "Alu Realty Group <noreply@contact.alurealtygroup.com>";
-const leadReplyToEmail = process.env.LEAD_REPLY_TO_EMAIL || "phil@alurealtygroup.com";
-const leadNotificationEmails = (process.env.LEAD_NOTIFICATION_EMAILS || "phil@alurealtygroup.com")
+
+function parseEmailList(value?: string) {
+  return (value || "")
   .split(",")
   .map((email) => email.trim())
   .filter(Boolean);
+}
 
 function escapeHtml(value?: string | null) {
   return (value || "")
@@ -33,13 +35,15 @@ async function sendResendEmail({
   subject,
   html,
   text,
-  replyTo
+  replyTo,
+  from
 }: {
   to: string | string[];
   subject: string;
   html: string;
   text: string;
   replyTo?: string;
+  from: string;
 }) {
   if (!resendApiKey) {
     return { skipped: true, reason: "RESEND_API_KEY is not configured." };
@@ -52,7 +56,7 @@ async function sendResendEmail({
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      from: resendFromEmail,
+      from,
       to,
       subject,
       html,
@@ -91,6 +95,11 @@ export async function POST(request: Request) {
   const phone = body.phone?.trim();
   const message = body.message?.trim();
   const sourcePage = body.sourcePage?.trim() || "home";
+  const siteSettings = await getSiteSettings();
+  const resendFromEmail = process.env.RESEND_FROM_EMAIL || siteSettings.resendFromEmail;
+  const leadReplyToEmail = process.env.LEAD_REPLY_TO_EMAIL || siteSettings.leadReplyToEmail;
+  const leadNotificationEmails = parseEmailList(process.env.LEAD_NOTIFICATION_EMAILS)
+    .concat(process.env.LEAD_NOTIFICATION_EMAILS ? [] : siteSettings.leadNotificationEmails);
 
   if (!email || !propertyAddress) {
     return NextResponse.json(
@@ -122,6 +131,7 @@ export async function POST(request: Request) {
 
   const clientEmail = sendResendEmail({
     to: email,
+    from: resendFromEmail,
     replyTo: leadReplyToEmail,
     subject: "We received your home valuation request",
     text: `Hi ${fullName},
@@ -152,6 +162,7 @@ Fathom Realty Elite`,
   const internalEmail = leadNotificationEmails.length
     ? sendResendEmail({
         to: leadNotificationEmails,
+        from: resendFromEmail,
         replyTo: email,
         subject: `New valuation request: ${propertyAddress}`,
         text: `New valuation request

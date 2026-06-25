@@ -2,6 +2,7 @@ import Script from "next/script";
 import { createClient } from "@supabase/supabase-js";
 import { teamMembers as fallbackTeamMembers, testimonials } from "@/lib/site-data";
 import type { TeamMember } from "@/lib/site-data";
+import { getSiteSettings } from "@/lib/site-settings";
 
 export const revalidate = 60;
 
@@ -37,10 +38,20 @@ async function getTeamMembers(): Promise<TeamMember[]> {
 }
 
 export default async function HomePage() {
+  const siteSettings = await getSiteSettings();
   const teamMembers = await getTeamMembers();
+  const heroHeadlineLines = siteSettings.heroHeadline.split("\n");
 
   return (
     <>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          :root {
+            --ink: ${siteSettings.brandPrimary};
+            --accent: ${siteSettings.brandAccent};
+          }
+        `
+      }} />
       <div className="announcement">
         <span>Market brief</span>
         Scottsdale inventory is up 8.4% month over month
@@ -48,8 +59,8 @@ export default async function HomePage() {
       </div>
 
       <header className="site-header" id="top">
-        <a className="brand fathom-brand" href="#top" aria-label="Fathom Realty Elite home">
-          <img src="/assets/fathom-realty-elite-logo.png" alt="Fathom Realty Elite" />
+        <a className="brand fathom-brand" href="#top" aria-label={`${siteSettings.brokerageName} home`}>
+          <img src={siteSettings.brokerLogoUrl} alt={siteSettings.brokerageName} />
         </a>
         <nav className="desktop-nav" aria-label="Primary navigation">
           <a href="#properties">Buy</a>
@@ -77,15 +88,19 @@ export default async function HomePage() {
         <a href="#insights">Insights</a>
       </nav>
 
-      <div className="alu-brand-banner" aria-label="Alu Realty Group holiday message">
+      <div className="alu-brand-banner" aria-label={`${siteSettings.siteName} featured message`}>
         <div className="alu-brand-lockup">
-          <img className="alu-group-logo" src="/assets/alu-realty-group-logo.png" alt="Alu Realty Group" />
-          <span className="brand-divider" aria-hidden="true"></span>
-          <div className="seasonal-banner" aria-label="Fourth of July 250th anniversary message">
-            <p>Celebrating America&apos;s 250th</p>
-            <h2>Home. Freedom. Future.</h2>
-            <span>Honoring the spirit of July 4th and the communities we call home.</span>
-          </div>
+          <img className="alu-group-logo" src={siteSettings.teamLogoUrl} alt={siteSettings.siteName} />
+          {siteSettings.promoEnabled ? (
+            <>
+              <span className="brand-divider" aria-hidden="true"></span>
+              <div className="seasonal-banner" aria-label={`${siteSettings.siteName} promotional message`}>
+                <p>{siteSettings.promoEyebrow}</p>
+                <h2>{siteSettings.promoHeadline}</h2>
+                <span>{siteSettings.promoBody}</span>
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
 
@@ -93,9 +108,16 @@ export default async function HomePage() {
         <section className="hero">
           <div className="hero-overlay"></div>
           <div className="hero-content">
-            <p className="eyebrow light">SCOTTSDALE · PARADISE VALLEY · PHOENIX</p>
-            <h1>Find the place<br />that feels like yours.</h1>
-            <p className="hero-copy">Local insight, real-time listings, and smart guidance for your next move in the Valley.</p>
+            <p className="eyebrow light">{siteSettings.heroEyebrow}</p>
+            <h1>
+              {heroHeadlineLines.map((line, index) => (
+                <span key={`${line}-${index}`}>
+                  {index > 0 ? <br /> : null}
+                  {line}
+                </span>
+              ))}
+            </h1>
+            <p className="hero-copy">{siteSettings.heroSubheadline}</p>
 
             <div className="search-panel" aria-label="Property search">
               <div className="search-tabs" role="tablist">
