@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Search homes, monitor mortgage rates, and get local real estate insight from Alu Realty Group at Fathom Realty Elite.">
+  <title>Alu Realty Group | Fathom Realty Elite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="announcement">
+    <span>Market brief</span>
+    Scottsdale inventory is up 8.4% month over month
+    <a href="#insights">Read the update <span aria-hidden="true">→</span></a>
+  </div>
+
+  <header class="site-header" id="top">
+    <a class="brand fathom-brand" href="#top" aria-label="Fathom Realty Elite home">
+      <img src="assets/fathom-realty-elite-logo.png" alt="Fathom Realty Elite">
+    </a>
+    <nav class="desktop-nav" aria-label="Primary navigation">
+      <a href="#properties">Buy</a>
+      <a href="#properties">Rent</a>
+      <a href="#sell">Sell</a>
+      <a href="#rates">Mortgage</a>
+      <a href="#team">Team</a>
+      <a href="#insights">Insights</a>
+    </nav>
+    <div class="header-actions">
+      <button class="text-button" data-open-modal="account">Sign in</button>
+      <button class="button button-dark" data-open-modal="account">Create account</button>
+      <button class="menu-button" id="menuButton" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="mobile-nav" id="mobileNav" aria-label="Mobile navigation">
+    <a href="#properties">Buy</a>
+    <a href="#properties">Rent</a>
+    <a href="#sell">Sell</a>
+    <a href="#rates">Mortgage</a>
+    <a href="#team">Team</a>
+    <a href="#insights">Insights</a>
+  </nav>
+
+  <div class="alu-brand-banner" aria-label="Alu Realty Group for WhatMovesYou.com">
+    <div class="alu-brand-lockup">
+      <img class="alu-group-logo" src="assets/alu-realty-group-logo.png" alt="Alu Realty Group">
+      <span class="brand-divider" aria-hidden="true"></span>
+      <img class="what-moves-you-logo" src="assets/what-moves-you-bold-logo.png" alt="WhatMovesYou.com">
+    </div>
+  </div>
+
+  <main>
+    <section class="hero">
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <p class="eyebrow light">SCOTTSDALE · PARADISE VALLEY · PHOENIX</p>
+        <h1>Find the place<br>that feels like yours.</h1>
+        <p class="hero-copy">Local insight, real-time listings, and smart guidance for your next move in the Valley.</p>
+
+        <div class="search-panel" aria-label="Property search">
+          <div class="search-tabs" role="tablist">
+            <button class="search-tab active" data-mode="buy" role="tab" aria-selected="true">Buy</button>
+            <button class="search-tab" data-mode="rent" role="tab" aria-selected="false">Rent</button>
+            <button class="search-tab" data-mode="sold" role="tab" aria-selected="false">Recently sold</button>
+          </div>
+          <form class="hero-search" id="heroSearch">
+            <label class="search-field">
+              <span class="pin-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+              </span>
+              <span>
+                <small>LOCATION</small>
+                <input id="locationInput" type="search" placeholder="City, neighborhood, or ZIP" autocomplete="off">
+              </span>
+            </label>
+            <label class="select-field">
+              <small>PRICE</small>
+              <select id="priceInput">
+                <option value="">Any price</option>
+                <option value="750000">Under $750k</option>
+                <option value="1000000">Under $1M</option>
+                <option value="1500000">Under $1.5M</option>
+                <option value="2500000">Under $2.5M</option>
+              </select>
+            </label>
+            <label class="select-field">
+              <small>BEDS &amp; BATHS</small>
+              <select id="bedsInput">
+                <option value="0">Any</option>
+                <option value="2">2+ beds</option>
+                <option value="3">3+ beds</option>
+                <option value="4">4+ beds</option>
+              </select>
+            </label>
+            <button class="button button-accent search-submit" type="submit">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+              Search homes
+            </button>
+          </form>
+        </div>
+        <div class="market-pulse">
+          <div><strong>2,418</strong><span>homes for sale</span></div>
+          <div><strong>31 days</strong><span>median time on market</span></div>
+          <div><strong>$742K</strong><span>median list price</span></div>
+          <small>Market data refreshed today at 9:12 AM</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="section properties-section" id="properties">
+      <div class="section-heading split-heading">
+        <div>
+          <p class="eyebrow">CURATED FOR YOU</p>
+          <h2>Homes worth a closer look.</h2>
+        </div>
+        <div class="section-controls">
+          <label class="sort-control">Sort by
+            <select id="sortListings">
+              <option value="featured">Featured</option>
+              <option value="price-asc">Price: low to high</option>
+              <option value="price-desc">Price: high to low</option>
+            </select>
+          </label>
+          <button class="round-control" id="prevListings" aria-label="Previous listings">←</button>
+          <button class="round-control" id="nextListings" aria-label="Next listings">→</button>
+        </div>
+      </div>
+      <div class="results-bar" id="resultsBar" hidden>
+        <span id="resultsText">Showing matching homes</span>
+        <button id="clearFilters">Clear filters</button>
+      </div>
+      <div class="property-grid" id="propertyGrid"></div>
+      <div class="empty-state" id="emptyState" hidden>
+        <h3>No exact matches yet.</h3>
+        <p>Try expanding your location or price range.</p>
+        <button class="button button-dark" id="resetSearch">Reset search</button>
+      </div>
+      <div class="center-action">
+        <button class="button button-outline" id="viewAllButton">View all properties <span>→</span></button>
+      </div>
+    </section>
+
+    <section class="rates-section" id="rates">
+      <div class="rates-copy">
+        <p class="eyebrow light">TODAY'S MORTGAGE SNAPSHOT</p>
+        <h2>Know your buying power.</h2>
+        <p>Rates move quickly. See national mortgage-market data from Mortgage News Daily and estimate a monthly payment before you tour.</p>
+        <p class="rates-updated"><span></span> Prepared for live Mortgage News Daily widget data</p>
+        <button class="button button-light" data-open-modal="calculator">Calculate a payment</button>
+      </div>
+      <div class="rate-cards">
+        <article class="rate-card">
+          <div><span>30-year fixed</span><small>Most popular</small></div>
+          <strong>6.68%</strong>
+          <p>6.74% APR</p>
+          <span class="rate-change down">↓ 0.05% this week</span>
+        </article>
+        <article class="rate-card">
+          <div><span>15-year fixed</span></div>
+          <strong>5.91%</strong>
+          <p>6.02% APR</p>
+          <span class="rate-change down">↓ 0.03% this week</span>
+        </article>
+        <article class="rate-card">
+          <div><span>5/1 ARM</span></div>
+          <strong>6.12%</strong>
+          <p>6.36% APR</p>
+          <span class="rate-change up">↑ 0.02% this week</span>
+        </article>
+        <p class="rate-disclaimer">Illustrative national averages. Your actual rate depends on credit, loan type, and lender terms.</p>
+      </div>
+      <div class="mnd-widget-panel mnd-widget-panel-dark" aria-label="Mortgage News Daily rate widget area">
+        <div class="mnd-widget-slot">
+          <div class="mnd-rates-widget" style="width: 600px; height: 340px; font-size: 12px; ">
+            <div class="w-header" style="text-align: center; padding:4px 0;background-color: #0d4722; color: #FFFFFF;"> <a href="https://www.mortgagenewsdaily.com/mortgage-rates" target="_blank" style="color: #FFFFFF;text-decoration:none;">Home Mortgage Rates</a></div>
+            <iframe src="//widgets.mortgagenewsdaily.com/widget/f/rates?t=large&sn=true&c=0d4722&u=&cbu=&w=598&h=290" width="600" height="290" frameborder="0" scrolling="no" style="border: solid 1px #0d4722; border-width: 0 1px;box-sizing:border-box;width:600px;height:290px;display:block;"></iframe>
+            <div class="w-footer" style="text-align: center; padding:4px 0;background-color: #0d4722; color: #FFFFFF;">View More <a href="https://www.mortgagenewsdaily.com/mortgage-rates" target="_blank" style="color: #FFFFFF;text-decoration:none;">Refinance Rates</a></div>
+          </div>
+        </div>
+        <p class="rate-disclaimer">Mortgage News Daily rate widgets show national average index data, not a lender quote or commitment to lend.</p>
+      </div>
+    </section>
+
+    <section class="section team-section" id="team">
+      <div class="section-heading split-heading">
+        <div>
+          <p class="eyebrow">MEET THE TEAM</p>
+          <h2>Personal guidance, built to scale.</h2>
+        </div>
+        <p class="section-lede">Start with Phil and Denise today, then add future agents with photos, contact details, bios, specialties, and reviews from the same database structure.</p>
+      </div>
+      <div class="team-grid">
+        <article class="team-card">
+          <div class="team-photo" aria-hidden="true"><span>PA</span></div>
+          <div class="team-card-content">
+            <p class="story-meta">REALTOR | ALU REALTY GROUP</p>
+            <h3>Phil Alu</h3>
+            <p>Phil helps Arizona buyers and sellers make confident decisions with practical market guidance, clear communication, and a steady process from first conversation to closing.</p>
+            <div class="team-contact">
+              <a href="tel:4805550124">(480) 555-0124</a>
+              <a href="mailto:phil@whatmovesyou.com">phil@whatmovesyou.com</a>
+            </div>
+            <div class="team-specialties"><span>Buyers</span><span>Sellers</span><span>Relocation</span><span>Market strategy</span></div>
+          </div>
+        </article>
+        <article class="team-card">
+          <div class="team-photo" aria-hidden="true"><span>DA</span></div>
+          <div class="team-card-content">
+            <p class="story-meta">REALTOR | ALU REALTY GROUP</p>
+            <h3>Denise Alu</h3>
+            <p>Denise brings warmth, detail, and follow-through to the client experience, helping people feel informed and cared for through each step of the move.</p>
+            <div class="team-contact">
+              <a href="tel:4805550125">(480) 555-0125</a>
+              <a href="mailto:denise@whatmovesyou.com">denise@whatmovesyou.com</a>
+            </div>
+            <div class="team-specialties"><span>Client care</span><span>Home preparation</span><span>Buyer guidance</span><span>Follow-up</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section testimonials-section" id="feedback">
+      <div class="section-heading split-heading">
+        <div>
+          <p class="eyebrow">CLIENT FEEDBACK</p>
+          <h2>Stories from the people we serve.</h2>
+        </div>
+      </div>
+      <div class="testimonial-grid">
+        <article class="testimonial-card">
+          <p>"Phil and Denise made the process feel calm and organized from the first showing through closing."</p>
+          <div><strong>Buyer Client</strong><span>Scottsdale purchase · Team review</span></div>
+        </article>
+        <article class="testimonial-card">
+          <p>"Phil explained the market clearly and helped us make a smart offer without feeling rushed."</p>
+          <div><strong>Relocation Client</strong><span>North Scottsdale · Agent review</span></div>
+        </article>
+        <article class="testimonial-card">
+          <p>"Denise stayed on top of the details and made sure we always knew what came next."</p>
+          <div><strong>Seller Client</strong><span>Phoenix sale · Agent review</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section insights-section" id="insights">
+      <div class="section-heading split-heading">
+        <div>
+          <p class="eyebrow">THE MARKET, MADE CLEAR</p>
+          <h2>News &amp; local insight.</h2>
+        </div>
+        <a class="arrow-link" href="#insights">Explore all insights <span>→</span></a>
+      </div>
+      <div class="news-grid">
+        <article class="featured-story">
+          <div class="story-visual market-chart">
+            <span class="story-tag">LOCAL MARKET</span>
+            <svg viewBox="0 0 680 250" preserveAspectRatio="none" aria-hidden="true">
+              <path class="chart-fill" d="M0 210 C80 190 115 130 190 155 S315 115 390 105 S500 40 680 30 V250 H0Z"/>
+              <path class="chart-line" d="M0 210 C80 190 115 130 190 155 S315 115 390 105 S500 40 680 30"/>
+            </svg>
+            <div class="chart-stat"><strong>+4.2%</strong><span>year over year</span></div>
+          </div>
+          <div class="story-content">
+            <p class="story-meta">5 MIN READ · JUNE 10, 2026</p>
+            <h3>What rising inventory means for Phoenix-area buyers this summer</h3>
+            <p>More choices are returning to the market. Here is where buyers have negotiating room and where competition remains.</p>
+            <a href="#insights" class="arrow-link">Read the story <span>→</span></a>
+          </div>
+        </article>
+        <div class="story-list">
+          <article class="mnd-news-widget-card">
+            <span class="story-number" aria-hidden="true">MND</span>
+            <div>
+              <div class="mnd-news-widget" style="width: 300px; height: 400px; font-size: 12px; ">
+                <div class="w-header" style="text-align: center; padding:4px 0;background-color: #0d4722; color: #FFFFFF;">Mortgage and <a href="https://www.mortgagenewsdaily.com" target="_blank" style="color: #FFFFFF;text-decoration:none;">Real Estate News</a></div>
+                <iframe src="//widgets.mortgagenewsdaily.com/widget/f/news?t=scrollup&ss=true&c=0d4722&u=&cbu=&w=298&h=350&fs=12&nh=5&gs=5&bgc=ffffff&hlc=110b6e&sc=000000" width="300" height="350" frameborder="0" scrolling="no" style="border: solid 1px #0d4722; border-width: 0 1px;box-sizing:border-box;width:300px;height:350px;display:block;"></iframe>
+                <div class="w-footer" style="text-align: center; padding:4px 0;background-color: #0d4722; color: #FFFFFF;">View Current <a href="https://www.mortgagenewsdaily.com/mortgage-rates" target="_blank" style="color: #FFFFFF;text-decoration:none;">Interest Rates</a></div>
+              </div>
+            </div>
+          </article>
+          <article>
+            <span class="story-number">01</span>
+            <div>
+              <p class="story-meta">FINANCE · JUNE 9, 2026</p>
+              <h3>Mortgage rates ease as markets react to new inflation data</h3>
+              <a href="#rates">3 min read <span>→</span></a>
+            </div>
+          </article>
+          <article>
+            <span class="story-number">02</span>
+            <div>
+              <p class="story-meta">SELLING · JUNE 6, 2026</p>
+              <h3>Five upgrades Arizona buyers notice right now</h3>
+              <a href="#sell">4 min read <span>→</span></a>
+            </div>
+          </article>
+          <article>
+            <span class="story-number">03</span>
+            <div>
+              <p class="story-meta">NEIGHBORHOODS · JUNE 3, 2026</p>
+              <h3>A local's guide to living in North Scottsdale</h3>
+              <a href="#properties">6 min read <span>→</span></a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="saved-search-section">
+      <div class="saved-search-card">
+        <div class="saved-icon" aria-hidden="true">
+          <svg viewBox="0 0 64 64"><path d="M12 28 32 12l20 16v25H39V38H25v15H12V28Z"/><path d="M43 13v9"/></svg>
+        </div>
+        <div>
+          <p class="eyebrow">DON'T MISS THE RIGHT ONE</p>
+          <h2>Your search can keep working<br>while you get on with your day.</h2>
+          <p>Save your criteria and get a personal email when a new listing matches, a favorite changes price, or a property comes back on market.</p>
+          <div class="benefits">
+            <span>✓ Instant listing alerts</span>
+            <span>✓ Price-change updates</span>
+            <span>✓ Save &amp; compare homes</span>
+          </div>
+        </div>
+        <button class="button button-dark" data-open-modal="account">Create a free account <span>→</span></button>
+      </div>
+    </section>
+
+    <section class="section sell-section" id="sell">
+      <div>
+        <p class="eyebrow">THINKING OF SELLING?</p>
+        <h2>Start with a clearer<br>picture of your home.</h2>
+      </div>
+      <div>
+        <p>Get a thoughtful market estimate informed by recent sales, current competition, and the details that make your property different.</p>
+        <button class="button button-accent" data-open-modal="valuation">Request a home valuation</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <a class="brand fathom-brand footer-brand" href="#top" aria-label="Fathom Realty Elite home">
+      <img src="assets/fathom-realty-elite-logo.png" alt="Fathom Realty Elite">
+    </a>
+    <p>A modern real estate experience for Arizona buyers, sellers, and investors.</p>
+    <div class="footer-links"><a href="#properties">Properties</a><a href="#rates">Mortgage</a><a href="#team">Team</a><a href="#insights">Insights</a><a href="#sell">Contact</a></div>
+    <small>© 2026 Alu Realty Group · Fathom Realty Elite · Equal Housing Opportunity · Demo data shown</small>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <section class="modal" id="accountModal" role="dialog" aria-modal="true" aria-labelledby="accountTitle" hidden>
+      <button class="modal-close" data-close-modal aria-label="Close">×</button>
+      <p class="eyebrow">YOUR ALU REALTY GROUP ACCOUNT</p>
+      <h2 id="accountTitle">Save homes. Stay ahead.</h2>
+      <p class="modal-intro">Create a free account to save searches and receive matching-property alerts.</p>
+      <form id="accountForm">
+        <label>Full name<input name="name" type="text" placeholder="Your name" required></label>
+        <label>Email address<input name="email" type="email" placeholder="you@example.com" required></label>
+        <label class="checkbox-label"><input type="checkbox" checked> Email me new listings and price changes</label>
+        <button class="button button-accent" type="submit">Create my account</button>
+      </form>
+      <small>By continuing, you agree to receive account-related email. You can unsubscribe from property alerts anytime.</small>
+    </section>
+
+    <section class="modal" id="calculatorModal" role="dialog" aria-modal="true" aria-labelledby="calculatorTitle" hidden>
+      <button class="modal-close" data-close-modal aria-label="Close">×</button>
+      <p class="eyebrow">PAYMENT ESTIMATOR</p>
+      <h2 id="calculatorTitle">Estimate your monthly payment.</h2>
+      <div class="mnd-calculator-slot">
+        <div class="mnd-calc-widget" style="width: 250px; height: 472px; font-size: 12px; ">
+          <div class="w-header" style="text-align: center; padding:4px 0;background-color: #0d4722; color: #FFFFFF;"> <a href="https://www.mortgagenewsdaily.com/mortgage-calculator" target="_blank" style="color: #FFFFFF;text-decoration:none;">Mortgage Calculator</a></div>
+          <iframe src="//widgets.mortgagenewsdaily.com/widget/f/calculator?t=simple&c=0d4722&tc=333333&u=&cbu=&w=248&h=422&bgc=f8f8f8&sa=true&fs=12" width="250" height="422" frameborder="0" scrolling="no" style="border: solid 1px #0d4722; border-width: 0 1px;box-sizing:border-box;width:250px;height:422px;display:block;"></iframe>
+          <div class="w-footer" style="text-align: center; padding:4px 0;background-color: #0d4722; color: #FFFFFF;"> <a href="https://www.mortgagenewsdaily.com/mortgage-rates" target="_blank" style="color: #FFFFFF;text-decoration:none;">Today&#x27;s Mortgage Rates</a></div>
+        </div>
+      </div>
+      <form id="calculatorForm" class="legacy-calculator-form">
+        <label>Home price<input id="calcPrice" type="number" value="750000" min="50000" step="10000"></label>
+        <label>Down payment<input id="calcDown" type="number" value="150000" min="0" step="5000"></label>
+        <label>Interest rate<input id="calcRate" type="number" value="6.68" min="0.1" step="0.01"></label>
+        <div class="payment-result"><span>Estimated principal &amp; interest</span><strong id="paymentResult">$3,863/mo</strong></div>
+      </form>
+    </section>
+
+    <section class="modal" id="valuationModal" role="dialog" aria-modal="true" aria-labelledby="valuationTitle" hidden>
+      <button class="modal-close" data-close-modal aria-label="Close">×</button>
+      <p class="eyebrow">HOME VALUATION</p>
+      <h2 id="valuationTitle">Tell us where to begin.</h2>
+      <p class="modal-intro">We will review nearby sales and current competition, then follow up with a personal estimate.</p>
+      <form id="valuationForm">
+        <label>Property address<input name="address" type="text" placeholder="123 Main Street, Scottsdale" required></label>
+        <label>Email address<input name="email" type="email" placeholder="you@example.com" required></label>
+        <button class="button button-accent" type="submit">Request my valuation</button>
+      </form>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
