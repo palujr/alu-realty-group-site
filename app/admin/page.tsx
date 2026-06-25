@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getActiveSiteBanner, getSiteSettings } from "@/lib/site-settings";
@@ -77,7 +78,7 @@ async function updateBannerCampaign(formData: FormData) {
   const adminSupabase = createAdminClient();
 
   if (!adminSupabase) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
+    redirect("/admin?bannerStatus=error");
   }
 
   const bannerId = formData.get("bannerId")?.toString();
@@ -85,7 +86,7 @@ async function updateBannerCampaign(formData: FormData) {
   const headline = formData.get("headline")?.toString().trim();
 
   if (!bannerId || !campaignName || !headline) {
-    throw new Error("Banner ID, campaign name, and headline are required.");
+    redirect("/admin?bannerStatus=error");
   }
 
   const priorityValue = Number.parseInt(formData.get("priority")?.toString() || "100", 10);
@@ -107,11 +108,12 @@ async function updateBannerCampaign(formData: FormData) {
     .eq("id", bannerId);
 
   if (error) {
-    throw new Error(error.message);
+    redirect("/admin?bannerStatus=error");
   }
 
   revalidatePath("/");
   revalidatePath("/admin");
+  redirect("/admin?bannerStatus=saved");
 }
 
 async function getAdminData() {
@@ -174,9 +176,14 @@ async function getAdminData() {
   };
 }
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({
+  searchParams
+}: {
+  searchParams?: { bannerStatus?: string };
+}) {
   const { siteSettings, activeBanner, leads, banners, teamMembers, testimonials, errors } = await getAdminData();
   const visibleErrors = Object.values(errors).filter(Boolean);
+  const bannerStatus = searchParams?.bannerStatus;
 
   return (
     <main className="admin-shell">
@@ -196,6 +203,20 @@ export default async function AdminDashboardPage() {
           <ul>
             {visibleErrors.map((error) => <li key={error}>{error}</li>)}
           </ul>
+        </section>
+      ) : null}
+
+      {bannerStatus === "saved" ? (
+        <section className="admin-success">
+          <strong>Banner campaign saved.</strong>
+          <p>Your website banner has been updated. Refresh the public site if you do not see it right away.</p>
+        </section>
+      ) : null}
+
+      {bannerStatus === "error" ? (
+        <section className="admin-alert">
+          <strong>Banner campaign could not be saved yet.</strong>
+          <p>This usually means the Supabase admin update permission still needs to be applied.</p>
         </section>
       ) : null}
 

@@ -550,6 +550,7 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   white-space: nowrap;
 }
 .admin-alert,
+.admin-success,
 .admin-stats,
 .admin-grid {
   width: min(1180px, 100%);
@@ -565,6 +566,18 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
 }
 .admin-alert p { margin: 6px 0 10px; color: var(--muted); font-size: 12px; }
 .admin-alert li { margin-bottom: 4px; font-size: 11px; }
+.admin-success {
+  margin: 0 auto 20px;
+  padding: 20px 22px;
+  background: #eef7ee;
+  border: 1px solid rgba(85, 130, 87, .28);
+  border-left: 6px solid #5b8f5f;
+}
+.admin-success p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
 .admin-stats {
   margin-bottom: 22px;
   display: grid;
