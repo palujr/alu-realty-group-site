@@ -157,12 +157,18 @@ function renderListings() {
   resultsText.textContent = `${filtered.length} ${filtered.length === 1 ? "property" : "properties"} found for ${modeLabel}`;
 }
 
-function showToast(message) {
+function showToast(message, options = {}) {
   const toast = document.querySelector("#toast");
-  toast.textContent = message;
+  const title = options.title;
+  const duration = options.duration || 2600;
+
+  toast.className = `toast${options.variant ? ` toast-${options.variant}` : ""}`;
+  toast.innerHTML = title
+    ? `<strong>${title}</strong><span>${message}</span>`
+    : `<span>${message}</span>`;
   toast.classList.add("show");
   clearTimeout(showToast.timeout);
-  showToast.timeout = setTimeout(() => toast.classList.remove("show"), 2600);
+  showToast.timeout = setTimeout(() => toast.classList.remove("show"), duration);
 }
 
 document.querySelectorAll(".search-tab").forEach((tab) => {
@@ -309,7 +315,11 @@ document.querySelector("#valuationForm").addEventListener("submit", async (event
     }
 
     closeModal();
-    showToast("Valuation request received. We will be in touch.");
+    showToast("Thank you. We received your request and will follow up with a personal home value review.", {
+      title: "Valuation request received",
+      variant: "success",
+      duration: 7000
+    });
     form.reset();
   } catch (error) {
     showToast(error.message || "Something went wrong. Please try again.");

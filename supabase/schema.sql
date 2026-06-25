@@ -95,6 +95,12 @@ alter table public.manual_listings enable row level security;
 alter table public.saved_searches enable row level security;
 alter table public.favorite_listings enable row level security;
 
+grant usage on schema public to anon, authenticated;
+grant insert on public.lead_submissions to anon, authenticated;
+grant select on public.team_members to anon, authenticated;
+grant select on public.testimonials to anon, authenticated;
+grant select on public.manual_listings to anon, authenticated;
+
 create policy "Published team members are public"
   on public.team_members for select
   using (is_active = true);
