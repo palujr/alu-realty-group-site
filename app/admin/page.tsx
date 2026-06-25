@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getActiveSiteBanner, getSiteSettings } from "@/lib/site-settings";
 
 export const revalidate = 0;
+export const dynamic = "force-dynamic";
 
 type AdminLead = {
   id: string;
@@ -19,7 +21,10 @@ type AdminLead = {
 type AdminBanner = {
   id: string;
   campaign_name: string;
+  eyebrow: string | null;
   headline: string;
+  body: string | null;
+  theme: string;
   start_date: string | null;
   end_date: string | null;
   is_active: boolean;
@@ -61,6 +66,54 @@ function getAssignedName(lead: AdminLead) {
   return lead.team_members?.full_name || "Unassigned";
 }
 
+function asOptionalString(value: FormDataEntryValue | null) {
+  const stringValue = value?.toString().trim() || "";
+  return stringValue || null;
+}
+
+async function updateBannerCampaign(formData: FormData) {
+  "use server";
+
+  const adminSupabase = createAdminClient();
+
+  if (!adminSupabase) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
+  }
+
+  const bannerId = formData.get("bannerId")?.toString();
+  const campaignName = formData.get("campaignName")?.toString().trim();
+  const headline = formData.get("headline")?.toString().trim();
+
+  if (!bannerId || !campaignName || !headline) {
+    throw new Error("Banner ID, campaign name, and headline are required.");
+  }
+
+  const priorityValue = Number.parseInt(formData.get("priority")?.toString() || "100", 10);
+
+  const { error } = await adminSupabase
+    .from("site_banners")
+    .update({
+      campaign_name: campaignName,
+      eyebrow: asOptionalString(formData.get("eyebrow")),
+      headline,
+      body: asOptionalString(formData.get("body")),
+      theme: formData.get("theme")?.toString().trim() || "patriotic",
+      priority: Number.isNaN(priorityValue) ? 100 : priorityValue,
+      start_date: asOptionalString(formData.get("startDate")),
+      end_date: asOptionalString(formData.get("endDate")),
+      is_active: formData.get("isActive") === "on",
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", bannerId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+}
+
 async function getAdminData() {
   const siteSettings = await getSiteSettings();
   const activeBanner = await getActiveSiteBanner(siteSettings.slug, siteSettings);
@@ -74,7 +127,7 @@ async function getAdminData() {
   ] = await Promise.all([
     supabase
       .from("site_banners")
-      .select("id, campaign_name, headline, start_date, end_date, is_active, priority")
+      .select("id, campaign_name, eyebrow, headline, body, theme, start_date, end_date, is_active, priority")
       .eq("site_slug", siteSettings.slug)
       .order("priority", { ascending: true })
       .order("created_at", { ascending: false }),
@@ -210,16 +263,60 @@ export default async function AdminDashboardPage() {
           <div className="admin-card-header">
             <div>
               <p className="admin-kicker">Campaigns</p>
-              <h2>Banner schedule</h2>
+              <h2>Edit banner campaigns</h2>
             </div>
           </div>
-          <div className="admin-list">
+          <div className="admin-form-list">
             {banners.map((banner) => (
-              <div key={banner.id}>
-                <strong>{banner.campaign_name}</strong>
-                <span>{banner.is_active ? "Active" : "Inactive"} · Priority {banner.priority}</span>
-                <small>{formatDate(banner.start_date)} to {formatDate(banner.end_date)}</small>
-              </div>
+              <form className="admin-form-card" action={updateBannerCampaign} key={banner.id}>
+                <input name="bannerId" type="hidden" value={banner.id} />
+                <label>
+                  Campaign name
+                  <input name="campaignName" type="text" defaultValue={banner.campaign_name} required />
+                </label>
+                <label>
+                  Eyebrow
+                  <input name="eyebrow" type="text" defaultValue={banner.eyebrow || ""} />
+                </label>
+                <label>
+                  Headline
+                  <input name="headline" type="text" defaultValue={banner.headline} required />
+                </label>
+                <label>
+                  Body
+                  <textarea name="body" defaultValue={banner.body || ""} rows={3}></textarea>
+                </label>
+                <div className="admin-form-grid">
+                  <label>
+                    Start date
+                    <input name="startDate" type="date" defaultValue={banner.start_date || ""} />
+                  </label>
+                  <label>
+                    End date
+                    <input name="endDate" type="date" defaultValue={banner.end_date || ""} />
+                  </label>
+                  <label>
+                    Priority
+                    <input name="priority" type="number" defaultValue={banner.priority} min="1" step="1" />
+                  </label>
+                  <label>
+                    Theme
+                    <select name="theme" defaultValue={banner.theme}>
+                      <option value="patriotic">Patriotic</option>
+                      <option value="market">Market</option>
+                      <option value="seasonal">Seasonal</option>
+                    </select>
+                  </label>
+                </div>
+                <label className="admin-checkbox">
+                  <input name="isActive" type="checkbox" defaultChecked={banner.is_active} />
+                  Active on site
+                </label>
+                <div className="admin-form-footer">
+                  <small>{banner.is_active ? "Currently active" : "Currently inactive"} · {formatDate(banner.start_date)} to {formatDate(banner.end_date)}</small>
+                  <button className="admin-save-button" type="submit">Save banner</button>
+                </div>
+              </form>
             ))}
           </div>
         </article>
