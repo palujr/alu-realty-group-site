@@ -1,7 +1,7 @@
 import Script from "next/script";
 import { createClient } from "@supabase/supabase-js";
-import { teamMembers as fallbackTeamMembers, testimonials } from "@/lib/site-data";
-import type { TeamMember } from "@/lib/site-data";
+import { teamMembers as fallbackTeamMembers, testimonials as fallbackTestimonials } from "@/lib/site-data";
+import type { TeamMember, Testimonial } from "@/lib/site-data";
 import { getSiteSettings } from "@/lib/site-settings";
 
 export const revalidate = 60;
@@ -37,9 +37,43 @@ async function getTeamMembers(): Promise<TeamMember[]> {
   }));
 }
 
+async function getTestimonials(): Promise<Testimonial[]> {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return fallbackTestimonials;
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const { data, error } = await supabase
+    .from("testimonials")
+    .select("id, scope, client_name, context, quote, team_members(slug)")
+    .eq("is_published", true)
+    .order("is_featured", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (error || !data?.length) {
+    return fallbackTestimonials;
+  }
+
+  return data.map((testimonial) => {
+    const teamMember = Array.isArray(testimonial.team_members)
+      ? testimonial.team_members[0]
+      : testimonial.team_members;
+
+    return {
+      id: testimonial.id,
+      quote: testimonial.quote || "",
+      clientName: testimonial.client_name || "Client",
+      context: testimonial.context || "Client experience",
+      scope: testimonial.scope === "individual" ? "individual" : "team",
+      teamMemberId: teamMember?.slug
+    };
+  });
+}
+
 export default async function HomePage() {
   const siteSettings = await getSiteSettings();
   const teamMembers = await getTeamMembers();
+  const testimonials = await getTestimonials();
   const heroHeadlineLines = siteSettings.heroHeadline.split("\n");
 
   return (

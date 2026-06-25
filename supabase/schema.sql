@@ -253,3 +253,77 @@ values
     20
   )
 on conflict (slug) do nothing;
+
+insert into public.testimonials (
+  scope,
+  client_name,
+  context,
+  quote,
+  rating,
+  is_featured,
+  is_published
+)
+select
+  'team',
+  'Buyer Client',
+  'Scottsdale purchase',
+  'Phil and Denise made the process feel calm and organized from the first showing through closing.',
+  5,
+  true,
+  true
+where not exists (
+  select 1 from public.testimonials
+  where quote = 'Phil and Denise made the process feel calm and organized from the first showing through closing.'
+);
+
+insert into public.testimonials (
+  team_member_id,
+  scope,
+  client_name,
+  context,
+  quote,
+  rating,
+  is_featured,
+  is_published
+)
+select
+  team_members.id,
+  'individual',
+  'Relocation Client',
+  'North Scottsdale',
+  'Phil explained the market clearly and helped us make a smart offer without feeling rushed.',
+  5,
+  true,
+  true
+from public.team_members
+where team_members.slug = 'phil-alu'
+  and not exists (
+    select 1 from public.testimonials
+    where quote = 'Phil explained the market clearly and helped us make a smart offer without feeling rushed.'
+  );
+
+insert into public.testimonials (
+  team_member_id,
+  scope,
+  client_name,
+  context,
+  quote,
+  rating,
+  is_featured,
+  is_published
+)
+select
+  team_members.id,
+  'individual',
+  'Seller Client',
+  'Phoenix sale',
+  'Denise stayed on top of the details and made sure we always knew what came next.',
+  5,
+  true,
+  true
+from public.team_members
+where team_members.slug = 'denise-alu'
+  and not exists (
+    select 1 from public.testimonials
+    where quote = 'Denise stayed on top of the details and made sure we always knew what came next.'
+  );
