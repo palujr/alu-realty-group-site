@@ -53,6 +53,14 @@ export type SiteSettings = {
   };
 };
 
+export type SiteBanner = {
+  id: string;
+  eyebrow: string;
+  headline: string;
+  body: string;
+  theme: string;
+};
+
 export const defaultHomepageSections: SiteSettings["homepageSections"] = {
   propertiesEyebrow: "CURATED FOR YOU",
   propertiesHeadline: "Homes worth a closer look.",
@@ -136,6 +144,14 @@ type BrokerSiteRow = {
   brand_accent: string | null;
   homepage_sections: Partial<SiteSettings["homepageSections"]> | null;
   lead_routing: Partial<SiteSettings["leadRouting"]> | null;
+};
+
+type SiteBannerRow = {
+  id: string;
+  eyebrow: string | null;
+  headline: string | null;
+  body: string | null;
+  theme: string | null;
 };
 
 function mapHomepageSections(
@@ -233,4 +249,59 @@ export async function getSiteSettings(slug = "alu-realty-group"): Promise<SiteSe
   }
 
   return mapBrokerSite(data as BrokerSiteRow);
+}
+
+export async function getActiveSiteBanner(
+  siteSlug = "alu-realty-group",
+  fallbackSettings?: SiteSettings
+): Promise<SiteBanner | null> {
+  const settings = fallbackSettings || defaultSiteSettings;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return settings.promoEnabled
+      ? {
+          id: "fallback",
+          eyebrow: settings.promoEyebrow,
+          headline: settings.promoHeadline,
+          body: settings.promoBody,
+          theme: "patriotic"
+        }
+      : null;
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const { data, error } = await supabase
+    .from("site_banners")
+    .select("id, eyebrow, headline, body, theme")
+    .eq("site_slug", siteSlug)
+    .eq("is_active", true)
+    .or(`start_date.is.null,start_date.lte.${today}`)
+    .or(`end_date.is.null,end_date.gte.${today}`)
+    .order("priority", { ascending: true })
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) {
+    return settings.promoEnabled
+      ? {
+          id: "fallback",
+          eyebrow: settings.promoEyebrow,
+          headline: settings.promoHeadline,
+          body: settings.promoBody,
+          theme: "patriotic"
+        }
+      : null;
+  }
+
+  const banner = data as SiteBannerRow;
+
+  return {
+    id: banner.id,
+    eyebrow: banner.eyebrow || settings.promoEyebrow,
+    headline: banner.headline || settings.promoHeadline,
+    body: banner.body || settings.promoBody,
+    theme: banner.theme || "patriotic"
+  };
 }

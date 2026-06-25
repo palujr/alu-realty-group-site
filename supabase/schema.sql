@@ -45,6 +45,22 @@ create table if not exists public.team_members (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.site_banners (
+  id uuid primary key default gen_random_uuid(),
+  site_slug text not null references public.broker_sites(slug) on delete cascade,
+  campaign_name text not null,
+  eyebrow text,
+  headline text not null,
+  body text,
+  theme text not null default 'patriotic',
+  priority integer not null default 100,
+  start_date date,
+  end_date date,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.testimonials (
   id uuid primary key default gen_random_uuid(),
   team_member_id uuid references public.team_members(id) on delete set null,
@@ -118,6 +134,7 @@ create table if not exists public.favorite_listings (
 );
 
 alter table public.broker_sites enable row level security;
+alter table public.site_banners enable row level security;
 alter table public.team_members enable row level security;
 alter table public.testimonials enable row level security;
 alter table public.lead_submissions enable row level security;
@@ -127,6 +144,7 @@ alter table public.favorite_listings enable row level security;
 
 grant usage on schema public to anon, authenticated;
 grant select on public.broker_sites to anon, authenticated;
+grant select on public.site_banners to anon, authenticated;
 grant insert on public.lead_submissions to anon, authenticated;
 grant select on public.team_members to anon, authenticated;
 grant select on public.testimonials to anon, authenticated;
@@ -134,6 +152,10 @@ grant select on public.manual_listings to anon, authenticated;
 
 create policy "Active broker sites are public"
   on public.broker_sites for select
+  using (is_active = true);
+
+create policy "Active site banners are public"
+  on public.site_banners for select
   using (is_active = true);
 
 create policy "Published team members are public"
@@ -289,6 +311,36 @@ values
     20
   )
 on conflict (slug) do nothing;
+
+insert into public.site_banners (
+  site_slug,
+  campaign_name,
+  eyebrow,
+  headline,
+  body,
+  theme,
+  priority,
+  start_date,
+  end_date,
+  is_active
+)
+select
+  'alu-realty-group',
+  'America 250 Fourth of July',
+  'Celebrating America''s 250th',
+  'Home. Freedom. Future.',
+  'Honoring the spirit of July 4th and the communities we call home.',
+  'patriotic',
+  10,
+  '2026-06-01',
+  '2026-07-10',
+  true
+where not exists (
+  select 1
+  from public.site_banners
+  where site_slug = 'alu-realty-group'
+    and campaign_name = 'America 250 Fourth of July'
+);
 
 insert into public.testimonials (
   scope,

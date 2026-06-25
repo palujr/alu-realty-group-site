@@ -2,7 +2,7 @@ import Script from "next/script";
 import { createClient } from "@supabase/supabase-js";
 import { teamMembers as fallbackTeamMembers, testimonials as fallbackTestimonials } from "@/lib/site-data";
 import type { TeamMember, Testimonial } from "@/lib/site-data";
-import { getSiteSettings } from "@/lib/site-settings";
+import { getActiveSiteBanner, getSiteSettings } from "@/lib/site-settings";
 
 export const revalidate = 60;
 
@@ -72,6 +72,7 @@ async function getTestimonials(): Promise<Testimonial[]> {
 
 export default async function HomePage() {
   const siteSettings = await getSiteSettings();
+  const activeBanner = await getActiveSiteBanner(siteSettings.slug, siteSettings);
   const teamMembers = await getTeamMembers();
   const testimonials = await getTestimonials();
   const heroHeadlineLines = siteSettings.heroHeadline.split("\n");
@@ -126,13 +127,13 @@ export default async function HomePage() {
       <div className="alu-brand-banner" aria-label={`${siteSettings.siteName} featured message`}>
         <div className="alu-brand-lockup">
           <img className="alu-group-logo" src={siteSettings.teamLogoUrl} alt={siteSettings.siteName} />
-          {siteSettings.promoEnabled ? (
+          {activeBanner ? (
             <>
               <span className="brand-divider" aria-hidden="true"></span>
-              <div className="seasonal-banner" aria-label={`${siteSettings.siteName} promotional message`}>
-                <p>{siteSettings.promoEyebrow}</p>
-                <h2>{siteSettings.promoHeadline}</h2>
-                <span>{siteSettings.promoBody}</span>
+              <div className={`seasonal-banner banner-theme-${activeBanner.theme}`} aria-label={`${siteSettings.siteName} promotional message`}>
+                <p>{activeBanner.eyebrow}</p>
+                <h2>{activeBanner.headline}</h2>
+                <span>{activeBanner.body}</span>
               </div>
             </>
           ) : null}
