@@ -75,6 +75,7 @@ export default async function HomePage() {
   const teamMembers = await getTeamMembers();
   const testimonials = await getTestimonials();
   const heroHeadlineLines = siteSettings.heroHeadline.split("\n");
+  const homepageSections = siteSettings.homepageSections;
 
   return (
     <>
@@ -206,8 +207,8 @@ export default async function HomePage() {
         <section className="section properties-section" id="properties">
           <div className="section-heading split-heading">
             <div>
-              <p className="eyebrow">CURATED FOR YOU</p>
-              <h2>Homes worth a closer look.</h2>
+              <p className="eyebrow">{homepageSections.propertiesEyebrow}</p>
+              <h2>{homepageSections.propertiesHeadline}</h2>
             </div>
             <div className="section-controls">
               <label className="sort-control">Sort by
@@ -238,10 +239,10 @@ export default async function HomePage() {
 
         <section className="rates-section" id="rates">
           <div className="rates-copy">
-            <p className="eyebrow light">TODAY&apos;S MORTGAGE SNAPSHOT</p>
-            <h2>Know your buying power.</h2>
-            <p>Rates move quickly. See national mortgage-market data from Mortgage News Daily and estimate a monthly payment before you tour.</p>
-            <p className="rates-updated"><span></span> Prepared for live Mortgage News Daily widget data</p>
+            <p className="eyebrow light">{homepageSections.ratesEyebrow}</p>
+            <h2>{homepageSections.ratesHeadline}</h2>
+            <p>{homepageSections.ratesBody}</p>
+            <p className="rates-updated"><span></span> {homepageSections.ratesStatus}</p>
             <button className="button button-light" data-open-modal="calculator">Calculate a payment</button>
           </div>
           <div className="mnd-widget-panel mnd-widget-panel-dark" aria-label="Mortgage News Daily rate widget area">
@@ -259,10 +260,10 @@ export default async function HomePage() {
         <section className="section team-section" id="team">
           <div className="section-heading split-heading">
             <div>
-              <p className="eyebrow">MEET THE TEAM</p>
-              <h2>Personal guidance, built to scale.</h2>
+              <p className="eyebrow">{homepageSections.teamEyebrow}</p>
+              <h2>{homepageSections.teamHeadline}</h2>
             </div>
-            <p className="section-lede">Start with Phil and Denise today, then add future agents with photos, contact details, bios, specialties, and reviews from the same database structure.</p>
+            <p className="section-lede">{homepageSections.teamBody}</p>
           </div>
           <div className="team-grid">
             {teamMembers.map((member) => (
@@ -294,8 +295,8 @@ export default async function HomePage() {
         <section className="section testimonials-section" id="feedback">
           <div className="section-heading split-heading">
             <div>
-              <p className="eyebrow">CLIENT FEEDBACK</p>
-              <h2>Stories from the people we serve.</h2>
+              <p className="eyebrow">{homepageSections.testimonialsEyebrow}</p>
+              <h2>{homepageSections.testimonialsHeadline}</h2>
             </div>
           </div>
           <div className="testimonial-grid">
@@ -314,8 +315,8 @@ export default async function HomePage() {
         <section className="section insights-section" id="insights">
           <div className="section-heading split-heading">
             <div>
-              <p className="eyebrow">THE MARKET, MADE CLEAR</p>
-              <h2>News &amp; local insight.</h2>
+              <p className="eyebrow">{homepageSections.insightsEyebrow}</p>
+              <h2>{homepageSections.insightsHeadline}</h2>
             </div>
           </div>
           <div className="news-grid">
@@ -355,9 +356,16 @@ export default async function HomePage() {
               <svg viewBox="0 0 64 64"><path d="M12 28 32 12l20 16v25H39V38H25v15H12V28Z" /><path d="M43 13v9" /></svg>
             </div>
             <div>
-              <p className="eyebrow">DON&apos;T MISS THE RIGHT ONE</p>
-              <h2>Your search can keep working<br />while you get on with your day.</h2>
-              <p>Save your criteria and get a personal email when a new listing matches, a favorite changes price, or a property comes back on market.</p>
+              <p className="eyebrow">{homepageSections.savedSearchEyebrow}</p>
+              <h2>
+                {homepageSections.savedSearchHeadline.split("\n").map((line, index) => (
+                  <span key={`${line}-${index}`}>
+                    {index > 0 ? <br /> : null}
+                    {line}
+                  </span>
+                ))}
+              </h2>
+              <p>{homepageSections.savedSearchBody}</p>
               <div className="benefits">
                 <span>✓ Instant listing alerts</span>
                 <span>✓ Price-change updates</span>
@@ -370,12 +378,19 @@ export default async function HomePage() {
 
         <section className="section sell-section" id="sell">
           <div>
-            <p className="eyebrow">THINKING OF SELLING?</p>
-            <h2>Start with a clearer<br />picture of your home.</h2>
+            <p className="eyebrow">{homepageSections.sellEyebrow}</p>
+            <h2>
+              {homepageSections.sellHeadline.split("\n").map((line, index) => (
+                <span key={`${line}-${index}`}>
+                  {index > 0 ? <br /> : null}
+                  {line}
+                </span>
+              ))}
+            </h2>
           </div>
           <div>
-            <p>Get a thoughtful market estimate informed by recent sales, current competition, and the details that make your property different.</p>
-            <button className="button button-accent" data-open-modal="valuation">Request a home valuation</button>
+            <p>{homepageSections.sellBody}</p>
+            <button className="button button-accent" data-open-modal="valuation">{homepageSections.sellButtonText}</button>
           </div>
         </section>
       </main>

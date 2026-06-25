@@ -21,6 +21,51 @@ export type SiteSettings = {
   promoBody: string;
   brandPrimary: string;
   brandAccent: string;
+  homepageSections: {
+    propertiesEyebrow: string;
+    propertiesHeadline: string;
+    ratesEyebrow: string;
+    ratesHeadline: string;
+    ratesBody: string;
+    ratesStatus: string;
+    teamEyebrow: string;
+    teamHeadline: string;
+    teamBody: string;
+    testimonialsEyebrow: string;
+    testimonialsHeadline: string;
+    insightsEyebrow: string;
+    insightsHeadline: string;
+    savedSearchEyebrow: string;
+    savedSearchHeadline: string;
+    savedSearchBody: string;
+    sellEyebrow: string;
+    sellHeadline: string;
+    sellBody: string;
+    sellButtonText: string;
+  };
+};
+
+export const defaultHomepageSections: SiteSettings["homepageSections"] = {
+  propertiesEyebrow: "CURATED FOR YOU",
+  propertiesHeadline: "Homes worth a closer look.",
+  ratesEyebrow: "TODAY'S MORTGAGE SNAPSHOT",
+  ratesHeadline: "Know your buying power.",
+  ratesBody: "Rates move quickly. See national mortgage-market data from Mortgage News Daily and estimate a monthly payment before you tour.",
+  ratesStatus: "Prepared for live Mortgage News Daily widget data",
+  teamEyebrow: "MEET THE TEAM",
+  teamHeadline: "Personal guidance, built to scale.",
+  teamBody: "Start with Phil and Denise today, then add future agents with photos, contact details, bios, specialties, and reviews from the same database structure.",
+  testimonialsEyebrow: "CLIENT FEEDBACK",
+  testimonialsHeadline: "Stories from the people we serve.",
+  insightsEyebrow: "THE MARKET, MADE CLEAR",
+  insightsHeadline: "News & local insight.",
+  savedSearchEyebrow: "DON'T MISS THE RIGHT ONE",
+  savedSearchHeadline: "Your search can keep working\nwhile you get on with your day.",
+  savedSearchBody: "Save your criteria and get a personal email when a new listing matches, a favorite changes price, or a property comes back on market.",
+  sellEyebrow: "THINKING OF SELLING?",
+  sellHeadline: "Start with a clearer\npicture of your home.",
+  sellBody: "Get a thoughtful market estimate informed by recent sales, current competition, and the details that make your property different.",
+  sellButtonText: "Request a home valuation"
 };
 
 export const defaultSiteSettings: SiteSettings = {
@@ -43,7 +88,8 @@ export const defaultSiteSettings: SiteSettings = {
   promoHeadline: "Home. Freedom. Future.",
   promoBody: "Honoring the spirit of July 4th and the communities we call home.",
   brandPrimary: "#17221f",
-  brandAccent: "#d9784f"
+  brandAccent: "#d9784f",
+  homepageSections: defaultHomepageSections
 };
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -70,7 +116,17 @@ type BrokerSiteRow = {
   promo_body: string | null;
   brand_primary: string | null;
   brand_accent: string | null;
+  homepage_sections: Partial<SiteSettings["homepageSections"]> | null;
 };
+
+function mapHomepageSections(
+  sections: Partial<SiteSettings["homepageSections"]> | null
+): SiteSettings["homepageSections"] {
+  return {
+    ...defaultHomepageSections,
+    ...(sections || {})
+  };
+}
 
 function mapBrokerSite(row: BrokerSiteRow): SiteSettings {
   return {
@@ -95,7 +151,8 @@ function mapBrokerSite(row: BrokerSiteRow): SiteSettings {
     promoHeadline: row.promo_headline || defaultSiteSettings.promoHeadline,
     promoBody: row.promo_body || defaultSiteSettings.promoBody,
     brandPrimary: row.brand_primary || defaultSiteSettings.brandPrimary,
-    brandAccent: row.brand_accent || defaultSiteSettings.brandAccent
+    brandAccent: row.brand_accent || defaultSiteSettings.brandAccent,
+    homepageSections: mapHomepageSections(row.homepage_sections)
   };
 }
 
@@ -127,7 +184,8 @@ export async function getSiteSettings(slug = "alu-realty-group"): Promise<SiteSe
       promo_headline,
       promo_body,
       brand_primary,
-      brand_accent
+      brand_accent,
+      homepage_sections
     `)
     .eq("slug", slug)
     .eq("is_active", true)

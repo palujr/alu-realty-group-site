@@ -22,6 +22,7 @@ create table if not exists public.broker_sites (
   promo_body text,
   brand_primary text,
   brand_accent text,
+  homepage_sections jsonb not null default '{}',
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -188,7 +189,8 @@ insert into public.broker_sites (
   promo_headline,
   promo_body,
   brand_primary,
-  brand_accent
+  brand_accent,
+  homepage_sections
 )
 values (
   'alu-realty-group',
@@ -211,7 +213,29 @@ that feels like yours.',
   'Home. Freedom. Future.',
   'Honoring the spirit of July 4th and the communities we call home.',
   '#17221f',
-  '#d9784f'
+  '#d9784f',
+  '{
+    "propertiesEyebrow": "CURATED FOR YOU",
+    "propertiesHeadline": "Homes worth a closer look.",
+    "ratesEyebrow": "TODAY''S MORTGAGE SNAPSHOT",
+    "ratesHeadline": "Know your buying power.",
+    "ratesBody": "Rates move quickly. See national mortgage-market data from Mortgage News Daily and estimate a monthly payment before you tour.",
+    "ratesStatus": "Prepared for live Mortgage News Daily widget data",
+    "teamEyebrow": "MEET THE TEAM",
+    "teamHeadline": "Personal guidance, built to scale.",
+    "teamBody": "Start with Phil and Denise today, then add future agents with photos, contact details, bios, specialties, and reviews from the same database structure.",
+    "testimonialsEyebrow": "CLIENT FEEDBACK",
+    "testimonialsHeadline": "Stories from the people we serve.",
+    "insightsEyebrow": "THE MARKET, MADE CLEAR",
+    "insightsHeadline": "News & local insight.",
+    "savedSearchEyebrow": "DON''T MISS THE RIGHT ONE",
+    "savedSearchHeadline": "Your search can keep working\nwhile you get on with your day.",
+    "savedSearchBody": "Save your criteria and get a personal email when a new listing matches, a favorite changes price, or a property comes back on market.",
+    "sellEyebrow": "THINKING OF SELLING?",
+    "sellHeadline": "Start with a clearer\npicture of your home.",
+    "sellBody": "Get a thoughtful market estimate informed by recent sales, current competition, and the details that make your property different.",
+    "sellButtonText": "Request a home valuation"
+  }'::jsonb
 )
 on conflict (slug) do update set
   site_name = excluded.site_name,
@@ -228,6 +252,7 @@ on conflict (slug) do update set
   promo_body = excluded.promo_body,
   brand_primary = excluded.brand_primary,
   brand_accent = excluded.brand_accent,
+  homepage_sections = excluded.homepage_sections,
   updated_at = now();
 
 insert into public.team_members (slug, full_name, title, phone, email, bio, specialties, display_order)
