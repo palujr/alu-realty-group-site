@@ -128,7 +128,9 @@ svg { display: block; }
   background: linear-gradient(transparent, #bcc5c1 20%, #bcc5c1 80%, transparent);
 }
 .seasonal-banner {
-  width: min(760px, 100%);
+  flex: 1 1 auto;
+  width: auto;
+  max-width: min(1120px, calc(100vw - 430px));
   min-height: 96px;
   padding: 19px clamp(22px, 3vw, 36px);
   position: relative;
@@ -542,6 +544,7 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   }
   .seasonal-banner {
     width: 100%;
+    max-width: none;
     min-height: 118px;
     padding: 22px;
   }
