@@ -21,6 +21,13 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!supabaseUrl.startsWith("https://") || !supabaseUrl.includes(".supabase.co")) {
+    return NextResponse.json(
+      { error: "Supabase project URL is not configured correctly. It should look like https://your-project-id.supabase.co." },
+      { status: 500 }
+    );
+  }
+
   const body = (await request.json()) as ValuationRequest;
   const email = body.email?.trim();
   const propertyAddress = body.address?.trim();
