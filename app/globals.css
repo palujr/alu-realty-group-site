@@ -696,6 +696,27 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   font-size: 11px;
   line-height: 1.5;
 }
+.admin-inline-success,
+.admin-inline-alert {
+  margin: -4px 0 18px;
+  padding: 14px 16px;
+  display: grid;
+  gap: 4px;
+  border-left: 5px solid;
+  font-size: 12px;
+}
+.admin-inline-success {
+  background: #eef7ee;
+  border-color: #5b8f5f;
+}
+.admin-inline-alert {
+  background: #fff4ed;
+  border-color: var(--accent);
+}
+.admin-inline-success span,
+.admin-inline-alert span {
+  color: var(--muted);
+}
 .admin-form-list {
   display: grid;
   gap: 18px;

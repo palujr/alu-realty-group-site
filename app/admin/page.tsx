@@ -78,7 +78,7 @@ async function updateBannerCampaign(formData: FormData) {
   const adminSupabase = createAdminClient();
 
   if (!adminSupabase) {
-    redirect("/admin?bannerStatus=error");
+    redirect("/admin?bannerStatus=error#banner-campaigns");
   }
 
   const bannerId = formData.get("bannerId")?.toString();
@@ -86,7 +86,7 @@ async function updateBannerCampaign(formData: FormData) {
   const headline = formData.get("headline")?.toString().trim();
 
   if (!bannerId || !campaignName || !headline) {
-    redirect("/admin?bannerStatus=error");
+    redirect("/admin?bannerStatus=error#banner-campaigns");
   }
 
   const priorityValue = Number.parseInt(formData.get("priority")?.toString() || "100", 10);
@@ -108,12 +108,12 @@ async function updateBannerCampaign(formData: FormData) {
     .eq("id", bannerId);
 
   if (error) {
-    redirect("/admin?bannerStatus=error");
+    redirect("/admin?bannerStatus=error#banner-campaigns");
   }
 
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect("/admin?bannerStatus=saved");
+  redirect("/admin?bannerStatus=saved#banner-campaigns");
 }
 
 async function getAdminData() {
@@ -280,13 +280,25 @@ export default async function AdminDashboardPage({
           <p>{activeBanner?.body || "The site will use fallback banner settings or hide the banner when no active campaign is available."}</p>
         </article>
 
-        <article className="admin-card">
+        <article className="admin-card" id="banner-campaigns">
           <div className="admin-card-header">
             <div>
               <p className="admin-kicker">Campaigns</p>
               <h2>Edit banner campaigns</h2>
             </div>
           </div>
+          {bannerStatus === "saved" ? (
+            <div className="admin-inline-success" role="status">
+              <strong>Saved successfully.</strong>
+              <span>The banner campaign is updated and ready on the website.</span>
+            </div>
+          ) : null}
+          {bannerStatus === "error" ? (
+            <div className="admin-inline-alert" role="alert">
+              <strong>Save did not complete.</strong>
+              <span>Please check the required fields or Supabase update permission.</span>
+            </div>
+          ) : null}
           <div className="admin-form-list">
             {banners.map((banner) => (
               <form className="admin-form-card" action={updateBannerCampaign} key={banner.id}>
