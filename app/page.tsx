@@ -331,6 +331,7 @@ export default function HomePage() {
             <label>Anything helpful to know?<input name="message" type="text" placeholder="Timing, upgrades, questions, or goals" /></label>
             <button className="button button-accent" type="submit">Request my valuation</button>
           </form>
+          <small>By submitting, you agree that Alu Realty Group may contact you by email, phone, or text about your request.</small>
         </section>
 
         <section className="modal success-modal" id="valuationSuccessModal" role="dialog" aria-modal="true" aria-labelledby="valuationSuccessTitle" hidden>

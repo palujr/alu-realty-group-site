@@ -10,3 +10,4 @@ pnpm-debug.log*
 *.tsbuildinfo
 vercel
 .vercel
+resend/
