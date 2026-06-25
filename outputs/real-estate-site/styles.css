@@ -100,7 +100,7 @@ svg { display: block; }
 .menu-button span { width: 100%; height: 1px; margin: 5px 0; display: block; background: var(--ink); }
 .mobile-nav { display: none; }
 .alu-brand-banner {
-  min-height: 166px;
+  min-height: 158px;
   padding: 8px 5vw;
   display: flex;
   align-items: center;
@@ -108,14 +108,16 @@ svg { display: block; }
   border-bottom: 1px solid rgba(23, 34, 31, .11);
 }
 .alu-brand-lockup {
-  width: min(1160px, 100%);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   display: flex;
   align-items: center;
-  gap: clamp(28px, 4vw, 62px);
+  justify-content: flex-start;
+  gap: clamp(24px, 3.4vw, 54px);
 }
 .alu-group-logo {
   width: clamp(243px, 26.1vw, 315px);
+  flex: 0 0 auto;
   height: auto;
   display: block;
 }
@@ -125,10 +127,52 @@ svg { display: block; }
   flex: 0 0 auto;
   background: linear-gradient(transparent, #bcc5c1 20%, #bcc5c1 80%, transparent);
 }
-.what-moves-you-logo {
-  width: clamp(430px, 50vw, 620px);
-  height: auto;
-  display: block;
+.seasonal-banner {
+  width: min(760px, 100%);
+  min-height: 96px;
+  padding: 19px clamp(22px, 3vw, 36px);
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 92% 18%, rgba(255, 255, 255, .28) 0 2px, transparent 3px),
+    radial-gradient(circle at 84% 64%, rgba(255, 255, 255, .22) 0 2px, transparent 3px),
+    linear-gradient(135deg, #102a54 0%, #173866 46%, #b52234 100%);
+  border: 1px solid rgba(16, 42, 84, .18);
+  border-radius: 3px;
+  box-shadow: 0 18px 42px rgba(16, 42, 84, .18);
+}
+.seasonal-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: .18;
+  background: repeating-linear-gradient(135deg, #fff 0 7px, transparent 7px 18px);
+}
+.seasonal-banner > * { position: relative; z-index: 1; }
+.seasonal-banner p {
+  margin: 0;
+  color: #f8d9a5;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.seasonal-banner h2 {
+  margin: 0;
+  font-family: "DM Sans", sans-serif;
+  font-size: clamp(27px, 3.2vw, 42px);
+  line-height: .98;
+  letter-spacing: -.04em;
+}
+.seasonal-banner span {
+  max-width: 560px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, .88);
 }
 
 .hero {
@@ -486,7 +530,7 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   .alu-brand-lockup {
     align-items: flex-start;
     flex-direction: column;
-    gap: 9px;
+    gap: 14px;
   }
   .alu-group-logo {
     width: min(221px, 66.6vw);
@@ -496,8 +540,13 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
     height: 1px;
     background: linear-gradient(90deg, #bcc5c1, transparent);
   }
-  .what-moves-you-logo {
-    width: min(335px, 94vw);
+  .seasonal-banner {
+    width: 100%;
+    min-height: 118px;
+    padding: 22px;
+  }
+  .seasonal-banner h2 {
+    font-size: 32px;
   }
   .hero { min-height: 710px; background-position: 61% center; }
   .hero-content { padding-top: 55px; }

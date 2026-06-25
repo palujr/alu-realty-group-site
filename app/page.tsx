@@ -77,11 +77,15 @@ export default async function HomePage() {
         <a href="#insights">Insights</a>
       </nav>
 
-      <div className="alu-brand-banner" aria-label="Alu Realty Group for WhatMovesYou.com">
+      <div className="alu-brand-banner" aria-label="Alu Realty Group holiday message">
         <div className="alu-brand-lockup">
           <img className="alu-group-logo" src="/assets/alu-realty-group-logo.png" alt="Alu Realty Group" />
           <span className="brand-divider" aria-hidden="true"></span>
-          <img className="what-moves-you-logo" src="/assets/what-moves-you-bold-logo.png" alt="WhatMovesYou.com" />
+          <div className="seasonal-banner" aria-label="Fourth of July 250th anniversary message">
+            <p>Celebrating America&apos;s 250th</p>
+            <h2>Home. Freedom. Future.</h2>
+            <span>Honoring the spirit of July 4th and the communities we call home.</span>
+          </div>
         </div>
       </div>
 
