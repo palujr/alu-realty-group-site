@@ -314,13 +314,8 @@ document.querySelector("#valuationForm").addEventListener("submit", async (event
       throw new Error(result.error || "Unable to send valuation request.");
     }
 
-    closeModal();
-    showToast("Thank you. We received your request and will follow up with a personal home value review.", {
-      title: "Valuation request received",
-      variant: "success",
-      duration: 7000
-    });
     form.reset();
+    openModal("valuationSuccess");
   } catch (error) {
     showToast(error.message || "Something went wrong. Please try again.");
   } finally {

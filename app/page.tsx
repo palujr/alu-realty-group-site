@@ -332,6 +332,18 @@ export default function HomePage() {
             <button className="button button-accent" type="submit">Request my valuation</button>
           </form>
         </section>
+
+        <section className="modal success-modal" id="valuationSuccessModal" role="dialog" aria-modal="true" aria-labelledby="valuationSuccessTitle" hidden>
+          <button className="modal-close" data-close-modal aria-label="Close">Ã—</button>
+          <p className="eyebrow">REQUEST RECEIVED</p>
+          <h2 id="valuationSuccessTitle">Thank you. We&apos;re on it.</h2>
+          <p className="modal-intro">Your home valuation request has been received. We will review the property details and follow up with a personal home value review.</p>
+          <div className="success-next-steps">
+            <span>What happens next</span>
+            <p>Phil or Denise will reach out using the contact information you provided.</p>
+          </div>
+          <button className="button button-accent" type="button" data-close-modal>Done</button>
+        </section>
       </div>
 
       <Script src="/site-interactions.js" strategy="afterInteractive" />
