@@ -21,6 +21,7 @@ create table if not exists public.broker_sites (
   brand_primary text,
   brand_accent text,
   homepage_sections jsonb not null default '{}',
+  lead_routing jsonb not null default '{}',
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -28,6 +29,9 @@ create table if not exists public.broker_sites (
 
 alter table public.broker_sites
   add column if not exists homepage_sections jsonb not null default '{}';
+
+alter table public.broker_sites
+  add column if not exists lead_routing jsonb not null default '{}';
 
 alter table public.broker_sites enable row level security;
 
@@ -60,7 +64,8 @@ insert into public.broker_sites (
   promo_body,
   brand_primary,
   brand_accent,
-  homepage_sections
+  homepage_sections,
+  lead_routing
 )
 values (
   'alu-realty-group',
@@ -105,8 +110,17 @@ that feels like yours.',
     "sellHeadline": "Start with a clearer\npicture of your home.",
     "sellBody": "Get a thoughtful market estimate informed by recent sales, current competition, and the details that make your property different.",
     "sellButtonText": "Request a home valuation"
+  }'::jsonb,
+  '{
+    "defaultNotificationEmails": ["phil@alurealtygroup.com"],
+    "valuationNotificationEmails": ["phil@alurealtygroup.com"],
+    "defaultAssignedTeamMemberSlug": "",
+    "valuationAssignedTeamMemberSlug": "",
+    "sendClientConfirmation": true,
+    "sendInternalNotification": true
   }'::jsonb
 )
 on conflict (slug) do update set
-  homepage_sections = excluded.homepage_sections,
+  homepage_sections = public.broker_sites.homepage_sections || excluded.homepage_sections,
+  lead_routing = public.broker_sites.lead_routing || excluded.lead_routing,
   updated_at = now();

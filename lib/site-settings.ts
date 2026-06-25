@@ -43,6 +43,14 @@ export type SiteSettings = {
     sellBody: string;
     sellButtonText: string;
   };
+  leadRouting: {
+    defaultNotificationEmails: string[];
+    valuationNotificationEmails: string[];
+    defaultAssignedTeamMemberSlug: string;
+    valuationAssignedTeamMemberSlug: string;
+    sendClientConfirmation: boolean;
+    sendInternalNotification: boolean;
+  };
 };
 
 export const defaultHomepageSections: SiteSettings["homepageSections"] = {
@@ -68,6 +76,15 @@ export const defaultHomepageSections: SiteSettings["homepageSections"] = {
   sellButtonText: "Request a home valuation"
 };
 
+export const defaultLeadRouting: SiteSettings["leadRouting"] = {
+  defaultNotificationEmails: ["phil@alurealtygroup.com"],
+  valuationNotificationEmails: ["phil@alurealtygroup.com"],
+  defaultAssignedTeamMemberSlug: "",
+  valuationAssignedTeamMemberSlug: "",
+  sendClientConfirmation: true,
+  sendInternalNotification: true
+};
+
 export const defaultSiteSettings: SiteSettings = {
   slug: "alu-realty-group",
   siteName: "Alu Realty Group",
@@ -89,7 +106,8 @@ export const defaultSiteSettings: SiteSettings = {
   promoBody: "Honoring the spirit of July 4th and the communities we call home.",
   brandPrimary: "#17221f",
   brandAccent: "#d9784f",
-  homepageSections: defaultHomepageSections
+  homepageSections: defaultHomepageSections,
+  leadRouting: defaultLeadRouting
 };
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -117,6 +135,7 @@ type BrokerSiteRow = {
   brand_primary: string | null;
   brand_accent: string | null;
   homepage_sections: Partial<SiteSettings["homepageSections"]> | null;
+  lead_routing: Partial<SiteSettings["leadRouting"]> | null;
 };
 
 function mapHomepageSections(
@@ -125,6 +144,22 @@ function mapHomepageSections(
   return {
     ...defaultHomepageSections,
     ...(sections || {})
+  };
+}
+
+function mapLeadRouting(
+  routing: Partial<SiteSettings["leadRouting"]> | null,
+  legacyNotificationEmails: string[] | null
+): SiteSettings["leadRouting"] {
+  const fallbackEmails = legacyNotificationEmails?.length
+    ? legacyNotificationEmails
+    : defaultLeadRouting.defaultNotificationEmails;
+
+  return {
+    ...defaultLeadRouting,
+    defaultNotificationEmails: fallbackEmails,
+    valuationNotificationEmails: fallbackEmails,
+    ...(routing || {})
   };
 }
 
@@ -152,7 +187,8 @@ function mapBrokerSite(row: BrokerSiteRow): SiteSettings {
     promoBody: row.promo_body || defaultSiteSettings.promoBody,
     brandPrimary: row.brand_primary || defaultSiteSettings.brandPrimary,
     brandAccent: row.brand_accent || defaultSiteSettings.brandAccent,
-    homepageSections: mapHomepageSections(row.homepage_sections)
+    homepageSections: mapHomepageSections(row.homepage_sections),
+    leadRouting: mapLeadRouting(row.lead_routing, row.lead_notification_emails)
   };
 }
 
@@ -185,7 +221,8 @@ export async function getSiteSettings(slug = "alu-realty-group"): Promise<SiteSe
       promo_body,
       brand_primary,
       brand_accent,
-      homepage_sections
+      homepage_sections,
+      lead_routing
     `)
     .eq("slug", slug)
     .eq("is_active", true)

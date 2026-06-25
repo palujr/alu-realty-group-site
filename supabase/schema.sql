@@ -23,6 +23,7 @@ create table if not exists public.broker_sites (
   brand_primary text,
   brand_accent text,
   homepage_sections jsonb not null default '{}',
+  lead_routing jsonb not null default '{}',
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -190,7 +191,8 @@ insert into public.broker_sites (
   promo_body,
   brand_primary,
   brand_accent,
-  homepage_sections
+  homepage_sections,
+  lead_routing
 )
 values (
   'alu-realty-group',
@@ -235,6 +237,14 @@ that feels like yours.',
     "sellHeadline": "Start with a clearer\npicture of your home.",
     "sellBody": "Get a thoughtful market estimate informed by recent sales, current competition, and the details that make your property different.",
     "sellButtonText": "Request a home valuation"
+  }'::jsonb,
+  '{
+    "defaultNotificationEmails": ["phil@alurealtygroup.com"],
+    "valuationNotificationEmails": ["phil@alurealtygroup.com"],
+    "defaultAssignedTeamMemberSlug": "",
+    "valuationAssignedTeamMemberSlug": "",
+    "sendClientConfirmation": true,
+    "sendInternalNotification": true
   }'::jsonb
 )
 on conflict (slug) do update set
@@ -253,6 +263,7 @@ on conflict (slug) do update set
   brand_primary = excluded.brand_primary,
   brand_accent = excluded.brand_accent,
   homepage_sections = excluded.homepage_sections,
+  lead_routing = excluded.lead_routing,
   updated_at = now();
 
 insert into public.team_members (slug, full_name, title, phone, email, bio, specialties, display_order)

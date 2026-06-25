@@ -17,9 +17,9 @@ const resendApiKey = process.env.RESEND_API_KEY;
 
 function parseEmailList(value?: string) {
   return (value || "")
-  .split(",")
-  .map((email) => email.trim())
-  .filter(Boolean);
+    .split(",")
+    .map((email) => email.trim())
+    .filter(Boolean);
 }
 
 function escapeHtml(value?: string | null) {
@@ -96,10 +96,15 @@ export async function POST(request: Request) {
   const message = body.message?.trim();
   const sourcePage = body.sourcePage?.trim() || "home";
   const siteSettings = await getSiteSettings();
+  const routing = siteSettings.leadRouting;
   const resendFromEmail = process.env.RESEND_FROM_EMAIL || siteSettings.resendFromEmail;
   const leadReplyToEmail = process.env.LEAD_REPLY_TO_EMAIL || siteSettings.leadReplyToEmail;
-  const leadNotificationEmails = parseEmailList(process.env.LEAD_NOTIFICATION_EMAILS)
-    .concat(process.env.LEAD_NOTIFICATION_EMAILS ? [] : siteSettings.leadNotificationEmails);
+  const envLeadNotificationEmails = parseEmailList(process.env.LEAD_NOTIFICATION_EMAILS);
+  const leadNotificationEmails = envLeadNotificationEmails.length
+    ? envLeadNotificationEmails
+    : routing.valuationNotificationEmails.length
+      ? routing.valuationNotificationEmails
+      : routing.defaultNotificationEmails;
 
   if (!email || !propertyAddress) {
     return NextResponse.json(
@@ -109,6 +114,20 @@ export async function POST(request: Request) {
   }
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const assignedTeamMemberSlug = routing.valuationAssignedTeamMemberSlug || routing.defaultAssignedTeamMemberSlug;
+  let assignedTeamMemberId: string | null = null;
+
+  if (assignedTeamMemberSlug) {
+    const { data: assignedTeamMember } = await supabase
+      .from("team_members")
+      .select("id")
+      .eq("slug", assignedTeamMemberSlug)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    assignedTeamMemberId = assignedTeamMember?.id || null;
+  }
+
   const { error } = await supabase.from("lead_submissions").insert({
     lead_type: "valuation",
     full_name: body.name?.trim() || null,
@@ -116,7 +135,8 @@ export async function POST(request: Request) {
     phone: phone || null,
     property_address: propertyAddress,
     message: message || null,
-    source_page: sourcePage
+    source_page: sourcePage,
+    assigned_team_member_id: assignedTeamMemberId
   });
 
   if (error) {
@@ -129,12 +149,13 @@ export async function POST(request: Request) {
   const safeMessage = escapeHtml(message || "No additional notes provided.");
   const safeSourcePage = escapeHtml(sourcePage);
 
-  const clientEmail = sendResendEmail({
-    to: email,
-    from: resendFromEmail,
-    replyTo: leadReplyToEmail,
-    subject: "We received your home valuation request",
-    text: `Hi ${fullName},
+  const clientEmail = routing.sendClientConfirmation
+    ? sendResendEmail({
+        to: email,
+        from: resendFromEmail,
+        replyTo: leadReplyToEmail,
+        subject: "We received your home valuation request",
+        text: `Hi ${fullName},
 
 Thank you for requesting a home valuation from Alu Realty Group.
 
@@ -145,7 +166,7 @@ Phil or Denise will review the details and follow up with a personal home value 
 
 Alu Realty Group
 Fathom Realty Elite`,
-    html: `
+        html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #12201a; max-width: 620px;">
         <h1 style="font-size: 26px; margin-bottom: 12px;">We received your home valuation request.</h1>
         <p>Hi ${safeName},</p>
@@ -157,9 +178,10 @@ Fathom Realty Elite`,
         <p style="margin-top: 28px;">Alu Realty Group<br />Fathom Realty Elite</p>
       </div>
     `
-  });
+      })
+    : Promise.resolve({ skipped: true, reason: "Client confirmation emails are disabled." });
 
-  const internalEmail = leadNotificationEmails.length
+  const internalEmail = routing.sendInternalNotification && leadNotificationEmails.length
     ? sendResendEmail({
         to: leadNotificationEmails,
         from: resendFromEmail,
