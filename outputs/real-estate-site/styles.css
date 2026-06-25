@@ -130,7 +130,7 @@ svg { display: block; }
 .seasonal-banner {
   flex: 1 1 auto;
   width: auto;
-  max-width: min(1120px, calc(100vw - 430px));
+  max-width: calc(100vw - 430px);
   min-height: 96px;
   padding: 19px clamp(22px, 3vw, 36px);
   position: relative;
