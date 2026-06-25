@@ -364,28 +364,30 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   z-index: 60;
   left: 50%;
   bottom: 28px;
-  width: min(520px, calc(100% - 34px));
-  padding: 18px 22px;
+  width: min(660px, calc(100% - 34px));
+  padding: 24px 28px;
   display: grid;
   gap: 6px;
   color: #fff;
   background: var(--ink);
   box-shadow: var(--shadow);
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.5;
   text-transform: none;
   transform: translate(-50%, 120px);
   opacity: 0;
   transition: .3s;
 }
-.toast strong { font-size: 17px; line-height: 1.25; }
+.toast strong { font-size: 22px; line-height: 1.2; }
 .toast.show { transform: translate(-50%, 0); opacity: 1; }
 .toast-success {
   bottom: 50%;
-  padding: 24px 28px;
+  padding: 32px 36px;
   color: var(--ink);
-  background: #fff;
-  border-left: 6px solid var(--green);
+  background: linear-gradient(135deg, #fff 0%, #fbf7ef 100%);
+  border: 1px solid rgba(13, 71, 34, .18);
+  border-left: 10px solid var(--green);
+  box-shadow: 0 28px 70px rgba(7, 14, 12, .24), 0 0 0 8px rgba(255, 255, 255, .45);
   transform: translate(-50%, 55%) scale(.96);
 }
 .toast-success.show { transform: translate(-50%, 50%) scale(1); }
@@ -400,13 +402,21 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
 .modal input:focus { border-color: var(--accent); }
 .checkbox-label { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 10px; }
 .modal > small { margin-top: 17px; display: block; color: #909893; font-size: 8px; line-height: 1.6; }
-.success-modal { width: min(545px, 100%); text-align: left; }
-.success-modal h2 { font-size: 40px; }
+.success-modal {
+  width: min(625px, 100%);
+  padding: 50px;
+  text-align: left;
+  border: 1px solid rgba(13, 71, 34, .2);
+  border-top: 8px solid var(--green);
+  box-shadow: 0 32px 80px rgba(7, 14, 12, .32);
+}
+.success-modal h2 { font-size: 44px; }
 .success-next-steps {
-  margin: 24px 0;
-  padding: 18px 20px;
-  background: #f5f2eb;
-  border-left: 5px solid var(--accent);
+  margin: 28px 0;
+  padding: 22px 24px;
+  background: linear-gradient(135deg, #f8f3ea 0%, #fff 100%);
+  border: 1px solid rgba(199, 91, 49, .22);
+  border-left: 6px solid var(--accent);
 }
 .success-next-steps span {
   display: block;

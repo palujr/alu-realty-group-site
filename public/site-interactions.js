@@ -160,7 +160,7 @@ function renderListings() {
 function showToast(message, options = {}) {
   const toast = document.querySelector("#toast");
   const title = options.title;
-  const duration = options.duration || 2600;
+  const duration = options.duration || (options.variant === "success" ? 10000 : 2600);
 
   toast.className = `toast${options.variant ? ` toast-${options.variant}` : ""}`;
   toast.innerHTML = title
@@ -255,13 +255,16 @@ document.querySelector("#prevListings").addEventListener("click", () => {
 });
 
 const backdrop = document.querySelector("#modalBackdrop");
+let modalAutoCloseTimeout;
 function openModal(name) {
+  clearTimeout(modalAutoCloseTimeout);
   backdrop.hidden = false;
   document.body.style.overflow = "hidden";
   document.querySelectorAll(".modal").forEach((modal) => modal.hidden = true);
   document.querySelector(`#${name}Modal`).hidden = false;
 }
 function closeModal() {
+  clearTimeout(modalAutoCloseTimeout);
   backdrop.hidden = true;
   document.body.style.overflow = "";
   document.querySelectorAll(".modal").forEach((modal) => modal.hidden = true);
@@ -316,6 +319,7 @@ document.querySelector("#valuationForm").addEventListener("submit", async (event
 
     form.reset();
     openModal("valuationSuccess");
+    modalAutoCloseTimeout = setTimeout(closeModal, 10000);
   } catch (error) {
     showToast(error.message || "Something went wrong. Please try again.");
   } finally {
