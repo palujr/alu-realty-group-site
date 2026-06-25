@@ -1,7 +1,44 @@
 import Script from "next/script";
-import { teamMembers, testimonials } from "@/lib/site-data";
+import { createClient } from "@supabase/supabase-js";
+import { teamMembers as fallbackTeamMembers, testimonials } from "@/lib/site-data";
+import type { TeamMember } from "@/lib/site-data";
 
-export default function HomePage() {
+export const revalidate = 60;
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+async function getTeamMembers(): Promise<TeamMember[]> {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return fallbackTeamMembers;
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const { data, error } = await supabase
+    .from("team_members")
+    .select("slug, full_name, title, phone, email, bio, photo_url, specialties")
+    .eq("is_active", true)
+    .order("display_order", { ascending: true });
+
+  if (error || !data?.length) {
+    return fallbackTeamMembers;
+  }
+
+  return data.map((member) => ({
+    id: member.slug,
+    name: member.full_name,
+    title: member.title,
+    phone: member.phone || "",
+    email: member.email || "",
+    bio: member.bio || "",
+    specialties: member.specialties || [],
+    imageUrl: member.photo_url || undefined
+  }));
+}
+
+export default async function HomePage() {
+  const teamMembers = await getTeamMembers();
+
   return (
     <>
       <div className="announcement">
@@ -171,15 +208,19 @@ export default function HomePage() {
             {teamMembers.map((member) => (
               <article className="team-card" key={member.id}>
                 <div className="team-photo" aria-hidden="true">
-                  <span>{member.name.split(" ").map((part) => part[0]).join("")}</span>
+                  {member.imageUrl ? (
+                    <img src={member.imageUrl} alt="" />
+                  ) : (
+                    <span>{member.name.split(" ").map((part) => part[0]).join("")}</span>
+                  )}
                 </div>
                 <div className="team-card-content">
                   <p className="story-meta">{member.title}</p>
                   <h3>{member.name}</h3>
                   <p>{member.bio}</p>
                   <div className="team-contact">
-                    <a href={`tel:${member.phone.replace(/[^0-9]/g, "")}`}>{member.phone}</a>
-                    <a href={`mailto:${member.email}`}>{member.email}</a>
+                    {member.phone ? <a href={`tel:${member.phone.replace(/[^0-9]/g, "")}`}>{member.phone}</a> : null}
+                    {member.email ? <a href={`mailto:${member.email}`}>{member.email}</a> : null}
                   </div>
                   <div className="team-specialties">
                     {member.specialties.map((specialty) => <span key={specialty}>{specialty}</span>)}
