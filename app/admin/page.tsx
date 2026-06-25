@@ -133,7 +133,7 @@ export default async function AdminDashboardPage() {
           <h1>{siteSettings.siteName}</h1>
           <p>Manage the pieces that make this real estate site reusable: settings, banners, team, feedback, and leads.</p>
         </div>
-        <Link className="admin-button" href="/">View website</Link>
+        <Link className="admin-button" href="/" target="_blank" rel="noopener noreferrer">View website</Link>
       </header>
 
       {visibleErrors.length ? (
