@@ -324,8 +324,11 @@ export default function HomePage() {
           <h2 id="valuationTitle">Tell us where to begin.</h2>
           <p className="modal-intro">We will review nearby sales and current competition, then follow up with a personal estimate.</p>
           <form id="valuationForm">
+            <label>Full name<input name="name" type="text" placeholder="Your name" required /></label>
             <label>Property address<input name="address" type="text" placeholder="123 Main Street, Scottsdale" required /></label>
             <label>Email address<input name="email" type="email" placeholder="you@example.com" required /></label>
+            <label>Phone number<input name="phone" type="tel" placeholder="(480) 555-0124" /></label>
+            <label>Anything helpful to know?<input name="message" type="text" placeholder="Timing, upgrades, questions, or goals" /></label>
             <button className="button button-accent" type="submit">Request my valuation</button>
           </form>
         </section>

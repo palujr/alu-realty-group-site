@@ -280,11 +280,43 @@ document.querySelector("#accountForm").addEventListener("submit", (event) => {
   event.currentTarget.reset();
 });
 
-document.querySelector("#valuationForm").addEventListener("submit", (event) => {
+document.querySelector("#valuationForm").addEventListener("submit", async (event) => {
   event.preventDefault();
-  closeModal();
-  showToast("Valuation request received. We will be in touch.");
-  event.currentTarget.reset();
+  const form = event.currentTarget;
+  const button = form.querySelector("button[type='submit']");
+  const data = new FormData(form);
+
+  button.disabled = true;
+  button.textContent = "Sending...";
+
+  try {
+    const response = await fetch("/api/valuation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: data.get("name"),
+        address: data.get("address"),
+        email: data.get("email"),
+        phone: data.get("phone"),
+        message: data.get("message"),
+        sourcePage: window.location.pathname
+      })
+    });
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      throw new Error(result.error || "Unable to send valuation request.");
+    }
+
+    closeModal();
+    showToast("Valuation request received. We will be in touch.");
+    form.reset();
+  } catch (error) {
+    showToast(error.message || "Something went wrong. Please try again.");
+  } finally {
+    button.disabled = false;
+    button.textContent = "Request my valuation";
+  }
 });
 
 function updatePayment() {
