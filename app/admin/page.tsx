@@ -170,7 +170,7 @@ async function updateTeamMember(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect("/admin?teamStatus=saved#team-members");
+  redirect(`/admin?teamStatus=saved&teamMemberId=${memberId}#team-member-${memberId}`);
 }
 
 async function getAdminData() {
@@ -237,12 +237,13 @@ async function getAdminData() {
 export default async function AdminDashboardPage({
   searchParams
 }: {
-  searchParams?: { bannerStatus?: string; teamStatus?: string };
+  searchParams?: { bannerStatus?: string; teamStatus?: string; teamMemberId?: string };
 }) {
   const { siteSettings, activeBanner, leads, banners, teamMembers, testimonials, errors } = await getAdminData();
   const visibleErrors = Object.values(errors).filter(Boolean);
   const bannerStatus = searchParams?.bannerStatus;
   const teamStatus = searchParams?.teamStatus;
+  const savedTeamMemberId = searchParams?.teamMemberId;
 
   return (
     <main className="admin-shell">
@@ -336,7 +337,14 @@ export default async function AdminDashboardPage({
               <h2>{activeBanner?.headline || "No active banner"}</h2>
             </div>
           </div>
-          <p>{activeBanner?.body || "The site will use fallback banner settings or hide the banner when no active campaign is available."}</p>
+          {activeBanner ? (
+            <div className={`admin-banner-preview banner-theme-${activeBanner.theme}`}>
+              <p>{activeBanner.eyebrow}</p>
+              <h3>{activeBanner.headline}</h3>
+              <span>{activeBanner.body}</span>
+            </div>
+          ) : null}
+          <p>{activeBanner ? "This is the banner currently displayed beneath the team logo on the website." : "The site will use fallback banner settings or hide the banner when no active campaign is available."}</p>
         </article>
 
         <article className="admin-card" id="banner-campaigns">
@@ -420,12 +428,6 @@ export default async function AdminDashboardPage({
               <h2>Edit agent profiles</h2>
             </div>
           </div>
-          {teamStatus === "saved" ? (
-            <div className="admin-inline-success" role="status">
-              <strong>Team profile saved.</strong>
-              <span>The agent details are updated on the website.</span>
-            </div>
-          ) : null}
           {teamStatus === "error" ? (
             <div className="admin-inline-alert" role="alert">
               <strong>Team profile could not be saved.</strong>
@@ -434,7 +436,7 @@ export default async function AdminDashboardPage({
           ) : null}
           <div className="admin-form-list">
             {teamMembers.map((member) => (
-              <form className="admin-form-card" action={updateTeamMember} key={member.id}>
+              <form className="admin-form-card" action={updateTeamMember} id={`team-member-${member.id}`} key={member.id}>
                 <input name="memberId" type="hidden" value={member.id} />
                 <div className="admin-form-grid">
                   <label>
@@ -476,6 +478,9 @@ export default async function AdminDashboardPage({
                 </label>
                 <div className="admin-form-footer">
                   <small>{member.is_active ? "Currently visible" : "Currently hidden"} · {member.slug}</small>
+                  {teamStatus === "saved" && savedTeamMemberId === member.id ? (
+                    <span className="admin-save-confirmation" role="status">Saved successfully</span>
+                  ) : null}
                   <button className="admin-save-button" type="submit">Save team member</button>
                 </div>
               </form>
