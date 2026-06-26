@@ -2022,64 +2022,67 @@ export default async function AdminDashboardPage({
                     <p className="admin-empty">No timeline activity has been added for this lead yet.</p>
                   ) : null}
                 </div>
-                <form className="admin-form-card admin-activity-form" action={createLeadActivity} data-activity-form={lead.id}>
-                  <input name="leadId" type="hidden" value={lead.id} />
-                  <div className="admin-form-grid">
+                {leadActivityStatus === "saved" && savedLeadId === lead.id ? (
+                  <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status">Activity added</span>
+                ) : null}
+                {leadActivityStatus === "updated" && savedLeadId === lead.id ? (
+                  <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status">Activity updated</span>
+                ) : null}
+                {leadActivityStatus === "deleted" && savedLeadId === lead.id ? (
+                  <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status">Activity deleted</span>
+                ) : null}
+                <details className="admin-create-panel admin-activity-create-panel" data-activity-create-panel="true">
+                  <summary>Add New Activity</summary>
+                  <form className="admin-form-card admin-activity-form" action={createLeadActivity} data-activity-form={lead.id}>
+                    <input name="leadId" type="hidden" value={lead.id} />
+                    <div className="admin-form-grid">
+                      <label>
+                        Activity type
+                        <select name="activityType" defaultValue="note">
+                          {leadActivityTypeOptions.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        Activity date
+                        <input name="activityAt" type="datetime-local" />
+                      </label>
+                    </div>
+                    <div className="admin-form-grid admin-activity-added-by-grid">
+                      <label>
+                        Added by
+                        <select name="createdByTeamMemberIds" multiple>
+                          {teamMembers.map((member) => (
+                            <option key={member.id} value={member.id}>{member.full_name}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        Other added by
+                        <input name="createdByName" type="text" placeholder="Manual name if needed" />
+                      </label>
+                      <small className="admin-grid-help">Hold Ctrl while clicking to select more than one team member.</small>
+                    </div>
                     <label>
-                      Activity type
-                      <select name="activityType" defaultValue="note">
-                        {leadActivityTypeOptions.map((option) => (
-                          <option key={option.value} value={option.value}>{option.label}</option>
-                        ))}
-                      </select>
+                      Activity note
+                      <textarea name="activitySummary" rows={3} placeholder="Called client, sent CMA, left voicemail, scheduled showing..." required></textarea>
                     </label>
                     <label>
-                      Activity date
-                      <input name="activityAt" type="datetime-local" />
-                    </label>
-                  </div>
-                  <div className="admin-form-grid admin-activity-added-by-grid">
-                    <label>
-                      Added by
-                      <select name="createdByTeamMemberIds" multiple>
-                        {teamMembers.map((member) => (
-                          <option key={member.id} value={member.id}>{member.full_name}</option>
-                        ))}
-                      </select>
+                      Outcome
+                      <input name="activityOutcome" type="text" placeholder="Left voicemail, meeting set, waiting for reply" required />
                     </label>
                     <label>
-                      Other added by
-                      <input name="createdByName" type="text" placeholder="Manual name if needed" />
+                      Activity follow-up
+                      <input name="activityFollowUpAt" type="datetime-local" />
                     </label>
-                    <small className="admin-grid-help">Hold Ctrl while clicking to select more than one team member.</small>
-                  </div>
-                  <label>
-                    Activity note
-                    <textarea name="activitySummary" rows={3} placeholder="Called client, sent CMA, left voicemail, scheduled showing..." required></textarea>
-                  </label>
-                  <label>
-                    Outcome
-                    <input name="activityOutcome" type="text" placeholder="Left voicemail, meeting set, waiting for reply" required />
-                  </label>
-                  <label>
-                    Activity follow-up
-                    <input name="activityFollowUpAt" type="datetime-local" />
-                  </label>
-                  <div className="admin-form-footer">
-                    <small>Leave activity date blank to use the current time. Use activity follow-up for a task tied to this note only.</small>
-                    {leadActivityStatus === "saved" && savedLeadId === lead.id ? (
-                      <span className="admin-save-confirmation" data-admin-status="saved" role="status">Activity added</span>
-                    ) : null}
-                    {leadActivityStatus === "updated" && savedLeadId === lead.id ? (
-                      <span className="admin-save-confirmation" data-admin-status="saved" role="status">Activity updated</span>
-                    ) : null}
-                    {leadActivityStatus === "deleted" && savedLeadId === lead.id ? (
-                      <span className="admin-save-confirmation" data-admin-status="saved" role="status">Activity deleted</span>
-                    ) : null}
-                    <button className="admin-secondary-button" type="reset">Clear entry</button>
-                    <button className="admin-save-button" type="submit">Add activity</button>
-                  </div>
-                </form>
+                    <div className="admin-form-footer">
+                      <small>Leave activity date blank to use the current time. Use activity follow-up for a task tied to this note only.</small>
+                      <button className="admin-secondary-button" type="reset">Clear entry</button>
+                      <button className="admin-save-button" type="submit">Add activity</button>
+                    </div>
+                  </form>
+                </details>
               </section>
               </details>
             ))}

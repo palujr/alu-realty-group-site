@@ -1012,6 +1012,30 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
 .admin-create-panel .admin-form-card {
   border: 0;
 }
+.admin-activity-create-panel {
+  margin: 4px 0 0;
+  background: transparent;
+  border: 0;
+}
+.admin-activity-create-panel summary {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  color: #fff;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+}
+.admin-activity-create-panel[open] summary {
+  color: var(--ink);
+  background: #f8f5ee;
+  border-color: var(--line);
+}
+.admin-activity-create-panel .admin-activity-form {
+  margin-top: 12px;
+}
+.admin-timeline-confirmation {
+  justify-self: start;
+}
 .admin-form-card {
   padding: 18px;
   display: grid;

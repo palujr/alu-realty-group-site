@@ -16,7 +16,10 @@ export function AdminLeadFormReset({
       return;
     }
 
-    document.querySelector<HTMLFormElement>(`form[data-activity-form="${savedLeadId}"]`)?.reset();
+    const activityForm = document.querySelector<HTMLFormElement>(`form[data-activity-form="${savedLeadId}"]`);
+
+    activityForm?.reset();
+    activityForm?.closest<HTMLDetailsElement>("details[data-activity-create-panel='true']")?.removeAttribute("open");
   }, [activitySaved, savedLeadId]);
 
   useEffect(() => {
