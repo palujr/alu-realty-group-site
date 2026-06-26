@@ -939,6 +939,38 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   letter-spacing: .08em;
   text-transform: uppercase;
 }
+.admin-logo-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.admin-logo-preview {
+  min-height: 112px;
+  padding: 16px;
+  display: grid;
+  align-items: center;
+  justify-items: start;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+.admin-logo-preview img {
+  max-width: 240px;
+  max-height: 72px;
+  object-fit: contain;
+}
+.admin-logo-preview span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.admin-color-field input[type="color"] {
+  height: 46px;
+  padding: 5px;
+  cursor: pointer;
+}
 .admin-checkbox {
   display: flex !important;
   align-items: center;
@@ -1011,6 +1043,7 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   .admin-stats { grid-template-columns: repeat(2, 1fr); }
   .admin-grid { grid-template-columns: 1fr; }
   .admin-form-grid { grid-template-columns: 1fr; }
+  .admin-logo-preview-grid { grid-template-columns: 1fr; }
   .admin-summary-row {
     grid-template-columns: 1fr auto;
   }

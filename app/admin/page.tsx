@@ -86,7 +86,8 @@ const contactMethodOptions = [
 ];
 
 const teamPhotoBucket = "team-photos";
-const maxTeamPhotoSize = 5 * 1024 * 1024;
+const siteLogoBucket = "site-logos";
+const maxAdminImageSize = 5 * 1024 * 1024;
 
 function formatDate(value?: string | null) {
   if (!value) {
@@ -177,25 +178,27 @@ function asOptionalDateTime(value: FormDataEntryValue | null) {
   return stringValue ? new Date(stringValue).toISOString() : null;
 }
 
-async function uploadTeamPhoto(
+async function uploadAdminImage(
   adminSupabase: NonNullable<ReturnType<typeof createAdminClient>>,
   file: FormDataEntryValue | null,
-  slug: string
+  slug: string,
+  bucket: string,
+  fallbackSlug: string
 ) {
   if (!(file instanceof File) || file.size === 0) {
     return null;
   }
 
-  if (!file.type.startsWith("image/") || file.size > maxTeamPhotoSize) {
-    throw new Error("Invalid team photo");
+  if (!file.type.startsWith("image/") || file.size > maxAdminImageSize) {
+    throw new Error("Invalid image upload");
   }
 
   const extension = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-  const safeSlug = slugify(slug) || "team-member";
+  const safeSlug = slugify(slug) || fallbackSlug;
   const filePath = `${safeSlug}/${Date.now()}.${extension}`;
 
   const { error } = await adminSupabase.storage
-    .from(teamPhotoBucket)
+    .from(bucket)
     .upload(filePath, file, {
       contentType: file.type,
       upsert: true
@@ -205,8 +208,24 @@ async function uploadTeamPhoto(
     throw new Error(error.message);
   }
 
-  const { data } = adminSupabase.storage.from(teamPhotoBucket).getPublicUrl(filePath);
+  const { data } = adminSupabase.storage.from(bucket).getPublicUrl(filePath);
   return data.publicUrl;
+}
+
+async function uploadTeamPhoto(
+  adminSupabase: NonNullable<ReturnType<typeof createAdminClient>>,
+  file: FormDataEntryValue | null,
+  slug: string
+) {
+  return uploadAdminImage(adminSupabase, file, slug, teamPhotoBucket, "team-member");
+}
+
+async function uploadSiteLogo(
+  adminSupabase: NonNullable<ReturnType<typeof createAdminClient>>,
+  file: FormDataEntryValue | null,
+  slug: string
+) {
+  return uploadAdminImage(adminSupabase, file, slug, siteLogoBucket, "site-logo");
 }
 
 async function updateSiteSettings(formData: FormData) {
@@ -267,14 +286,28 @@ async function updateSiteSettings(formData: FormData) {
     sendInternalNotification: formData.get("sendInternalNotification") === "on"
   };
 
+  let brokerLogoUrl = asOptionalString(formData.get("brokerLogoUrl"));
+  let teamLogoUrl = asOptionalString(formData.get("teamLogoUrl"));
+
+  try {
+    brokerLogoUrl =
+      (await uploadSiteLogo(adminSupabase, formData.get("brokerLogoFile"), `${siteSlug}-broker-logo`)) ||
+      brokerLogoUrl;
+    teamLogoUrl =
+      (await uploadSiteLogo(adminSupabase, formData.get("teamLogoFile"), `${siteSlug}-team-logo`)) ||
+      teamLogoUrl;
+  } catch {
+    redirect("/admin?siteStatus=error#site-settings");
+  }
+
   const { error } = await adminSupabase
     .from("broker_sites")
     .update({
       site_name: siteName,
       brokerage_name: asOptionalString(formData.get("brokerageName")),
       primary_domain: asOptionalString(formData.get("primaryDomain")),
-      broker_logo_url: asOptionalString(formData.get("brokerLogoUrl")),
-      team_logo_url: asOptionalString(formData.get("teamLogoUrl")),
+      broker_logo_url: brokerLogoUrl,
+      team_logo_url: teamLogoUrl,
       contact_email: contactEmail,
       contact_phone: asOptionalString(formData.get("contactPhone")),
       lead_notification_emails: safeLeadNotificationEmails,
@@ -848,8 +881,22 @@ export default async function AdminDashboardPage({
               <span>{siteSettings.brandPrimary}</span>
               <span>{siteSettings.brandAccent}</span>
             </summary>
-            <form className="admin-form-card" action={updateSiteSettings}>
+            <form className="admin-form-card" action={updateSiteSettings} encType="multipart/form-data">
               <input name="siteSlug" type="hidden" value={siteSettings.slug} />
+              <div className="admin-logo-preview-grid">
+                {siteSettings.brokerLogoUrl ? (
+                  <div className="admin-logo-preview">
+                    <img src={siteSettings.brokerLogoUrl} alt={`${siteSettings.brokerageName} broker logo`} />
+                    <span>Current broker logo</span>
+                  </div>
+                ) : null}
+                {siteSettings.teamLogoUrl ? (
+                  <div className="admin-logo-preview">
+                    <img src={siteSettings.teamLogoUrl} alt={`${siteSettings.siteName} team logo`} />
+                    <span>Current team logo</span>
+                  </div>
+                ) : null}
+              </div>
               <div className="admin-form-grid">
                 <label>
                   Site name
@@ -884,16 +931,24 @@ export default async function AdminDashboardPage({
                   <input name="brokerLogoUrl" type="text" defaultValue={siteSettings.brokerLogoUrl} />
                 </label>
                 <label>
+                  Upload broker logo
+                  <input name="brokerLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+                </label>
+                <label>
                   Team logo URL
                   <input name="teamLogoUrl" type="text" defaultValue={siteSettings.teamLogoUrl} />
                 </label>
                 <label>
-                  Primary brand color
-                  <input name="brandPrimary" type="text" defaultValue={siteSettings.brandPrimary} />
+                  Upload team logo
+                  <input name="teamLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
                 </label>
-                <label>
+                <label className="admin-color-field">
+                  Primary brand color
+                  <input name="brandPrimary" type="color" defaultValue={siteSettings.brandPrimary} />
+                </label>
+                <label className="admin-color-field">
                   Accent brand color
-                  <input name="brandAccent" type="text" defaultValue={siteSettings.brandAccent} />
+                  <input name="brandAccent" type="color" defaultValue={siteSettings.brandAccent} />
                 </label>
               </div>
               <label>
