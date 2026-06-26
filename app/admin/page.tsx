@@ -904,196 +904,244 @@ export default async function AdminDashboardPage({
                   </div>
                 ) : null}
               </div>
-              <div className="admin-form-grid">
+              <section className="admin-settings-section">
+                <div className="admin-settings-section-heading">
+                  <p className="admin-kicker">Branding</p>
+                  <h3>Names, logos, and colors</h3>
+                </div>
+                <div className="admin-form-grid">
+                  <label>
+                    Site name
+                    <input name="siteName" type="text" defaultValue={siteSettings.siteName} required />
+                  </label>
+                  <label>
+                    Brokerage name
+                    <input name="brokerageName" type="text" defaultValue={siteSettings.brokerageName} />
+                  </label>
+                  <label>
+                    Primary domain
+                    <input name="primaryDomain" type="text" defaultValue={siteSettings.primaryDomain} />
+                  </label>
+                  <BrandColorField label="Primary brand color" name="brandPrimary" defaultValue={siteSettings.brandPrimary} />
+                  <BrandColorField label="Accent brand color" name="brandAccent" defaultValue={siteSettings.brandAccent} />
+                  <label>
+                    Broker logo URL
+                    <input name="brokerLogoUrl" type="text" defaultValue={siteSettings.brokerLogoUrl} />
+                  </label>
+                  <label>
+                    Upload broker logo
+                    <input name="brokerLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+                  </label>
+                  <label>
+                    Team logo URL
+                    <input name="teamLogoUrl" type="text" defaultValue={siteSettings.teamLogoUrl} />
+                  </label>
+                  <label>
+                    Upload team logo
+                    <input name="teamLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+                  </label>
+                </div>
+              </section>
+
+              <section className="admin-settings-section">
+                <div className="admin-settings-section-heading">
+                  <p className="admin-kicker">Contact</p>
+                  <h3>Email, phone, and notifications</h3>
+                </div>
+                <div className="admin-form-grid">
+                  <label>
+                    Contact phone
+                    <input name="contactPhone" type="tel" defaultValue={siteSettings.contactPhone} />
+                  </label>
+                  <label>
+                    Contact email
+                    <input name="contactEmail" type="email" defaultValue={siteSettings.contactEmail} />
+                  </label>
+                  <label>
+                    Reply-to email
+                    <input name="leadReplyToEmail" type="email" defaultValue={siteSettings.leadReplyToEmail} />
+                  </label>
+                  <label>
+                    Resend sender email
+                    <input name="resendFromEmail" type="text" defaultValue={siteSettings.resendFromEmail} />
+                  </label>
+                </div>
                 <label>
-                  Site name
-                  <input name="siteName" type="text" defaultValue={siteSettings.siteName} required />
-                </label>
-                <label>
-                  Brokerage name
-                  <input name="brokerageName" type="text" defaultValue={siteSettings.brokerageName} />
-                </label>
-                <label>
-                  Primary domain
-                  <input name="primaryDomain" type="text" defaultValue={siteSettings.primaryDomain} />
-                </label>
-                <label>
-                  Contact phone
-                  <input name="contactPhone" type="tel" defaultValue={siteSettings.contactPhone} />
-                </label>
-                <label>
-                  Contact email
-                  <input name="contactEmail" type="email" defaultValue={siteSettings.contactEmail} />
-                </label>
-                <label>
-                  Reply-to email
-                  <input name="leadReplyToEmail" type="email" defaultValue={siteSettings.leadReplyToEmail} />
-                </label>
-                <label>
-                  Resend sender email
-                  <input name="resendFromEmail" type="text" defaultValue={siteSettings.resendFromEmail} />
-                </label>
-                <label>
-                  Broker logo URL
-                  <input name="brokerLogoUrl" type="text" defaultValue={siteSettings.brokerLogoUrl} />
-                </label>
-                <label>
-                  Upload broker logo
-                  <input name="brokerLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
-                </label>
-                <label>
-                  Team logo URL
-                  <input name="teamLogoUrl" type="text" defaultValue={siteSettings.teamLogoUrl} />
-                </label>
-                <label>
-                  Upload team logo
-                  <input name="teamLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
-                </label>
-                <BrandColorField label="Primary brand color" name="brandPrimary" defaultValue={siteSettings.brandPrimary} />
-                <BrandColorField label="Accent brand color" name="brandAccent" defaultValue={siteSettings.brandAccent} />
-              </div>
-              <label>
-                Lead notification emails
-                <textarea name="leadNotificationEmails" rows={2} defaultValue={siteSettings.leadNotificationEmails.join(", ")}></textarea>
-              </label>
-              <label>
-                Valuation notification emails
-                <textarea name="valuationNotificationEmails" rows={2} defaultValue={siteSettings.leadRouting.valuationNotificationEmails.join(", ")}></textarea>
-              </label>
-              <div className="admin-form-grid">
-                <label>
-                  Default assigned team member slug
-                  <input name="defaultAssignedTeamMemberSlug" type="text" defaultValue={siteSettings.leadRouting.defaultAssignedTeamMemberSlug} />
-                </label>
-                <label>
-                  Valuation assigned team member slug
-                  <input name="valuationAssignedTeamMemberSlug" type="text" defaultValue={siteSettings.leadRouting.valuationAssignedTeamMemberSlug} />
-                </label>
-              </div>
-              <div className="admin-checkbox-row">
-                <label className="admin-checkbox">
-                  <input name="sendClientConfirmation" type="checkbox" defaultChecked={siteSettings.leadRouting.sendClientConfirmation} />
-                  Send client confirmation emails
-                </label>
-                <label className="admin-checkbox">
-                  <input name="sendInternalNotification" type="checkbox" defaultChecked={siteSettings.leadRouting.sendInternalNotification} />
-                  Send internal lead notifications
-                </label>
-                <label className="admin-checkbox">
-                  <input name="promoEnabled" type="checkbox" defaultChecked={siteSettings.promoEnabled} />
-                  Enable fallback promo banner
-                </label>
-              </div>
-              <div className="admin-form-grid">
-                <label>
-                  Hero eyebrow
-                  <input name="heroEyebrow" type="text" defaultValue={siteSettings.heroEyebrow} />
+                  Lead notification emails
+                  <textarea name="leadNotificationEmails" rows={2} defaultValue={siteSettings.leadNotificationEmails.join(", ")}></textarea>
                 </label>
                 <label>
-                  Hero subheadline
-                  <input name="heroSubheadline" type="text" defaultValue={siteSettings.heroSubheadline} />
+                  Valuation notification emails
+                  <textarea name="valuationNotificationEmails" rows={2} defaultValue={siteSettings.leadRouting.valuationNotificationEmails.join(", ")}></textarea>
                 </label>
-              </div>
-              <label>
-                Hero headline
-                <textarea name="heroHeadline" rows={2} defaultValue={siteSettings.heroHeadline}></textarea>
-              </label>
-              <div className="admin-form-grid">
+              </section>
+
+              <section className="admin-settings-section">
+                <div className="admin-settings-section-heading">
+                  <p className="admin-kicker">Lead Routing</p>
+                  <h3>Assignments and email behavior</h3>
+                </div>
+                <div className="admin-form-grid">
+                  <label>
+                    Default assigned team member
+                    <select name="defaultAssignedTeamMemberSlug" defaultValue={siteSettings.leadRouting.defaultAssignedTeamMemberSlug}>
+                      <option value="">No default assignment</option>
+                      {teamMembers.map((member) => (
+                        <option key={member.id} value={member.slug}>{member.full_name}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Valuation assigned team member
+                    <select name="valuationAssignedTeamMemberSlug" defaultValue={siteSettings.leadRouting.valuationAssignedTeamMemberSlug}>
+                      <option value="">Use default assignment</option>
+                      {teamMembers.map((member) => (
+                        <option key={member.id} value={member.slug}>{member.full_name}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <div className="admin-checkbox-row">
+                  <label className="admin-checkbox">
+                    <input name="sendClientConfirmation" type="checkbox" defaultChecked={siteSettings.leadRouting.sendClientConfirmation} />
+                    Send client confirmation emails
+                  </label>
+                  <label className="admin-checkbox">
+                    <input name="sendInternalNotification" type="checkbox" defaultChecked={siteSettings.leadRouting.sendInternalNotification} />
+                    Send internal lead notifications
+                  </label>
+                </div>
+              </section>
+
+              <section className="admin-settings-section">
+                <div className="admin-settings-section-heading">
+                  <p className="admin-kicker">Hero & Promo</p>
+                  <h3>Top-of-page copy</h3>
+                </div>
+                <div className="admin-form-grid">
+                  <label>
+                    Hero eyebrow
+                    <input name="heroEyebrow" type="text" defaultValue={siteSettings.heroEyebrow} />
+                  </label>
+                  <label>
+                    Hero subheadline
+                    <input name="heroSubheadline" type="text" defaultValue={siteSettings.heroSubheadline} />
+                  </label>
+                </div>
                 <label>
-                  Fallback promo eyebrow
-                  <input name="promoEyebrow" type="text" defaultValue={siteSettings.promoEyebrow} />
+                  Hero headline
+                  <textarea name="heroHeadline" rows={2} defaultValue={siteSettings.heroHeadline}></textarea>
+                </label>
+                <div className="admin-checkbox-row">
+                  <label className="admin-checkbox">
+                    <input name="promoEnabled" type="checkbox" defaultChecked={siteSettings.promoEnabled} />
+                    Enable fallback promo banner
+                  </label>
+                </div>
+                <div className="admin-form-grid">
+                  <label>
+                    Fallback promo eyebrow
+                    <input name="promoEyebrow" type="text" defaultValue={siteSettings.promoEyebrow} />
+                  </label>
+                  <label>
+                    Fallback promo headline
+                    <input name="promoHeadline" type="text" defaultValue={siteSettings.promoHeadline} />
+                  </label>
+                </div>
+                <label>
+                  Fallback promo body
+                  <textarea name="promoBody" rows={2} defaultValue={siteSettings.promoBody}></textarea>
+                </label>
+              </section>
+
+              <section className="admin-settings-section">
+                <div className="admin-settings-section-heading">
+                  <p className="admin-kicker">Homepage Copy</p>
+                  <h3>Section headlines and supporting text</h3>
+                </div>
+                <div className="admin-form-grid">
+                  <label>
+                    Properties eyebrow
+                    <input name="propertiesEyebrow" type="text" defaultValue={siteSettings.homepageSections.propertiesEyebrow} />
+                  </label>
+                  <label>
+                    Properties headline
+                    <input name="propertiesHeadline" type="text" defaultValue={siteSettings.homepageSections.propertiesHeadline} />
+                  </label>
+                  <label>
+                    Mortgage eyebrow
+                    <input name="ratesEyebrow" type="text" defaultValue={siteSettings.homepageSections.ratesEyebrow} />
+                  </label>
+                  <label>
+                    Mortgage headline
+                    <input name="ratesHeadline" type="text" defaultValue={siteSettings.homepageSections.ratesHeadline} />
+                  </label>
+                  <label>
+                    Mortgage status
+                    <input name="ratesStatus" type="text" defaultValue={siteSettings.homepageSections.ratesStatus} />
+                  </label>
+                  <label>
+                    Team eyebrow
+                    <input name="teamEyebrow" type="text" defaultValue={siteSettings.homepageSections.teamEyebrow} />
+                  </label>
+                  <label>
+                    Team headline
+                    <input name="teamHeadline" type="text" defaultValue={siteSettings.homepageSections.teamHeadline} />
+                  </label>
+                  <label>
+                    Testimonials eyebrow
+                    <input name="testimonialsEyebrow" type="text" defaultValue={siteSettings.homepageSections.testimonialsEyebrow} />
+                  </label>
+                  <label>
+                    Testimonials headline
+                    <input name="testimonialsHeadline" type="text" defaultValue={siteSettings.homepageSections.testimonialsHeadline} />
+                  </label>
+                  <label>
+                    Insights eyebrow
+                    <input name="insightsEyebrow" type="text" defaultValue={siteSettings.homepageSections.insightsEyebrow} />
+                  </label>
+                  <label>
+                    Insights headline
+                    <input name="insightsHeadline" type="text" defaultValue={siteSettings.homepageSections.insightsHeadline} />
+                  </label>
+                  <label>
+                    Saved search eyebrow
+                    <input name="savedSearchEyebrow" type="text" defaultValue={siteSettings.homepageSections.savedSearchEyebrow} />
+                  </label>
+                  <label>
+                    Sell eyebrow
+                    <input name="sellEyebrow" type="text" defaultValue={siteSettings.homepageSections.sellEyebrow} />
+                  </label>
+                  <label>
+                    Sell button text
+                    <input name="sellButtonText" type="text" defaultValue={siteSettings.homepageSections.sellButtonText} />
+                  </label>
+                </div>
+                <label>
+                  Mortgage body
+                  <textarea name="ratesBody" rows={3} defaultValue={siteSettings.homepageSections.ratesBody}></textarea>
                 </label>
                 <label>
-                  Fallback promo headline
-                  <input name="promoHeadline" type="text" defaultValue={siteSettings.promoHeadline} />
-                </label>
-              </div>
-              <label>
-                Fallback promo body
-                <textarea name="promoBody" rows={2} defaultValue={siteSettings.promoBody}></textarea>
-              </label>
-              <div className="admin-form-grid">
-                <label>
-                  Properties eyebrow
-                  <input name="propertiesEyebrow" type="text" defaultValue={siteSettings.homepageSections.propertiesEyebrow} />
+                  Team body
+                  <textarea name="teamBody" rows={3} defaultValue={siteSettings.homepageSections.teamBody}></textarea>
                 </label>
                 <label>
-                  Properties headline
-                  <input name="propertiesHeadline" type="text" defaultValue={siteSettings.homepageSections.propertiesHeadline} />
+                  Saved search headline
+                  <textarea name="savedSearchHeadline" rows={2} defaultValue={siteSettings.homepageSections.savedSearchHeadline}></textarea>
                 </label>
                 <label>
-                  Mortgage eyebrow
-                  <input name="ratesEyebrow" type="text" defaultValue={siteSettings.homepageSections.ratesEyebrow} />
+                  Saved search body
+                  <textarea name="savedSearchBody" rows={3} defaultValue={siteSettings.homepageSections.savedSearchBody}></textarea>
                 </label>
                 <label>
-                  Mortgage headline
-                  <input name="ratesHeadline" type="text" defaultValue={siteSettings.homepageSections.ratesHeadline} />
+                  Sell headline
+                  <textarea name="sellHeadline" rows={2} defaultValue={siteSettings.homepageSections.sellHeadline}></textarea>
                 </label>
                 <label>
-                  Mortgage status
-                  <input name="ratesStatus" type="text" defaultValue={siteSettings.homepageSections.ratesStatus} />
+                  Sell body
+                  <textarea name="sellBody" rows={3} defaultValue={siteSettings.homepageSections.sellBody}></textarea>
                 </label>
-                <label>
-                  Team eyebrow
-                  <input name="teamEyebrow" type="text" defaultValue={siteSettings.homepageSections.teamEyebrow} />
-                </label>
-                <label>
-                  Team headline
-                  <input name="teamHeadline" type="text" defaultValue={siteSettings.homepageSections.teamHeadline} />
-                </label>
-                <label>
-                  Testimonials eyebrow
-                  <input name="testimonialsEyebrow" type="text" defaultValue={siteSettings.homepageSections.testimonialsEyebrow} />
-                </label>
-                <label>
-                  Testimonials headline
-                  <input name="testimonialsHeadline" type="text" defaultValue={siteSettings.homepageSections.testimonialsHeadline} />
-                </label>
-                <label>
-                  Insights eyebrow
-                  <input name="insightsEyebrow" type="text" defaultValue={siteSettings.homepageSections.insightsEyebrow} />
-                </label>
-                <label>
-                  Insights headline
-                  <input name="insightsHeadline" type="text" defaultValue={siteSettings.homepageSections.insightsHeadline} />
-                </label>
-                <label>
-                  Saved search eyebrow
-                  <input name="savedSearchEyebrow" type="text" defaultValue={siteSettings.homepageSections.savedSearchEyebrow} />
-                </label>
-                <label>
-                  Sell eyebrow
-                  <input name="sellEyebrow" type="text" defaultValue={siteSettings.homepageSections.sellEyebrow} />
-                </label>
-                <label>
-                  Sell button text
-                  <input name="sellButtonText" type="text" defaultValue={siteSettings.homepageSections.sellButtonText} />
-                </label>
-              </div>
-              <label>
-                Mortgage body
-                <textarea name="ratesBody" rows={3} defaultValue={siteSettings.homepageSections.ratesBody}></textarea>
-              </label>
-              <label>
-                Team body
-                <textarea name="teamBody" rows={3} defaultValue={siteSettings.homepageSections.teamBody}></textarea>
-              </label>
-              <label>
-                Saved search headline
-                <textarea name="savedSearchHeadline" rows={2} defaultValue={siteSettings.homepageSections.savedSearchHeadline}></textarea>
-              </label>
-              <label>
-                Saved search body
-                <textarea name="savedSearchBody" rows={3} defaultValue={siteSettings.homepageSections.savedSearchBody}></textarea>
-              </label>
-              <label>
-                Sell headline
-                <textarea name="sellHeadline" rows={2} defaultValue={siteSettings.homepageSections.sellHeadline}></textarea>
-              </label>
-              <label>
-                Sell body
-                <textarea name="sellBody" rows={3} defaultValue={siteSettings.homepageSections.sellBody}></textarea>
-              </label>
+              </section>
               <div className="admin-form-footer">
                 <small>These settings power the reusable website template.</small>
                 {siteStatus === "saved" ? (

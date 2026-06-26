@@ -866,6 +866,26 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   background: #f8f5ee;
   border: 1px solid var(--line);
 }
+.admin-settings-section {
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+  background: rgba(255, 255, 255, .68);
+  border: 1px solid rgba(27, 45, 38, .12);
+}
+.admin-settings-section-heading {
+  padding-bottom: 10px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 1px solid rgba(27, 45, 38, .1);
+}
+.admin-settings-section-heading h3 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+}
 .admin-form-title {
   margin-bottom: 0;
   padding-bottom: 12px;
