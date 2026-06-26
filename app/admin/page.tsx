@@ -1915,7 +1915,6 @@ export default async function AdminDashboardPage({
                 <button className="admin-save-button" type="submit">Save site settings</button>
               </div>
             </form>
-          </details>
           <section className="admin-settings-section" id="banner-campaigns">
             <div className="admin-settings-section-heading">
               <div>
@@ -2066,6 +2065,7 @@ export default async function AdminDashboardPage({
               </div>
             </div>
           </section>
+          </details>
         </article>
 
         <article className="admin-card admin-card-wide" id="lead-inbox">

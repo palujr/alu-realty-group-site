@@ -902,6 +902,9 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   border: 0;
   border-top: 1px solid var(--line);
 }
+.admin-edit-panel > .admin-settings-section {
+  margin: 0 18px 18px;
+}
 .admin-timeline-panel {
   padding: 18px;
   display: grid;
