@@ -948,6 +948,16 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
+.admin-routing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.admin-routing-stack {
+  display: grid;
+  gap: 12px;
+}
 .admin-photo-preview {
   padding: 12px;
   display: flex;
@@ -1081,6 +1091,7 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   .admin-stats { grid-template-columns: repeat(2, 1fr); }
   .admin-grid { grid-template-columns: 1fr; }
   .admin-form-grid { grid-template-columns: 1fr; }
+  .admin-routing-grid { grid-template-columns: 1fr; }
   .admin-logo-preview-grid { grid-template-columns: 1fr; }
   .admin-summary-row {
     grid-template-columns: 1fr auto;

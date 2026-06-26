@@ -989,51 +989,55 @@ export default async function AdminDashboardPage({
                   <p className="admin-kicker">Lead Routing</p>
                   <h3>Assignments and email behavior</h3>
                 </div>
-                <div className="admin-form-grid">
-                  <label>
-                    Default assigned team member
-                    <select name="defaultAssignedTeamMemberSlug" defaultValue={siteSettings.leadRouting.defaultAssignedTeamMemberSlug}>
-                      <option value="">No default assignment</option>
-                      {teamMembers.map((member) => (
-                        <option key={member.id} value={member.slug}>{member.full_name}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Default notification team members
-                    <select
-                      name="defaultNotificationTeamMemberSlugs"
-                      multiple
-                      defaultValue={siteSettings.leadRouting.defaultNotificationTeamMemberSlugs}
-                    >
-                      {teamMembers.map((member) => (
-                        <option key={member.id} value={member.slug}>{member.full_name}</option>
-                      ))}
-                    </select>
-                    <small>Hold Ctrl while clicking to select more than one.</small>
-                  </label>
-                  <label>
-                    Valuation assigned team member
-                    <select name="valuationAssignedTeamMemberSlug" defaultValue={siteSettings.leadRouting.valuationAssignedTeamMemberSlug}>
-                      <option value="">Use default assignment</option>
-                      {teamMembers.map((member) => (
-                        <option key={member.id} value={member.slug}>{member.full_name}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Valuation notification team members
-                    <select
-                      name="valuationNotificationTeamMemberSlugs"
-                      multiple
-                      defaultValue={siteSettings.leadRouting.valuationNotificationTeamMemberSlugs}
-                    >
-                      {teamMembers.map((member) => (
-                        <option key={member.id} value={member.slug}>{member.full_name}</option>
-                      ))}
-                    </select>
-                    <small>Leave blank to use the default notification team.</small>
-                  </label>
+                <div className="admin-routing-grid">
+                  <div className="admin-routing-stack">
+                    <label>
+                      Default assigned team member
+                      <select name="defaultAssignedTeamMemberSlug" defaultValue={siteSettings.leadRouting.defaultAssignedTeamMemberSlug}>
+                        <option value="">No default assignment</option>
+                        {teamMembers.map((member) => (
+                          <option key={member.id} value={member.slug}>{member.full_name}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Valuation assigned team member
+                      <select name="valuationAssignedTeamMemberSlug" defaultValue={siteSettings.leadRouting.valuationAssignedTeamMemberSlug}>
+                        <option value="">Use default assignment</option>
+                        {teamMembers.map((member) => (
+                          <option key={member.id} value={member.slug}>{member.full_name}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <div className="admin-routing-stack">
+                    <label>
+                      Default notification team members
+                      <select
+                        name="defaultNotificationTeamMemberSlugs"
+                        multiple
+                        defaultValue={siteSettings.leadRouting.defaultNotificationTeamMemberSlugs}
+                      >
+                        {teamMembers.map((member) => (
+                          <option key={member.id} value={member.slug}>{member.full_name}</option>
+                        ))}
+                      </select>
+                      <small>Hold Ctrl while clicking to select more than one.</small>
+                    </label>
+                    <label>
+                      Valuation notification team members
+                      <select
+                        name="valuationNotificationTeamMemberSlugs"
+                        multiple
+                        defaultValue={siteSettings.leadRouting.valuationNotificationTeamMemberSlugs}
+                      >
+                        {teamMembers.map((member) => (
+                          <option key={member.id} value={member.slug}>{member.full_name}</option>
+                        ))}
+                      </select>
+                      <small>Leave blank to use the default notification team.</small>
+                    </label>
+                  </div>
                 </div>
                 <div className="admin-checkbox-row">
                   <label className="admin-checkbox">
