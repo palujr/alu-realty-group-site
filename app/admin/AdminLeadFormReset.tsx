@@ -36,20 +36,30 @@ export function AdminLeadFormReset({
   useEffect(() => {
     const leadPanels = Array.from(document.querySelectorAll<HTMLDetailsElement>("details[data-reset-on-close='true']"));
 
-    const resetFormsOnClose = (event: Event) => {
-      const panel = event.currentTarget as HTMLDetailsElement;
-
-      if (panel.open) {
-        return;
-      }
-
+    const resetForms = (panel: HTMLDetailsElement) => {
       panel.querySelectorAll<HTMLFormElement>("form").forEach((form) => form.reset());
     };
 
-    leadPanels.forEach((panel) => panel.addEventListener("toggle", resetFormsOnClose));
+    const handleLeadPanelToggle = (event: Event) => {
+      const panel = event.currentTarget as HTMLDetailsElement;
+
+      if (panel.open) {
+        leadPanels.forEach((otherPanel) => {
+          if (otherPanel !== panel && otherPanel.open) {
+            otherPanel.open = false;
+            resetForms(otherPanel);
+          }
+        });
+        return;
+      }
+
+      resetForms(panel);
+    };
+
+    leadPanels.forEach((panel) => panel.addEventListener("toggle", handleLeadPanelToggle));
 
     return () => {
-      leadPanels.forEach((panel) => panel.removeEventListener("toggle", resetFormsOnClose));
+      leadPanels.forEach((panel) => panel.removeEventListener("toggle", handleLeadPanelToggle));
     };
   }, []);
 
