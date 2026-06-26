@@ -91,12 +91,19 @@ create table if not exists public.lead_submissions (
     )
   ),
   full_name text,
-  email text not null,
+  email text,
   phone text,
   property_address text,
   message text,
   source_page text,
   assigned_team_member_id uuid references public.team_members(id) on delete set null,
+  contact_status text not null default 'new',
+  preferred_contact_method text,
+  contact_notes text,
+  last_contacted_at timestamptz,
+  lead_priority text not null default 'normal' check (lead_priority in ('low', 'normal', 'high', 'urgent')),
+  next_follow_up_at timestamptz,
+  lead_source_detail text,
   created_at timestamptz not null default now()
 );
 

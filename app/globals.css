@@ -775,11 +775,14 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   margin-bottom: 18px;
   padding: 16px;
   display: grid;
-  grid-template-columns: minmax(180px, 1.4fr) repeat(3, minmax(130px, .85fr)) auto;
+  grid-template-columns: repeat(6, minmax(130px, 1fr)) auto;
   gap: 12px;
   align-items: end;
   background: #f8f5ee;
   border: 1px solid var(--line);
+}
+.admin-filter-bar label:first-child {
+  grid-column: span 2;
 }
 .admin-filter-bar label {
   display: grid;
@@ -1144,6 +1147,7 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   .admin-stats { grid-template-columns: repeat(2, 1fr); }
   .admin-grid { grid-template-columns: 1fr; }
   .admin-filter-bar { grid-template-columns: 1fr; }
+  .admin-filter-bar label:first-child { grid-column: auto; }
   .admin-filter-actions { justify-content: flex-start; }
   .admin-form-grid { grid-template-columns: 1fr; }
   .admin-routing-grid { grid-template-columns: 1fr; }

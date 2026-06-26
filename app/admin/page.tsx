@@ -24,6 +24,9 @@ type AdminLead = {
   preferred_contact_method: string | null;
   contact_notes: string | null;
   last_contacted_at: string | null;
+  lead_priority: string;
+  next_follow_up_at: string | null;
+  lead_source_detail: string | null;
   created_at: string;
   team_members: { full_name: string | null } | { full_name: string | null }[] | null;
 };
@@ -72,6 +75,8 @@ type LeadFilters = {
   type: string;
   status: string;
   assigned: string;
+  priority: string;
+  followUp: string;
 };
 
 const leadStatusOptions = [
@@ -106,6 +111,21 @@ const contactMethodOptions = [
   { value: "other", label: "Other" }
 ];
 
+const leadPriorityOptions = [
+  { value: "low", label: "Low" },
+  { value: "normal", label: "Normal" },
+  { value: "high", label: "High" },
+  { value: "urgent", label: "Urgent" }
+];
+
+const followUpFilterOptions = [
+  { value: "", label: "All follow-ups" },
+  { value: "overdue", label: "Overdue" },
+  { value: "today", label: "Due today" },
+  { value: "upcoming", label: "Upcoming" },
+  { value: "none", label: "No follow-up" }
+];
+
 const teamPhotoBucket = "team-photos";
 const siteLogoBucket = "site-logos";
 const maxAdminImageSize = 5 * 1024 * 1024;
@@ -130,6 +150,20 @@ function formatDateTimeLocal(value?: string | null) {
   const date = new Date(value);
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
   return localDate.toISOString().slice(0, 16);
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) {
+    return "Not set";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(new Date(value));
 }
 
 function getAssignedName(lead: AdminLead) {
@@ -210,6 +244,18 @@ function getLeadTypeLabel(value?: string | null) {
   return leadTypeOptions.find((option) => option.value === value)?.label || "Lead";
 }
 
+function getLeadPriorityLabel(value?: string | null) {
+  return leadPriorityOptions.find((option) => option.value === value)?.label || "Normal";
+}
+
+function getLeadFollowUpLabel(lead: AdminLead) {
+  if (!lead.next_follow_up_at) {
+    return "No follow-up";
+  }
+
+  return `Next: ${formatDate(lead.next_follow_up_at)}`;
+}
+
 function getSearchParamValue(
   searchParams: Record<string, string | string[] | undefined> | undefined,
   key: string
@@ -242,6 +288,12 @@ function normalizeContactMethod(value: FormDataEntryValue | null) {
   const method = value?.toString() || "";
   const allowedMethods = ["email", "phone", "text", "in_person", "other"];
   return allowedMethods.includes(method) ? method : null;
+}
+
+function normalizeLeadPriority(value: FormDataEntryValue | null) {
+  const priority = value?.toString() || "normal";
+  const allowedPriorities = leadPriorityOptions.map((option) => option.value);
+  return allowedPriorities.includes(priority) ? priority : "normal";
 }
 
 function asOptionalDateTime(value: FormDataEntryValue | null) {
@@ -441,7 +493,10 @@ async function createLead(formData: FormData) {
       contact_status: normalizeLeadStatus(formData.get("contactStatus")),
       preferred_contact_method: normalizeContactMethod(formData.get("preferredContactMethod")),
       contact_notes: asOptionalString(formData.get("contactNotes")),
-      last_contacted_at: asOptionalDateTime(formData.get("lastContactedAt"))
+      last_contacted_at: asOptionalDateTime(formData.get("lastContactedAt")),
+      lead_priority: normalizeLeadPriority(formData.get("leadPriority")),
+      next_follow_up_at: asOptionalDateTime(formData.get("nextFollowUpAt")),
+      lead_source_detail: asOptionalString(formData.get("leadSourceDetail"))
     })
     .select("id")
     .single();
@@ -485,7 +540,10 @@ async function updateLead(formData: FormData) {
       contact_status: normalizeLeadStatus(formData.get("contactStatus")),
       preferred_contact_method: normalizeContactMethod(formData.get("preferredContactMethod")),
       contact_notes: asOptionalString(formData.get("contactNotes")),
-      last_contacted_at: asOptionalDateTime(formData.get("lastContactedAt"))
+      last_contacted_at: asOptionalDateTime(formData.get("lastContactedAt")),
+      lead_priority: normalizeLeadPriority(formData.get("leadPriority")),
+      next_follow_up_at: asOptionalDateTime(formData.get("nextFollowUpAt")),
+      lead_source_detail: asOptionalString(formData.get("leadSourceDetail"))
     })
     .eq("id", leadId);
 
@@ -783,6 +841,11 @@ async function getAdminData(leadFilters: LeadFilters) {
   const adminSupabase = createAdminClient();
   const adminDataClient = adminSupabase || supabase;
   const cleanLeadSearch = sanitizeLeadSearch(leadFilters.search);
+  const now = new Date();
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+  const startOfTomorrow = new Date(startOfToday);
+  startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
 
   const [
     bannersResult,
@@ -812,7 +875,7 @@ async function getAdminData(leadFilters: LeadFilters) {
     ? await (async () => {
         let leadsQuery = adminSupabase
           .from("lead_submissions")
-          .select("id, lead_type, full_name, email, phone, property_address, message, source_page, assigned_team_member_id, contact_status, preferred_contact_method, contact_notes, last_contacted_at, created_at, team_members(full_name)");
+          .select("id, lead_type, full_name, email, phone, property_address, message, source_page, assigned_team_member_id, contact_status, preferred_contact_method, contact_notes, last_contacted_at, lead_priority, next_follow_up_at, lead_source_detail, created_at, team_members(full_name)");
 
         if (leadFilters.type) {
           leadsQuery = leadsQuery.eq("lead_type", leadFilters.type);
@@ -826,6 +889,22 @@ async function getAdminData(leadFilters: LeadFilters) {
           leadsQuery = leadsQuery.is("assigned_team_member_id", null);
         } else if (leadFilters.assigned) {
           leadsQuery = leadsQuery.eq("assigned_team_member_id", leadFilters.assigned);
+        }
+
+        if (leadFilters.priority) {
+          leadsQuery = leadsQuery.eq("lead_priority", leadFilters.priority);
+        }
+
+        if (leadFilters.followUp === "none") {
+          leadsQuery = leadsQuery.is("next_follow_up_at", null);
+        } else if (leadFilters.followUp === "overdue") {
+          leadsQuery = leadsQuery.lt("next_follow_up_at", now.toISOString());
+        } else if (leadFilters.followUp === "today") {
+          leadsQuery = leadsQuery
+            .gte("next_follow_up_at", startOfToday.toISOString())
+            .lt("next_follow_up_at", startOfTomorrow.toISOString());
+        } else if (leadFilters.followUp === "upcoming") {
+          leadsQuery = leadsQuery.gte("next_follow_up_at", now.toISOString());
         }
 
         if (cleanLeadSearch) {
@@ -882,15 +961,19 @@ export default async function AdminDashboardPage({
     leadFilterType?: string;
     leadFilterStatus?: string;
     leadFilterAssigned?: string;
+    leadFilterPriority?: string;
+    leadFilterFollowUp?: string;
   };
 }) {
   const leadFilters: LeadFilters = {
     search: getSearchParamValue(searchParams, "leadSearch"),
     type: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterType"), leadTypeOptions.map((option) => option.value)),
     status: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterStatus"), leadStatusOptions.map((option) => option.value)),
-    assigned: normalizeLeadAssignedFilter(getSearchParamValue(searchParams, "leadFilterAssigned"))
+    assigned: normalizeLeadAssignedFilter(getSearchParamValue(searchParams, "leadFilterAssigned")),
+    priority: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterPriority"), leadPriorityOptions.map((option) => option.value)),
+    followUp: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterFollowUp"), followUpFilterOptions.map((option) => option.value))
   };
-  const hasLeadFilters = Boolean(leadFilters.search || leadFilters.type || leadFilters.status || leadFilters.assigned);
+  const hasLeadFilters = Boolean(leadFilters.search || leadFilters.type || leadFilters.status || leadFilters.assigned || leadFilters.priority || leadFilters.followUp);
   const { siteSettings, activeBanner, leads, banners, teamMembers, testimonials, errors } = await getAdminData(leadFilters);
   const visibleErrors = Object.values(errors).filter(Boolean);
   const siteStatus = searchParams?.siteStatus;
@@ -1335,6 +1418,23 @@ export default async function AdminDashboardPage({
                 ))}
               </select>
             </label>
+            <label>
+              Priority
+              <select name="leadFilterPriority" defaultValue={leadFilters.priority}>
+                <option value="">All priorities</option>
+                {leadPriorityOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Follow-up
+              <select name="leadFilterFollowUp" defaultValue={leadFilters.followUp}>
+                {followUpFilterOptions.map((option) => (
+                  <option key={option.value || "all"} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
             <div className="admin-filter-actions">
               <button className="admin-save-button" type="submit">Apply filters</button>
               {hasLeadFilters ? (
@@ -1397,8 +1497,24 @@ export default async function AdminDashboardPage({
                   </select>
                 </label>
                 <label>
+                  Priority
+                  <select name="leadPriority" defaultValue="normal">
+                    {leadPriorityOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
                   Last contacted
                   <input name="lastContactedAt" type="datetime-local" />
+                </label>
+                <label>
+                  Next follow-up
+                  <input name="nextFollowUpAt" type="datetime-local" />
+                </label>
+                <label>
+                  Source detail
+                  <input name="leadSourceDetail" type="text" placeholder="Phone call, sign call, referral, open house" />
                 </label>
               </div>
               <label>
@@ -1429,8 +1545,8 @@ export default async function AdminDashboardPage({
                   </span>
                   <span>{getLeadTypeLabel(lead.lead_type)}</span>
                   <span>{getAssignedName(lead)}</span>
-                  <span>{lead.contact_status || "new"}</span>
-                  <span>{formatDate(lead.created_at)}</span>
+                  <span>{getLeadPriorityLabel(lead.lead_priority)} - {lead.contact_status || "new"}</span>
+                  <span>{getLeadFollowUpLabel(lead)}</span>
                 </summary>
               <form className="admin-form-card" action={updateLead}>
                 <input name="leadId" type="hidden" value={lead.id} />
@@ -1492,8 +1608,24 @@ export default async function AdminDashboardPage({
                     </select>
                   </label>
                   <label>
+                    Priority
+                    <select name="leadPriority" defaultValue={lead.lead_priority || "normal"}>
+                      {leadPriorityOptions.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
                     Last contacted
                     <input name="lastContactedAt" type="datetime-local" defaultValue={formatDateTimeLocal(lead.last_contacted_at)} />
+                  </label>
+                  <label>
+                    Next follow-up
+                    <input name="nextFollowUpAt" type="datetime-local" defaultValue={formatDateTimeLocal(lead.next_follow_up_at)} />
+                  </label>
+                  <label>
+                    Source detail
+                    <input name="leadSourceDetail" type="text" defaultValue={lead.lead_source_detail || ""} placeholder="Phone call, referral, sign call, open house" />
                   </label>
                 </div>
                 <label>
@@ -1505,7 +1637,7 @@ export default async function AdminDashboardPage({
                   <textarea name="contactNotes" rows={3} defaultValue={lead.contact_notes || ""}></textarea>
                 </label>
                 <div className="admin-form-footer">
-                  <small>Assigned to {getAssignedName(lead)} - Source: {lead.source_page || "website"}</small>
+                  <small>Assigned to {getAssignedName(lead)} - Priority: {getLeadPriorityLabel(lead.lead_priority)} - Next follow-up: {formatDateTime(lead.next_follow_up_at)} - Source: {lead.lead_source_detail || lead.source_page || "website"}</small>
                   {leadStatus === "saved" && savedLeadId === lead.id ? (
                     <span className="admin-save-confirmation" data-admin-status="saved">Saved successfully</span>
                   ) : null}
