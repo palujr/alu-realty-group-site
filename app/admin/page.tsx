@@ -1909,6 +1909,8 @@ export default async function AdminDashboardPage({
                       Activity date
                       <input name="activityAt" type="datetime-local" />
                     </label>
+                  </div>
+                  <div className="admin-form-grid admin-activity-added-by-grid">
                     <label>
                       Added by
                       <select name="createdByTeamMemberIds" multiple>

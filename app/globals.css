@@ -899,6 +899,16 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
 .admin-activity-form {
   border: 1px solid rgba(27, 45, 38, .12) !important;
 }
+.admin-activity-added-by-grid {
+  align-items: start;
+}
+.admin-activity-added-by-grid label {
+  align-self: stretch;
+}
+.admin-activity-added-by-grid input,
+.admin-activity-added-by-grid select {
+  min-height: 132px;
+}
 .admin-summary-row {
   padding: 14px 16px;
   display: grid;
