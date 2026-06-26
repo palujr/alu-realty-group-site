@@ -126,7 +126,7 @@ async function updateBannerCampaign(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect("/admin?bannerStatus=saved#banner-campaigns");
+  redirect(`/admin?bannerStatus=saved&bannerId=${bannerId}#banner-${bannerId}`);
 }
 
 async function updateTeamMember(formData: FormData) {
@@ -237,11 +237,12 @@ async function getAdminData() {
 export default async function AdminDashboardPage({
   searchParams
 }: {
-  searchParams?: { bannerStatus?: string; teamStatus?: string; teamMemberId?: string };
+  searchParams?: { bannerStatus?: string; bannerId?: string; teamStatus?: string; teamMemberId?: string };
 }) {
   const { siteSettings, activeBanner, leads, banners, teamMembers, testimonials, errors } = await getAdminData();
   const visibleErrors = Object.values(errors).filter(Boolean);
   const bannerStatus = searchParams?.bannerStatus;
+  const savedBannerId = searchParams?.bannerId;
   const teamStatus = searchParams?.teamStatus;
   const savedTeamMemberId = searchParams?.teamMemberId;
 
@@ -354,12 +355,6 @@ export default async function AdminDashboardPage({
               <h2>Edit banner campaigns</h2>
             </div>
           </div>
-          {bannerStatus === "saved" ? (
-            <div className="admin-inline-success" role="status">
-              <strong>Saved successfully.</strong>
-              <span>The banner campaign is updated and ready on the website.</span>
-            </div>
-          ) : null}
           {bannerStatus === "error" ? (
             <div className="admin-inline-alert" role="alert">
               <strong>Save did not complete.</strong>
@@ -368,7 +363,7 @@ export default async function AdminDashboardPage({
           ) : null}
           <div className="admin-form-list">
             {banners.map((banner) => (
-              <form className="admin-form-card" action={updateBannerCampaign} key={banner.id}>
+              <form className="admin-form-card" action={updateBannerCampaign} id={`banner-${banner.id}`} key={banner.id}>
                 <input name="bannerId" type="hidden" value={banner.id} />
                 <label>
                   Campaign name
@@ -414,6 +409,9 @@ export default async function AdminDashboardPage({
                 </label>
                 <div className="admin-form-footer">
                   <small>{banner.is_active ? "Currently active" : "Currently inactive"} · {formatDate(banner.start_date)} to {formatDate(banner.end_date)}</small>
+                  {bannerStatus === "saved" && savedBannerId === banner.id ? (
+                    <span className="admin-save-confirmation" role="status">Saved successfully</span>
+                  ) : null}
                   <button className="admin-save-button" type="submit">Save banner</button>
                 </div>
               </form>
