@@ -1916,6 +1916,156 @@ export default async function AdminDashboardPage({
               </div>
             </form>
           </details>
+          <section className="admin-settings-section" id="banner-campaigns">
+            <div className="admin-settings-section-heading">
+              <div>
+                <p className="admin-kicker">Homepage Banner</p>
+                <h3>Active banner and campaigns</h3>
+              </div>
+              <span>{activeBanner?.headline || "No active banner"}</span>
+            </div>
+            <div className="admin-property-image-grid">
+              <div>
+                <p className="admin-kicker">Active Banner</p>
+                {activeBanner ? (
+                  <div className={`admin-banner-preview banner-theme-${activeBanner.theme}`}>
+                    <p>{activeBanner.eyebrow}</p>
+                    <h3>{activeBanner.headline}</h3>
+                    <span>{activeBanner.body}</span>
+                  </div>
+                ) : null}
+                <p>{activeBanner ? "This is the banner currently displayed beneath the team logo on the website." : "The site will use fallback banner settings or hide the banner when no active campaign is available."}</p>
+              </div>
+              <div>
+                <p className="admin-kicker">Campaigns</p>
+                <h3>Edit banner campaigns</h3>
+                {bannerStatus === "error" ? (
+                  <div className="admin-inline-alert" role="alert">
+                    <strong>Save did not complete.</strong>
+                    <span>Please check the required fields or Supabase update permission.</span>
+                  </div>
+                ) : null}
+                <details className="admin-create-panel" id="new-banner-campaign">
+                  <summary>Add new banner campaign</summary>
+                  <form className="admin-form-card" action={createBannerCampaign}>
+                    <label>
+                      Campaign name
+                      <input name="campaignName" type="text" placeholder="Fall buyer campaign" required />
+                    </label>
+                    <label>
+                      Eyebrow
+                      <input name="eyebrow" type="text" placeholder="Seasonal update" />
+                    </label>
+                    <label>
+                      Headline
+                      <input name="headline" type="text" placeholder="A fresh season for your next move." required />
+                    </label>
+                    <label>
+                      Body
+                      <textarea name="body" placeholder="Short supporting line for the banner." rows={3}></textarea>
+                    </label>
+                    <div className="admin-form-grid">
+                      <label>
+                        Start date
+                        <input name="startDate" type="date" />
+                      </label>
+                      <label>
+                        End date
+                        <input name="endDate" type="date" />
+                      </label>
+                      <label>
+                        Priority
+                        <input name="priority" type="number" defaultValue="100" min="1" step="1" />
+                      </label>
+                      <label>
+                        Theme
+                        <select name="theme" defaultValue="seasonal">
+                          <option value="patriotic">Patriotic</option>
+                          <option value="market">Market</option>
+                          <option value="seasonal">Seasonal</option>
+                        </select>
+                      </label>
+                    </div>
+                    <label className="admin-checkbox">
+                      <input name="isActive" type="checkbox" />
+                      Active on site
+                    </label>
+                    <div className="admin-form-footer">
+                      <small>New banners can stay inactive until you are ready to use them.</small>
+                      <button className="admin-save-button" type="submit">Create banner</button>
+                    </div>
+                  </form>
+                </details>
+                <div className="admin-form-list">
+                  {banners.map((banner) => (
+                    <details className="admin-edit-panel" id={`banner-${banner.id}`} key={banner.id} open={bannerStatus === "saved" && savedBannerId === banner.id}>
+                      <summary className="admin-summary-row">
+                        <span>
+                          <strong>{banner.campaign_name}</strong>
+                          <small>{banner.headline}</small>
+                        </span>
+                        <span>{banner.is_active ? "Active" : "Inactive"}</span>
+                        <span>{banner.theme}</span>
+                        <span>{formatDate(banner.start_date)}</span>
+                      </summary>
+                      <form className="admin-form-card" action={updateBannerCampaign}>
+                        <input name="bannerId" type="hidden" value={banner.id} />
+                        <label>
+                          Campaign name
+                          <input name="campaignName" type="text" defaultValue={banner.campaign_name} required />
+                        </label>
+                        <label>
+                          Eyebrow
+                          <input name="eyebrow" type="text" defaultValue={banner.eyebrow || ""} />
+                        </label>
+                        <label>
+                          Headline
+                          <input name="headline" type="text" defaultValue={banner.headline} required />
+                        </label>
+                        <label>
+                          Body
+                          <textarea name="body" defaultValue={banner.body || ""} rows={3}></textarea>
+                        </label>
+                        <div className="admin-form-grid">
+                          <label>
+                            Start date
+                            <input name="startDate" type="date" defaultValue={banner.start_date || ""} />
+                          </label>
+                          <label>
+                            End date
+                            <input name="endDate" type="date" defaultValue={banner.end_date || ""} />
+                          </label>
+                          <label>
+                            Priority
+                            <input name="priority" type="number" defaultValue={banner.priority} min="1" step="1" />
+                          </label>
+                          <label>
+                            Theme
+                            <select name="theme" defaultValue={banner.theme}>
+                              <option value="patriotic">Patriotic</option>
+                              <option value="market">Market</option>
+                              <option value="seasonal">Seasonal</option>
+                            </select>
+                          </label>
+                        </div>
+                        <label className="admin-checkbox">
+                          <input name="isActive" type="checkbox" defaultChecked={banner.is_active} />
+                          Active on site
+                        </label>
+                        <div className="admin-form-footer">
+                          <small>{banner.is_active ? "Currently active" : "Currently inactive"} - {formatDate(banner.start_date)} to {formatDate(banner.end_date)}</small>
+                          {bannerStatus === "saved" && savedBannerId === banner.id ? (
+                            <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
+                          ) : null}
+                          <button className="admin-save-button" type="submit">Save banner</button>
+                        </div>
+                      </form>
+                    </details>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
         </article>
 
         <article className="admin-card admin-card-wide" id="lead-inbox">
@@ -2360,156 +2510,6 @@ export default async function AdminDashboardPage({
           </div>
 
           <AdminPaginationControls pagination={pagination.leads} searchParams={searchParams} />
-        </article>
-
-        <article className="admin-card">
-          <div className="admin-card-header">
-            <div>
-              <p className="admin-kicker">Active Banner</p>
-              <h2>{activeBanner?.headline || "No active banner"}</h2>
-            </div>
-          </div>
-          {activeBanner ? (
-            <div className={`admin-banner-preview banner-theme-${activeBanner.theme}`}>
-              <p>{activeBanner.eyebrow}</p>
-              <h3>{activeBanner.headline}</h3>
-              <span>{activeBanner.body}</span>
-            </div>
-          ) : null}
-          <p>{activeBanner ? "This is the banner currently displayed beneath the team logo on the website." : "The site will use fallback banner settings or hide the banner when no active campaign is available."}</p>
-        </article>
-
-        <article className="admin-card" id="banner-campaigns">
-          <div className="admin-card-header">
-            <div>
-              <p className="admin-kicker">Campaigns</p>
-              <h2>Edit banner campaigns</h2>
-            </div>
-          </div>
-          {bannerStatus === "error" ? (
-            <div className="admin-inline-alert" role="alert">
-              <strong>Save did not complete.</strong>
-              <span>Please check the required fields or Supabase update permission.</span>
-            </div>
-          ) : null}
-          <details className="admin-create-panel" id="new-banner-campaign">
-            <summary>Add new banner campaign</summary>
-            <form className="admin-form-card" action={createBannerCampaign}>
-              <label>
-                Campaign name
-                <input name="campaignName" type="text" placeholder="Fall buyer campaign" required />
-              </label>
-              <label>
-                Eyebrow
-                <input name="eyebrow" type="text" placeholder="Seasonal update" />
-              </label>
-              <label>
-                Headline
-                <input name="headline" type="text" placeholder="A fresh season for your next move." required />
-              </label>
-              <label>
-                Body
-                <textarea name="body" placeholder="Short supporting line for the banner." rows={3}></textarea>
-              </label>
-              <div className="admin-form-grid">
-                <label>
-                  Start date
-                  <input name="startDate" type="date" />
-                </label>
-                <label>
-                  End date
-                  <input name="endDate" type="date" />
-                </label>
-                <label>
-                  Priority
-                  <input name="priority" type="number" defaultValue="100" min="1" step="1" />
-                </label>
-                <label>
-                  Theme
-                  <select name="theme" defaultValue="seasonal">
-                    <option value="patriotic">Patriotic</option>
-                    <option value="market">Market</option>
-                    <option value="seasonal">Seasonal</option>
-                  </select>
-                </label>
-              </div>
-              <label className="admin-checkbox">
-                <input name="isActive" type="checkbox" />
-                Active on site
-              </label>
-              <div className="admin-form-footer">
-                <small>New banners can stay inactive until you are ready to use them.</small>
-                <button className="admin-save-button" type="submit">Create banner</button>
-              </div>
-            </form>
-          </details>
-          <div className="admin-form-list">
-            {banners.map((banner) => (
-              <details className="admin-edit-panel" id={`banner-${banner.id}`} key={banner.id} open={bannerStatus === "saved" && savedBannerId === banner.id}>
-                <summary className="admin-summary-row">
-                  <span>
-                    <strong>{banner.campaign_name}</strong>
-                    <small>{banner.headline}</small>
-                  </span>
-                  <span>{banner.is_active ? "Active" : "Inactive"}</span>
-                  <span>{banner.theme}</span>
-                  <span>{formatDate(banner.start_date)}</span>
-                </summary>
-              <form className="admin-form-card" action={updateBannerCampaign}>
-                <input name="bannerId" type="hidden" value={banner.id} />
-                <label>
-                  Campaign name
-                  <input name="campaignName" type="text" defaultValue={banner.campaign_name} required />
-                </label>
-                <label>
-                  Eyebrow
-                  <input name="eyebrow" type="text" defaultValue={banner.eyebrow || ""} />
-                </label>
-                <label>
-                  Headline
-                  <input name="headline" type="text" defaultValue={banner.headline} required />
-                </label>
-                <label>
-                  Body
-                  <textarea name="body" defaultValue={banner.body || ""} rows={3}></textarea>
-                </label>
-                <div className="admin-form-grid">
-                  <label>
-                    Start date
-                    <input name="startDate" type="date" defaultValue={banner.start_date || ""} />
-                  </label>
-                  <label>
-                    End date
-                    <input name="endDate" type="date" defaultValue={banner.end_date || ""} />
-                  </label>
-                  <label>
-                    Priority
-                    <input name="priority" type="number" defaultValue={banner.priority} min="1" step="1" />
-                  </label>
-                  <label>
-                    Theme
-                    <select name="theme" defaultValue={banner.theme}>
-                      <option value="patriotic">Patriotic</option>
-                      <option value="market">Market</option>
-                      <option value="seasonal">Seasonal</option>
-                    </select>
-                  </label>
-                </div>
-                <label className="admin-checkbox">
-                  <input name="isActive" type="checkbox" defaultChecked={banner.is_active} />
-                  Active on site
-                </label>
-                <div className="admin-form-footer">
-                  <small>{banner.is_active ? "Currently active" : "Currently inactive"} - {formatDate(banner.start_date)} to {formatDate(banner.end_date)}</small>
-                  {bannerStatus === "saved" && savedBannerId === banner.id ? (
-                    <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
-                  ) : null}
-                  <button className="admin-save-button" type="submit">Save banner</button>
-                </div>
-              </form>
-              </details>
-            ))}
-          </div>
         </article>
 
         <article className="admin-card admin-card-wide" id="team-members">
