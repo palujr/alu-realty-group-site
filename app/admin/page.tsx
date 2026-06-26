@@ -67,6 +67,13 @@ type AdminTestimonial = {
   is_published: boolean;
 };
 
+type LeadFilters = {
+  search: string;
+  type: string;
+  status: string;
+  assigned: string;
+};
+
 const leadStatusOptions = [
   { value: "new", label: "New" },
   { value: "assigned", label: "Assigned" },
@@ -201,6 +208,34 @@ function normalizeLeadType(value: FormDataEntryValue | null) {
 
 function getLeadTypeLabel(value?: string | null) {
   return leadTypeOptions.find((option) => option.value === value)?.label || "Lead";
+}
+
+function getSearchParamValue(
+  searchParams: Record<string, string | string[] | undefined> | undefined,
+  key: string
+) {
+  const value = searchParams?.[key];
+  return Array.isArray(value) ? value[0] || "" : value || "";
+}
+
+function normalizeLeadFilter(value: string, allowedValues: string[]) {
+  return allowedValues.includes(value) ? value : "";
+}
+
+function normalizeLeadAssignedFilter(value: string) {
+  if (value === "unassigned") {
+    return value;
+  }
+
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value) ? value : "";
+}
+
+function sanitizeLeadSearch(value: string) {
+  return value
+    .replace(/[,%()]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
 }
 
 function normalizeContactMethod(value: FormDataEntryValue | null) {
@@ -741,12 +776,13 @@ async function updateTestimonial(formData: FormData) {
   redirect(`/admin?testimonialStatus=saved&testimonialId=${testimonialId}#testimonial-${testimonialId}`);
 }
 
-async function getAdminData() {
+async function getAdminData(leadFilters: LeadFilters) {
   const siteSettings = await getSiteSettings();
   const activeBanner = await getActiveSiteBanner(siteSettings.slug, siteSettings);
   const supabase = createClient();
   const adminSupabase = createAdminClient();
   const adminDataClient = adminSupabase || supabase;
+  const cleanLeadSearch = sanitizeLeadSearch(leadFilters.search);
 
   const [
     bannersResult,
@@ -773,11 +809,35 @@ async function getAdminData() {
   ]);
 
   const leadsResult = adminSupabase
-    ? await adminSupabase
-        .from("lead_submissions")
-        .select("id, lead_type, full_name, email, phone, property_address, message, source_page, assigned_team_member_id, contact_status, preferred_contact_method, contact_notes, last_contacted_at, created_at, team_members(full_name)")
-        .order("created_at", { ascending: false })
-        .limit(10)
+    ? await (async () => {
+        let leadsQuery = adminSupabase
+          .from("lead_submissions")
+          .select("id, lead_type, full_name, email, phone, property_address, message, source_page, assigned_team_member_id, contact_status, preferred_contact_method, contact_notes, last_contacted_at, created_at, team_members(full_name)");
+
+        if (leadFilters.type) {
+          leadsQuery = leadsQuery.eq("lead_type", leadFilters.type);
+        }
+
+        if (leadFilters.status) {
+          leadsQuery = leadsQuery.eq("contact_status", leadFilters.status);
+        }
+
+        if (leadFilters.assigned === "unassigned") {
+          leadsQuery = leadsQuery.is("assigned_team_member_id", null);
+        } else if (leadFilters.assigned) {
+          leadsQuery = leadsQuery.eq("assigned_team_member_id", leadFilters.assigned);
+        }
+
+        if (cleanLeadSearch) {
+          leadsQuery = leadsQuery.or(
+            `full_name.ilike.%${cleanLeadSearch}%,email.ilike.%${cleanLeadSearch}%,phone.ilike.%${cleanLeadSearch}%,property_address.ilike.%${cleanLeadSearch}%`
+          );
+        }
+
+        return leadsQuery
+          .order("created_at", { ascending: false })
+          .limit(10);
+      })()
     : {
         data: [],
         error: { message: "Add SUPABASE_SERVICE_ROLE_KEY in Vercel to unlock private lead inbox data." }
@@ -808,6 +868,7 @@ export default async function AdminDashboardPage({
   searchParams
 }: {
   searchParams?: {
+    [key: string]: string | undefined;
     siteStatus?: string;
     bannerStatus?: string;
     bannerId?: string;
@@ -817,9 +878,20 @@ export default async function AdminDashboardPage({
     teamMemberId?: string;
     testimonialStatus?: string;
     testimonialId?: string;
+    leadSearch?: string;
+    leadFilterType?: string;
+    leadFilterStatus?: string;
+    leadFilterAssigned?: string;
   };
 }) {
-  const { siteSettings, activeBanner, leads, banners, teamMembers, testimonials, errors } = await getAdminData();
+  const leadFilters: LeadFilters = {
+    search: getSearchParamValue(searchParams, "leadSearch"),
+    type: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterType"), leadTypeOptions.map((option) => option.value)),
+    status: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterStatus"), leadStatusOptions.map((option) => option.value)),
+    assigned: normalizeLeadAssignedFilter(getSearchParamValue(searchParams, "leadFilterAssigned"))
+  };
+  const hasLeadFilters = Boolean(leadFilters.search || leadFilters.type || leadFilters.status || leadFilters.assigned);
+  const { siteSettings, activeBanner, leads, banners, teamMembers, testimonials, errors } = await getAdminData(leadFilters);
   const visibleErrors = Object.values(errors).filter(Boolean);
   const siteStatus = searchParams?.siteStatus;
   const bannerStatus = searchParams?.bannerStatus;
@@ -1220,7 +1292,7 @@ export default async function AdminDashboardPage({
               <p className="admin-kicker">Lead Workspace</p>
               <h2>Track buyer, seller, and valuation leads</h2>
             </div>
-            <span>{leads.length ? "Live data" : "No leads visible"}</span>
+            <span>{hasLeadFilters ? `${leads.length} matching` : leads.length ? "Live data" : "No leads visible"}</span>
           </div>
 
           {leadStatus === "error" ? (
@@ -1229,6 +1301,47 @@ export default async function AdminDashboardPage({
               <span>Please make sure there is a property address and at least one contact method.</span>
             </div>
           ) : null}
+
+          <form className="admin-filter-bar" action="/admin#lead-inbox">
+            <label>
+              Search leads
+              <input name="leadSearch" type="search" defaultValue={leadFilters.search} placeholder="Name, email, phone, or address" />
+            </label>
+            <label>
+              Lead type
+              <select name="leadFilterType" defaultValue={leadFilters.type}>
+                <option value="">All types</option>
+                {leadTypeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Status
+              <select name="leadFilterStatus" defaultValue={leadFilters.status}>
+                <option value="">All statuses</option>
+                {leadStatusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Assigned to
+              <select name="leadFilterAssigned" defaultValue={leadFilters.assigned}>
+                <option value="">Anyone</option>
+                <option value="unassigned">Unassigned</option>
+                {teamMembers.map((member) => (
+                  <option key={member.id} value={member.id}>{member.full_name}</option>
+                ))}
+              </select>
+            </label>
+            <div className="admin-filter-actions">
+              <button className="admin-save-button" type="submit">Apply filters</button>
+              {hasLeadFilters ? (
+                <Link className="admin-reset-link" href="/admin#lead-inbox">Clear</Link>
+              ) : null}
+            </div>
+          </form>
 
           <details className="admin-create-panel" id="new-lead">
             <summary>Add lead from phone, text, email, or website follow-up</summary>
@@ -1401,7 +1514,11 @@ export default async function AdminDashboardPage({
               </form>
               </details>
             ))}
-            {!leads.length ? <p className="admin-empty">No leads are available to this dashboard yet.</p> : null}
+            {!leads.length ? (
+              <p className="admin-empty">
+                {hasLeadFilters ? "No leads match these filters yet." : "No leads are available to this dashboard yet."}
+              </p>
+            ) : null}
           </div>
         </article>
 
