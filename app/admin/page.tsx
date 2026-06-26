@@ -34,9 +34,15 @@ type AdminBanner = {
 
 type AdminTeamMember = {
   id: string;
+  slug: string;
   full_name: string;
   title: string;
+  phone: string | null;
   email: string | null;
+  bio: string | null;
+  photo_url: string | null;
+  specialties: string[];
+  display_order: number;
   is_active: boolean;
 };
 
@@ -70,6 +76,13 @@ function getAssignedName(lead: AdminLead) {
 function asOptionalString(value: FormDataEntryValue | null) {
   const stringValue = value?.toString().trim() || "";
   return stringValue || null;
+}
+
+function asSpecialtyArray(value: FormDataEntryValue | null) {
+  return (value?.toString() || "")
+    .split(/[\n,]/)
+    .map((specialty) => specialty.trim())
+    .filter(Boolean);
 }
 
 async function updateBannerCampaign(formData: FormData) {
@@ -116,26 +129,71 @@ async function updateBannerCampaign(formData: FormData) {
   redirect("/admin?bannerStatus=saved#banner-campaigns");
 }
 
+async function updateTeamMember(formData: FormData) {
+  "use server";
+
+  const adminSupabase = createAdminClient();
+
+  if (!adminSupabase) {
+    redirect("/admin?teamStatus=error#team-members");
+  }
+
+  const memberId = formData.get("memberId")?.toString();
+  const fullName = formData.get("fullName")?.toString().trim();
+  const title = formData.get("title")?.toString().trim();
+
+  if (!memberId || !fullName || !title) {
+    redirect("/admin?teamStatus=error#team-members");
+  }
+
+  const displayOrderValue = Number.parseInt(formData.get("displayOrder")?.toString() || "100", 10);
+
+  const { error } = await adminSupabase
+    .from("team_members")
+    .update({
+      full_name: fullName,
+      title,
+      phone: asOptionalString(formData.get("phone")),
+      email: asOptionalString(formData.get("email")),
+      bio: asOptionalString(formData.get("bio")),
+      photo_url: asOptionalString(formData.get("photoUrl")),
+      specialties: asSpecialtyArray(formData.get("specialties")),
+      display_order: Number.isNaN(displayOrderValue) ? 100 : displayOrderValue,
+      is_active: formData.get("isActive") === "on",
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", memberId);
+
+  if (error) {
+    redirect("/admin?teamStatus=error#team-members");
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  redirect("/admin?teamStatus=saved#team-members");
+}
+
 async function getAdminData() {
   const siteSettings = await getSiteSettings();
   const activeBanner = await getActiveSiteBanner(siteSettings.slug, siteSettings);
   const supabase = createClient();
   const adminSupabase = createAdminClient();
+  const adminDataClient = adminSupabase || supabase;
 
   const [
     bannersResult,
     teamMembersResult,
     testimonialsResult
   ] = await Promise.all([
-    supabase
+    adminDataClient
       .from("site_banners")
       .select("id, campaign_name, eyebrow, headline, body, theme, start_date, end_date, is_active, priority")
       .eq("site_slug", siteSettings.slug)
       .order("priority", { ascending: true })
       .order("created_at", { ascending: false }),
-    supabase
+    adminDataClient
       .from("team_members")
-      .select("id, full_name, title, email, is_active")
+      .select("id, slug, full_name, title, phone, email, bio, photo_url, specialties, display_order, is_active")
       .order("display_order", { ascending: true }),
     supabase
       .from("testimonials")
@@ -179,11 +237,12 @@ async function getAdminData() {
 export default async function AdminDashboardPage({
   searchParams
 }: {
-  searchParams?: { bannerStatus?: string };
+  searchParams?: { bannerStatus?: string; teamStatus?: string };
 }) {
   const { siteSettings, activeBanner, leads, banners, teamMembers, testimonials, errors } = await getAdminData();
   const visibleErrors = Object.values(errors).filter(Boolean);
   const bannerStatus = searchParams?.bannerStatus;
+  const teamStatus = searchParams?.teamStatus;
 
   return (
     <main className="admin-shell">
@@ -354,20 +413,72 @@ export default async function AdminDashboardPage({
           </div>
         </article>
 
-        <article className="admin-card">
+        <article className="admin-card admin-card-wide" id="team-members">
           <div className="admin-card-header">
             <div>
               <p className="admin-kicker">Team</p>
-              <h2>Agent profiles</h2>
+              <h2>Edit agent profiles</h2>
             </div>
           </div>
-          <div className="admin-list">
+          {teamStatus === "saved" ? (
+            <div className="admin-inline-success" role="status">
+              <strong>Team profile saved.</strong>
+              <span>The agent details are updated on the website.</span>
+            </div>
+          ) : null}
+          {teamStatus === "error" ? (
+            <div className="admin-inline-alert" role="alert">
+              <strong>Team profile could not be saved.</strong>
+              <span>Please check the required name and title fields or Supabase update permission.</span>
+            </div>
+          ) : null}
+          <div className="admin-form-list">
             {teamMembers.map((member) => (
-              <div key={member.id}>
-                <strong>{member.full_name}</strong>
-                <span>{member.title}</span>
-                <small>{member.is_active ? "Visible on site" : "Hidden"} · {member.email || "No email"}</small>
-              </div>
+              <form className="admin-form-card" action={updateTeamMember} key={member.id}>
+                <input name="memberId" type="hidden" value={member.id} />
+                <div className="admin-form-grid">
+                  <label>
+                    Full name
+                    <input name="fullName" type="text" defaultValue={member.full_name} required />
+                  </label>
+                  <label>
+                    Title
+                    <input name="title" type="text" defaultValue={member.title} required />
+                  </label>
+                  <label>
+                    Phone
+                    <input name="phone" type="tel" defaultValue={member.phone || ""} />
+                  </label>
+                  <label>
+                    Email
+                    <input name="email" type="email" defaultValue={member.email || ""} />
+                  </label>
+                  <label>
+                    Display order
+                    <input name="displayOrder" type="number" defaultValue={member.display_order} min="1" step="1" />
+                  </label>
+                  <label>
+                    Photo URL
+                    <input name="photoUrl" type="text" defaultValue={member.photo_url || ""} placeholder="/assets/agent-photo.jpg" />
+                  </label>
+                </div>
+                <label>
+                  Bio
+                  <textarea name="bio" defaultValue={member.bio || ""} rows={4}></textarea>
+                </label>
+                <label>
+                  Specialties
+                  <textarea name="specialties" defaultValue={member.specialties.join(", ")} rows={2}></textarea>
+                </label>
+                <label className="admin-checkbox">
+                  <input name="isActive" type="checkbox" defaultChecked={member.is_active} />
+                  Visible on site
+                </label>
+                <div className="admin-form-footer">
+                  <small>{member.is_active ? "Currently visible" : "Currently hidden"} · {member.slug}</small>
+                  <button className="admin-save-button" type="submit">Save team member</button>
+                </div>
+              </form>
             ))}
           </div>
         </article>
