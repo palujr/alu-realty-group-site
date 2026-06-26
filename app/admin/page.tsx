@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getActiveSiteBanner, getSiteSettings } from "@/lib/site-settings";
+import { AdminDataFreshness } from "./AdminDataFreshness";
 import { AdminLeadFormReset } from "./AdminLeadFormReset";
 import { AdminStatusCleanup } from "./AdminStatusCleanup";
 import { BrandColorField } from "./BrandColorField";
@@ -1258,6 +1259,7 @@ export default async function AdminDashboardPage({
 
   return (
     <main className="admin-shell">
+      <AdminDataFreshness />
       <AdminStatusCleanup active={hasSavedStatus} />
       <AdminLeadFormReset
         activitySaved={leadActivityStatus === "saved"}
