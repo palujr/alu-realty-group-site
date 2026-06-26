@@ -967,14 +967,14 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   text-transform: uppercase;
 }
 .admin-color-field input[type="color"] {
-  width: 68px;
+  width: 100%;
   height: 46px;
   padding: 5px;
   cursor: pointer;
 }
 .admin-color-control {
   display: grid;
-  grid-template-columns: 68px 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   align-items: center;
 }
