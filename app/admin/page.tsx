@@ -1259,7 +1259,11 @@ export default async function AdminDashboardPage({
   return (
     <main className="admin-shell">
       <AdminStatusCleanup active={hasSavedStatus} />
-      <AdminLeadFormReset activitySaved={leadActivityStatus === "saved"} savedLeadId={savedLeadId} />
+      <AdminLeadFormReset
+        activitySaved={leadActivityStatus === "saved"}
+        activityUpdated={leadActivityStatus === "updated"}
+        savedLeadId={savedLeadId}
+      />
       <header className="admin-hero">
         <div>
           <p className="admin-kicker">Admin Dashboard</p>
@@ -1940,7 +1944,7 @@ export default async function AdminDashboardPage({
                 </div>
                 <div className="admin-timeline-list">
                   {(leadActivitiesByLeadId[lead.id] || []).slice(0, 6).map((activity) => (
-                    <details className="admin-timeline-item" key={activity.id}>
+                    <details className="admin-timeline-item" key={activity.id} data-activity-edit-panel="true">
                       <summary className="admin-timeline-summary">
                         <span>
                           <strong>{getLeadActivityTypeLabel(activity.activity_type)}</strong>
