@@ -77,6 +77,19 @@ const leadStatusOptions = [
   { value: "archived", label: "Archived" }
 ];
 
+const leadTypeOptions = [
+  { value: "seller", label: "Seller" },
+  { value: "buyer", label: "Buyer" },
+  { value: "buyer_seller", label: "Buyer / Seller" },
+  { value: "valuation", label: "Valuation" },
+  { value: "investor", label: "Investor" },
+  { value: "lease", label: "Lease" },
+  { value: "contact", label: "General contact" },
+  { value: "saved_search", label: "Saved search" },
+  { value: "account", label: "Account" },
+  { value: "other", label: "Other" }
+];
+
 const contactMethodOptions = [
   { value: "", label: "Not set" },
   { value: "email", label: "Email" },
@@ -178,6 +191,16 @@ function normalizeLeadStatus(value: FormDataEntryValue | null) {
   const status = value?.toString() || "new";
   const allowedStatuses = ["new", "assigned", "contacted", "verified", "in_progress", "completed", "archived"];
   return allowedStatuses.includes(status) ? status : "new";
+}
+
+function normalizeLeadType(value: FormDataEntryValue | null) {
+  const leadType = value?.toString() || "seller";
+  const allowedTypes = leadTypeOptions.map((option) => option.value);
+  return allowedTypes.includes(leadType) ? leadType : "seller";
+}
+
+function getLeadTypeLabel(value?: string | null) {
+  return leadTypeOptions.find((option) => option.value === value)?.label || "Lead";
 }
 
 function normalizeContactMethod(value: FormDataEntryValue | null) {
@@ -352,13 +375,13 @@ async function updateSiteSettings(formData: FormData) {
   redirect("/admin?siteStatus=saved#site-settings");
 }
 
-async function createValuationLead(formData: FormData) {
+async function createLead(formData: FormData) {
   "use server";
 
   const adminSupabase = createAdminClient();
 
   if (!adminSupabase) {
-    redirect("/admin?leadStatus=error#new-valuation");
+    redirect("/admin?leadStatus=error#new-lead");
   }
 
   const email = asOptionalString(formData.get("email"));
@@ -366,13 +389,13 @@ async function createValuationLead(formData: FormData) {
   const propertyAddress = asOptionalString(formData.get("propertyAddress"));
 
   if (!propertyAddress || (!email && !phone)) {
-    redirect("/admin?leadStatus=error#new-valuation");
+    redirect("/admin?leadStatus=error#new-lead");
   }
 
   const { data, error } = await adminSupabase
     .from("lead_submissions")
     .insert({
-      lead_type: "valuation",
+      lead_type: normalizeLeadType(formData.get("leadType")),
       full_name: asOptionalString(formData.get("fullName")),
       email,
       phone,
@@ -389,14 +412,14 @@ async function createValuationLead(formData: FormData) {
     .single();
 
   if (error || !data?.id) {
-    redirect("/admin?leadStatus=error#new-valuation");
+    redirect("/admin?leadStatus=error#new-lead");
   }
 
   revalidatePath("/admin");
   redirect(`/admin?leadStatus=saved&leadId=${data.id}#lead-${data.id}`);
 }
 
-async function updateValuationLead(formData: FormData) {
+async function updateLead(formData: FormData) {
   "use server";
 
   const adminSupabase = createAdminClient();
@@ -417,6 +440,7 @@ async function updateValuationLead(formData: FormData) {
   const { error } = await adminSupabase
     .from("lead_submissions")
     .update({
+      lead_type: normalizeLeadType(formData.get("leadType")),
       full_name: asOptionalString(formData.get("fullName")),
       email,
       phone,
@@ -752,7 +776,6 @@ async function getAdminData() {
     ? await adminSupabase
         .from("lead_submissions")
         .select("id, lead_type, full_name, email, phone, property_address, message, source_page, assigned_team_member_id, contact_status, preferred_contact_method, contact_notes, last_contacted_at, created_at, team_members(full_name)")
-        .eq("lead_type", "valuation")
         .order("created_at", { ascending: false })
         .limit(10)
     : {
@@ -1194,23 +1217,31 @@ export default async function AdminDashboardPage({
         <article className="admin-card admin-card-wide" id="lead-inbox">
           <div className="admin-card-header">
             <div>
-              <p className="admin-kicker">Valuation Workspace</p>
-              <h2>Track home valuation requests</h2>
+              <p className="admin-kicker">Lead Workspace</p>
+              <h2>Track buyer, seller, and valuation leads</h2>
             </div>
-            <span>{leads.length ? "Live data" : "No valuations visible"}</span>
+            <span>{leads.length ? "Live data" : "No leads visible"}</span>
           </div>
 
           {leadStatus === "error" ? (
             <div className="admin-inline-alert" role="alert">
-              <strong>Valuation could not be saved.</strong>
+              <strong>Lead could not be saved.</strong>
               <span>Please make sure there is a property address and at least one contact method.</span>
             </div>
           ) : null}
 
-          <details className="admin-create-panel" id="new-valuation">
-            <summary>Add valuation request from phone, text, or email</summary>
-            <form className="admin-form-card" action={createValuationLead}>
+          <details className="admin-create-panel" id="new-lead">
+            <summary>Add lead from phone, text, email, or website follow-up</summary>
+            <form className="admin-form-card" action={createLead}>
               <div className="admin-form-grid">
+                <label>
+                  Lead type
+                  <select name="leadType" defaultValue="seller">
+                    {leadTypeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
                 <label>
                   Client name
                   <input name="fullName" type="text" placeholder="Client name" />
@@ -1270,7 +1301,7 @@ export default async function AdminDashboardPage({
                 {leadStatus === "saved" && savedLeadId && !leads.some((lead) => lead.id === savedLeadId) ? (
                   <span className="admin-save-confirmation" data-admin-status="saved">Saved successfully</span>
                 ) : null}
-                <button className="admin-save-button" type="submit">Add valuation</button>
+                <button className="admin-save-button" type="submit">Add lead</button>
               </div>
             </form>
           </details>
@@ -1283,20 +1314,29 @@ export default async function AdminDashboardPage({
                     <strong>{lead.property_address || "No property address"}</strong>
                     <small>{lead.full_name || "No name"} - {lead.email || lead.phone || "No contact listed"}</small>
                   </span>
+                  <span>{getLeadTypeLabel(lead.lead_type)}</span>
                   <span>{getAssignedName(lead)}</span>
                   <span>{lead.contact_status || "new"}</span>
                   <span>{formatDate(lead.created_at)}</span>
                 </summary>
-              <form className="admin-form-card" action={updateValuationLead}>
+              <form className="admin-form-card" action={updateLead}>
                 <input name="leadId" type="hidden" value={lead.id} />
                 <div className="admin-card-header admin-form-title">
                   <div>
-                    <p className="admin-kicker">{lead.contact_status || "new"} valuation</p>
+                    <p className="admin-kicker">{lead.contact_status || "new"} {getLeadTypeLabel(lead.lead_type)}</p>
                     <h3>{lead.property_address || "No property address"}</h3>
                   </div>
                   <span>{formatDate(lead.created_at)}</span>
                 </div>
                 <div className="admin-form-grid">
+                  <label>
+                    Lead type
+                    <select name="leadType" defaultValue={lead.lead_type || "seller"}>
+                      {leadTypeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
                   <label>
                     Client name
                     <input name="fullName" type="text" defaultValue={lead.full_name || ""} />
@@ -1356,12 +1396,12 @@ export default async function AdminDashboardPage({
                   {leadStatus === "saved" && savedLeadId === lead.id ? (
                     <span className="admin-save-confirmation" data-admin-status="saved">Saved successfully</span>
                   ) : null}
-                  <button className="admin-save-button" type="submit">Save valuation</button>
+                  <button className="admin-save-button" type="submit">Save lead</button>
                 </div>
               </form>
               </details>
             ))}
-            {!leads.length ? <p className="admin-empty">No valuation requests are available to this dashboard yet.</p> : null}
+            {!leads.length ? <p className="admin-empty">No leads are available to this dashboard yet.</p> : null}
           </div>
         </article>
 

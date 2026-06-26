@@ -76,7 +76,20 @@ create table if not exists public.testimonials (
 
 create table if not exists public.lead_submissions (
   id uuid primary key default gen_random_uuid(),
-  lead_type text not null check (lead_type in ('account', 'valuation', 'contact', 'saved_search')),
+  lead_type text not null check (
+    lead_type in (
+      'account',
+      'valuation',
+      'contact',
+      'saved_search',
+      'seller',
+      'buyer',
+      'buyer_seller',
+      'investor',
+      'lease',
+      'other'
+    )
+  ),
   full_name text,
   email text not null,
   phone text,

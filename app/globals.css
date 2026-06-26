@@ -786,7 +786,7 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
 .admin-summary-row {
   padding: 14px 16px;
   display: grid;
-  grid-template-columns: minmax(160px, 1.7fr) repeat(3, minmax(72px, .7fr)) auto;
+  grid-template-columns: minmax(160px, 1.8fr) repeat(4, minmax(72px, .65fr)) auto;
   gap: 14px;
   align-items: center;
   max-width: 100%;
