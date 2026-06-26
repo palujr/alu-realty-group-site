@@ -6,6 +6,7 @@ create table if not exists public.broker_sites (
   primary_domain text,
   broker_logo_url text,
   team_logo_url text,
+  hero_image_url text,
   contact_email text,
   contact_phone text,
   time_zone text not null default 'America/Phoenix',
@@ -37,6 +38,9 @@ alter table public.broker_sites
 alter table public.broker_sites
   add column if not exists time_zone text not null default 'America/Phoenix';
 
+alter table public.broker_sites
+  add column if not exists hero_image_url text;
+
 alter table public.broker_sites enable row level security;
 
 grant usage on schema public to anon, authenticated;
@@ -54,6 +58,7 @@ insert into public.broker_sites (
   primary_domain,
   broker_logo_url,
   team_logo_url,
+  hero_image_url,
   contact_email,
   contact_phone,
   time_zone,
@@ -79,6 +84,7 @@ values (
   'alurealtygroup.com',
   '/assets/fathom-realty-elite-logo.png',
   '/assets/alu-realty-group-logo.png',
+  '/assets/desert-home-hero.png',
   'phil@alurealtygroup.com',
   null,
   'America/Phoenix',

@@ -188,6 +188,7 @@ const leadActivityTypeOptions = [
 
 const teamPhotoBucket = "team-photos";
 const siteLogoBucket = "site-logos";
+const siteHeroImageBucket = "site-hero-images";
 const adminPageSize = 10;
 const adminPageSizeOptions = [10, 20, 50, 75];
 const maxAdminImageSize = 5 * 1024 * 1024;
@@ -664,6 +665,14 @@ async function uploadSiteLogo(
   return uploadAdminImage(adminSupabase, file, slug, siteLogoBucket, "site-logo");
 }
 
+async function uploadSiteHeroImage(
+  adminSupabase: NonNullable<ReturnType<typeof createAdminClient>>,
+  file: FormDataEntryValue | null,
+  slug: string
+) {
+  return uploadAdminImage(adminSupabase, file, slug, siteHeroImageBucket, "home-property");
+}
+
 async function updateSiteSettings(formData: FormData) {
   "use server";
 
@@ -726,6 +735,7 @@ async function updateSiteSettings(formData: FormData) {
 
   let brokerLogoUrl = asOptionalString(formData.get("brokerLogoUrl"));
   let teamLogoUrl = asOptionalString(formData.get("teamLogoUrl"));
+  let heroImageUrl = asOptionalString(formData.get("heroImageUrl"));
 
   try {
     brokerLogoUrl =
@@ -734,6 +744,9 @@ async function updateSiteSettings(formData: FormData) {
     teamLogoUrl =
       (await uploadSiteLogo(adminSupabase, formData.get("teamLogoFile"), `${siteSlug}-team-logo`)) ||
       teamLogoUrl;
+    heroImageUrl =
+      (await uploadSiteHeroImage(adminSupabase, formData.get("heroImageFile"), `${siteSlug}-home-property`)) ||
+      heroImageUrl;
   } catch {
     redirect("/admin?siteStatus=error#site-settings");
   }
@@ -751,6 +764,7 @@ async function updateSiteSettings(formData: FormData) {
       lead_notification_emails: safeLeadNotificationEmails,
       resend_from_email: asOptionalString(formData.get("resendFromEmail")),
       lead_reply_to_email: leadReplyToEmail,
+      hero_image_url: heroImageUrl,
       hero_eyebrow: asOptionalString(formData.get("heroEyebrow")),
       hero_headline: asOptionalString(formData.get("heroHeadline")),
       hero_subheadline: asOptionalString(formData.get("heroSubheadline")),
@@ -1591,6 +1605,31 @@ export default async function AdminDashboardPage({
                   </div>
                 ) : null}
               </div>
+              <section className="admin-settings-section">
+                <div className="admin-settings-section-heading">
+                  <p className="admin-kicker">Home Page Property</p>
+                  <h3>Active hero photo</h3>
+                </div>
+                <div className="admin-property-image-grid">
+                  <div className="admin-property-image-preview">
+                    <span>Active Home Page Property</span>
+                    <img src={siteSettings.heroImageUrl} alt={`${siteSettings.siteName} homepage property`} />
+                    <small>This image displays behind the main search panel on the public homepage.</small>
+                  </div>
+                  <div className="admin-property-image-editor">
+                    <span>Edit Home Page Property Photo</span>
+                    <label>
+                      Property image URL
+                      <input name="heroImageUrl" type="text" defaultValue={siteSettings.heroImageUrl} />
+                    </label>
+                    <label>
+                      Upload property image
+                      <input name="heroImageFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+                    </label>
+                    <small>Wide landscape photos work best here because the image fills the top hero area.</small>
+                  </div>
+                </div>
+              </section>
               <section className="admin-settings-section">
                 <div className="admin-settings-section-heading">
                   <p className="admin-kicker">Branding</p>

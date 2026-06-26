@@ -94,11 +94,29 @@ export default async function HomePage() {
         <a href="#insights">Read the update <span aria-hidden="true">→</span></a>
       </div>
 
-      <header className="site-header" id="top">
-        <a className="brand fathom-brand" href="#top" aria-label={`${siteSettings.brokerageName} home`}>
-          <img src={siteSettings.brokerLogoUrl} alt={siteSettings.brokerageName} />
-        </a>
-        <nav className="desktop-nav" aria-label="Primary navigation">
+      <div className="site-sticky-shell">
+        <header className="site-header" id="top">
+          <a className="brand fathom-brand" href="#top" aria-label={`${siteSettings.brokerageName} home`}>
+            <img src={siteSettings.brokerLogoUrl} alt={siteSettings.brokerageName} />
+          </a>
+          <nav className="desktop-nav" aria-label="Primary navigation">
+            <a href="#properties">Buy</a>
+            <a href="#properties">Rent</a>
+            <a href="#sell">Sell</a>
+            <a href="#rates">Mortgage</a>
+            <a href="#team">Team</a>
+            <a href="#insights">Insights</a>
+          </nav>
+          <div className="header-actions">
+            <button className="text-button" data-open-modal="account">Sign in</button>
+            <button className="button button-dark" data-open-modal="account">Create account</button>
+            <button className="menu-button" id="menuButton" aria-label="Open menu" aria-expanded="false">
+              <span></span><span></span><span></span>
+            </button>
+          </div>
+        </header>
+
+        <nav className="mobile-nav" id="mobileNav" aria-label="Mobile navigation">
           <a href="#properties">Buy</a>
           <a href="#properties">Rent</a>
           <a href="#sell">Sell</a>
@@ -106,42 +124,26 @@ export default async function HomePage() {
           <a href="#team">Team</a>
           <a href="#insights">Insights</a>
         </nav>
-        <div className="header-actions">
-          <button className="text-button" data-open-modal="account">Sign in</button>
-          <button className="button button-dark" data-open-modal="account">Create account</button>
-          <button className="menu-button" id="menuButton" aria-label="Open menu" aria-expanded="false">
-            <span></span><span></span><span></span>
-          </button>
-        </div>
-      </header>
 
-      <nav className="mobile-nav" id="mobileNav" aria-label="Mobile navigation">
-        <a href="#properties">Buy</a>
-        <a href="#properties">Rent</a>
-        <a href="#sell">Sell</a>
-        <a href="#rates">Mortgage</a>
-        <a href="#team">Team</a>
-        <a href="#insights">Insights</a>
-      </nav>
-
-      <div className="alu-brand-banner" aria-label={`${siteSettings.siteName} featured message`}>
-        <div className="alu-brand-lockup">
-          <img className="alu-group-logo" src={siteSettings.teamLogoUrl} alt={siteSettings.siteName} />
-          {activeBanner ? (
-            <>
-              <span className="brand-divider" aria-hidden="true"></span>
-              <div className={`seasonal-banner banner-theme-${activeBanner.theme}`} aria-label={`${siteSettings.siteName} promotional message`}>
-                <p>{activeBanner.eyebrow}</p>
-                <h2>{activeBanner.headline}</h2>
-                <span>{activeBanner.body}</span>
-              </div>
-            </>
-          ) : null}
+        <div className="alu-brand-banner" aria-label={`${siteSettings.siteName} featured message`}>
+          <div className="alu-brand-lockup">
+            <img className="alu-group-logo" src={siteSettings.teamLogoUrl} alt={siteSettings.siteName} />
+            {activeBanner ? (
+              <>
+                <span className="brand-divider" aria-hidden="true"></span>
+                <div className={`seasonal-banner banner-theme-${activeBanner.theme}`} aria-label={`${siteSettings.siteName} promotional message`}>
+                  <p>{activeBanner.eyebrow}</p>
+                  <h2>{activeBanner.headline}</h2>
+                  <span>{activeBanner.body}</span>
+                </div>
+              </>
+            ) : null}
+          </div>
         </div>
       </div>
 
       <main>
-        <section className="hero">
+        <section className="hero" style={{ backgroundImage: `url("${siteSettings.heroImageUrl}")` }}>
           <div className="hero-overlay"></div>
           <div className="hero-content">
             <p className="eyebrow light">{siteSettings.heroEyebrow}</p>

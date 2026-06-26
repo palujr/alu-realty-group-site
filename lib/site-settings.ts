@@ -13,6 +13,7 @@ export type SiteSettings = {
   leadNotificationEmails: string[];
   resendFromEmail: string;
   leadReplyToEmail: string;
+  heroImageUrl: string;
   heroEyebrow: string;
   heroHeadline: string;
   heroSubheadline: string;
@@ -111,6 +112,7 @@ export const defaultSiteSettings: SiteSettings = {
   leadNotificationEmails: ["phil@alurealtygroup.com"],
   resendFromEmail: "Alu Realty Group <noreply@contact.alurealtygroup.com>",
   leadReplyToEmail: "phil@alurealtygroup.com",
+  heroImageUrl: "/assets/desert-home-hero.png",
   heroEyebrow: "SCOTTSDALE · PARADISE VALLEY · PHOENIX",
   heroHeadline: "Find the place\nthat feels like yours.",
   heroSubheadline: "Local insight, real-time listings, and smart guidance for your next move in the Valley.",
@@ -140,6 +142,7 @@ type BrokerSiteRow = {
   lead_notification_emails: string[] | null;
   resend_from_email: string | null;
   lead_reply_to_email: string | null;
+  hero_image_url: string | null;
   hero_eyebrow: string | null;
   hero_headline: string | null;
   hero_subheadline: string | null;
@@ -202,6 +205,7 @@ function mapBrokerSite(row: BrokerSiteRow): SiteSettings {
       : defaultSiteSettings.leadNotificationEmails,
     resendFromEmail: row.resend_from_email || defaultSiteSettings.resendFromEmail,
     leadReplyToEmail: row.lead_reply_to_email || defaultSiteSettings.leadReplyToEmail,
+    heroImageUrl: row.hero_image_url || defaultSiteSettings.heroImageUrl,
     heroEyebrow: row.hero_eyebrow || defaultSiteSettings.heroEyebrow,
     heroHeadline: row.hero_headline || defaultSiteSettings.heroHeadline,
     heroSubheadline: row.hero_subheadline || defaultSiteSettings.heroSubheadline,
@@ -237,6 +241,7 @@ export async function getSiteSettings(slug = "alu-realty-group"): Promise<SiteSe
       lead_notification_emails,
       resend_from_email,
       lead_reply_to_email,
+      hero_image_url,
       hero_eyebrow,
       hero_headline,
       hero_subheadline,
