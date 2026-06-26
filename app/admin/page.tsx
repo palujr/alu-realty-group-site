@@ -115,6 +115,22 @@ function getAssignedName(lead: AdminLead) {
   return lead.team_members?.full_name || "Unassigned";
 }
 
+function getTeamMemberNameById(teamMembers: AdminTeamMember[], id?: string | null) {
+  if (!id) {
+    return "Team";
+  }
+
+  return teamMembers.find((member) => member.id === id)?.full_name || "Team";
+}
+
+function truncateText(value?: string | null, maxLength = 86) {
+  if (!value) {
+    return "";
+  }
+
+  return value.length > maxLength ? `${value.slice(0, maxLength).trim()}...` : value;
+}
+
 function asOptionalString(value: FormDataEntryValue | null) {
   const stringValue = value?.toString().trim() || "";
   return stringValue || null;
@@ -517,16 +533,18 @@ async function getAdminData() {
       .select("id, campaign_name, eyebrow, headline, body, theme, start_date, end_date, is_active, priority")
       .eq("site_slug", siteSettings.slug)
       .order("priority", { ascending: true })
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(10),
     adminDataClient
       .from("team_members")
       .select("id, slug, full_name, title, phone, email, bio, photo_url, specialties, display_order, is_active")
-      .order("display_order", { ascending: true }),
+      .order("display_order", { ascending: true })
+      .limit(10),
     adminDataClient
       .from("testimonials")
       .select("id, team_member_id, scope, client_name, context, quote, rating, is_featured, is_published")
       .order("created_at", { ascending: false })
-      .limit(8)
+      .limit(10)
   ]);
 
   const leadsResult = adminSupabase
@@ -730,7 +748,17 @@ export default async function AdminDashboardPage({
 
           <div className="admin-form-list">
             {leads.map((lead) => (
-              <form className="admin-form-card" action={updateValuationLead} id={`lead-${lead.id}`} key={lead.id}>
+              <details className="admin-edit-panel" id={`lead-${lead.id}`} key={lead.id} open={leadStatus === "saved" && savedLeadId === lead.id}>
+                <summary className="admin-summary-row">
+                  <span>
+                    <strong>{lead.property_address || "No property address"}</strong>
+                    <small>{lead.full_name || "No name"} - {lead.email || lead.phone || "No contact listed"}</small>
+                  </span>
+                  <span>{getAssignedName(lead)}</span>
+                  <span>{lead.contact_status || "new"}</span>
+                  <span>{formatDate(lead.created_at)}</span>
+                </summary>
+              <form className="admin-form-card" action={updateValuationLead}>
                 <input name="leadId" type="hidden" value={lead.id} />
                 <div className="admin-card-header admin-form-title">
                   <div>
@@ -802,6 +830,7 @@ export default async function AdminDashboardPage({
                   <button className="admin-save-button" type="submit">Save valuation</button>
                 </div>
               </form>
+              </details>
             ))}
             {!leads.length ? <p className="admin-empty">No valuation requests are available to this dashboard yet.</p> : null}
           </div>
@@ -890,7 +919,17 @@ export default async function AdminDashboardPage({
           </details>
           <div className="admin-form-list">
             {banners.map((banner) => (
-              <form className="admin-form-card" action={updateBannerCampaign} id={`banner-${banner.id}`} key={banner.id}>
+              <details className="admin-edit-panel" id={`banner-${banner.id}`} key={banner.id} open={bannerStatus === "saved" && savedBannerId === banner.id}>
+                <summary className="admin-summary-row">
+                  <span>
+                    <strong>{banner.campaign_name}</strong>
+                    <small>{banner.headline}</small>
+                  </span>
+                  <span>{banner.is_active ? "Active" : "Inactive"}</span>
+                  <span>{banner.theme}</span>
+                  <span>{formatDate(banner.start_date)}</span>
+                </summary>
+              <form className="admin-form-card" action={updateBannerCampaign}>
                 <input name="bannerId" type="hidden" value={banner.id} />
                 <label>
                   Campaign name
@@ -942,6 +981,7 @@ export default async function AdminDashboardPage({
                   <button className="admin-save-button" type="submit">Save banner</button>
                 </div>
               </form>
+              </details>
             ))}
           </div>
         </article>
@@ -1012,7 +1052,17 @@ export default async function AdminDashboardPage({
           </details>
           <div className="admin-form-list">
             {teamMembers.map((member) => (
-              <form className="admin-form-card" action={updateTeamMember} id={`team-member-${member.id}`} key={member.id}>
+              <details className="admin-edit-panel" id={`team-member-${member.id}`} key={member.id} open={teamStatus === "saved" && savedTeamMemberId === member.id}>
+                <summary className="admin-summary-row">
+                  <span>
+                    <strong>{member.full_name}</strong>
+                    <small>{member.title}</small>
+                  </span>
+                  <span>{member.is_active ? "Visible" : "Hidden"}</span>
+                  <span>{member.phone || "No phone"}</span>
+                  <span>{member.email || "No email"}</span>
+                </summary>
+              <form className="admin-form-card" action={updateTeamMember}>
                 <input name="memberId" type="hidden" value={member.id} />
                 <div className="admin-form-grid">
                   <label>
@@ -1060,6 +1110,7 @@ export default async function AdminDashboardPage({
                   <button className="admin-save-button" type="submit">Save team member</button>
                 </div>
               </form>
+              </details>
             ))}
           </div>
         </article>
@@ -1132,7 +1183,17 @@ export default async function AdminDashboardPage({
           </details>
           <div className="admin-form-list">
             {testimonials.map((testimonial) => (
-              <form className="admin-form-card" action={updateTestimonial} id={`testimonial-${testimonial.id}`} key={testimonial.id}>
+              <details className="admin-edit-panel" id={`testimonial-${testimonial.id}`} key={testimonial.id} open={testimonialStatus === "saved" && savedTestimonialId === testimonial.id}>
+                <summary className="admin-summary-row">
+                  <span>
+                    <strong>{testimonial.client_name}</strong>
+                    <small>{truncateText(testimonial.quote)}</small>
+                  </span>
+                  <span>{testimonial.is_published ? "Published" : "Draft"}</span>
+                  <span>{getTeamMemberNameById(teamMembers, testimonial.team_member_id)}</span>
+                  <span>{testimonial.rating ? `${testimonial.rating}/5` : "No rating"}</span>
+                </summary>
+              <form className="admin-form-card" action={updateTestimonial}>
                 <input name="testimonialId" type="hidden" value={testimonial.id} />
                 <div className="admin-form-grid">
                   <label>
@@ -1186,6 +1247,7 @@ export default async function AdminDashboardPage({
                   <button className="admin-save-button" type="submit">Save testimonial</button>
                 </div>
               </form>
+              </details>
             ))}
           </div>
         </article>
