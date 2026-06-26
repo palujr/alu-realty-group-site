@@ -5,6 +5,8 @@ import { useEffect } from "react";
 const statusParams = [
   "bannerStatus",
   "bannerId",
+  "leadStatus",
+  "leadId",
   "teamStatus",
   "teamMemberId",
   "testimonialStatus",

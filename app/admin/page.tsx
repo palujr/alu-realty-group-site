@@ -13,9 +13,16 @@ type AdminLead = {
   id: string;
   lead_type: string;
   full_name: string | null;
-  email: string;
+  email: string | null;
   phone: string | null;
   property_address: string | null;
+  message: string | null;
+  source_page: string | null;
+  assigned_team_member_id: string | null;
+  contact_status: string;
+  preferred_contact_method: string | null;
+  contact_notes: string | null;
+  last_contacted_at: string | null;
   created_at: string;
   team_members: { full_name: string | null } | { full_name: string | null }[] | null;
 };
@@ -59,6 +66,25 @@ type AdminTestimonial = {
   is_published: boolean;
 };
 
+const leadStatusOptions = [
+  { value: "new", label: "New" },
+  { value: "assigned", label: "Assigned" },
+  { value: "contacted", label: "Contacted" },
+  { value: "verified", label: "Verified" },
+  { value: "in_progress", label: "In progress" },
+  { value: "completed", label: "Completed" },
+  { value: "archived", label: "Archived" }
+];
+
+const contactMethodOptions = [
+  { value: "", label: "Not set" },
+  { value: "email", label: "Email" },
+  { value: "phone", label: "Phone" },
+  { value: "text", label: "Text" },
+  { value: "in_person", label: "In person" },
+  { value: "other", label: "Other" }
+];
+
 function formatDate(value?: string | null) {
   if (!value) {
     return "Not set";
@@ -69,6 +95,16 @@ function formatDate(value?: string | null) {
     day: "numeric",
     year: "numeric"
   }).format(new Date(value));
+}
+
+function formatDateTimeLocal(value?: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 16);
 }
 
 function getAssignedName(lead: AdminLead) {
@@ -96,6 +132,109 @@ function slugify(value: string) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+function normalizeLeadStatus(value: FormDataEntryValue | null) {
+  const status = value?.toString() || "new";
+  const allowedStatuses = ["new", "assigned", "contacted", "verified", "in_progress", "completed", "archived"];
+  return allowedStatuses.includes(status) ? status : "new";
+}
+
+function normalizeContactMethod(value: FormDataEntryValue | null) {
+  const method = value?.toString() || "";
+  const allowedMethods = ["email", "phone", "text", "in_person", "other"];
+  return allowedMethods.includes(method) ? method : null;
+}
+
+function asOptionalDateTime(value: FormDataEntryValue | null) {
+  const stringValue = value?.toString().trim() || "";
+  return stringValue ? new Date(stringValue).toISOString() : null;
+}
+
+async function createValuationLead(formData: FormData) {
+  "use server";
+
+  const adminSupabase = createAdminClient();
+
+  if (!adminSupabase) {
+    redirect("/admin?leadStatus=error#new-valuation");
+  }
+
+  const email = asOptionalString(formData.get("email"));
+  const phone = asOptionalString(formData.get("phone"));
+  const propertyAddress = asOptionalString(formData.get("propertyAddress"));
+
+  if (!propertyAddress || (!email && !phone)) {
+    redirect("/admin?leadStatus=error#new-valuation");
+  }
+
+  const { data, error } = await adminSupabase
+    .from("lead_submissions")
+    .insert({
+      lead_type: "valuation",
+      full_name: asOptionalString(formData.get("fullName")),
+      email,
+      phone,
+      property_address: propertyAddress,
+      message: asOptionalString(formData.get("message")),
+      source_page: "admin_manual",
+      assigned_team_member_id: asOptionalString(formData.get("assignedTeamMemberId")),
+      contact_status: normalizeLeadStatus(formData.get("contactStatus")),
+      preferred_contact_method: normalizeContactMethod(formData.get("preferredContactMethod")),
+      contact_notes: asOptionalString(formData.get("contactNotes")),
+      last_contacted_at: asOptionalDateTime(formData.get("lastContactedAt"))
+    })
+    .select("id")
+    .single();
+
+  if (error || !data?.id) {
+    redirect("/admin?leadStatus=error#new-valuation");
+  }
+
+  revalidatePath("/admin");
+  redirect(`/admin?leadStatus=saved&leadId=${data.id}#lead-${data.id}`);
+}
+
+async function updateValuationLead(formData: FormData) {
+  "use server";
+
+  const adminSupabase = createAdminClient();
+
+  if (!adminSupabase) {
+    redirect("/admin?leadStatus=error#lead-inbox");
+  }
+
+  const leadId = formData.get("leadId")?.toString();
+  const propertyAddress = asOptionalString(formData.get("propertyAddress"));
+  const email = asOptionalString(formData.get("email"));
+  const phone = asOptionalString(formData.get("phone"));
+
+  if (!leadId || !propertyAddress || (!email && !phone)) {
+    redirect("/admin?leadStatus=error#lead-inbox");
+  }
+
+  const { error } = await adminSupabase
+    .from("lead_submissions")
+    .update({
+      full_name: asOptionalString(formData.get("fullName")),
+      email,
+      phone,
+      property_address: propertyAddress,
+      message: asOptionalString(formData.get("message")),
+      assigned_team_member_id: asOptionalString(formData.get("assignedTeamMemberId")),
+      contact_status: normalizeLeadStatus(formData.get("contactStatus")),
+      preferred_contact_method: normalizeContactMethod(formData.get("preferredContactMethod")),
+      contact_notes: asOptionalString(formData.get("contactNotes")),
+      last_contacted_at: asOptionalDateTime(formData.get("lastContactedAt"))
+    })
+    .eq("id", leadId);
+
+  if (error) {
+    redirect("/admin?leadStatus=error#lead-inbox");
+  }
+
+  revalidatePath("/admin");
+  redirect(`/admin?leadStatus=saved&leadId=${leadId}#lead-${leadId}`);
 }
 
 async function createBannerCampaign(formData: FormData) {
@@ -393,9 +532,10 @@ async function getAdminData() {
   const leadsResult = adminSupabase
     ? await adminSupabase
         .from("lead_submissions")
-        .select("id, lead_type, full_name, email, phone, property_address, created_at, team_members(full_name)")
+        .select("id, lead_type, full_name, email, phone, property_address, message, source_page, assigned_team_member_id, contact_status, preferred_contact_method, contact_notes, last_contacted_at, created_at, team_members(full_name)")
+        .eq("lead_type", "valuation")
         .order("created_at", { ascending: false })
-        .limit(8)
+        .limit(10)
     : {
         data: [],
         error: { message: "Add SUPABASE_SERVICE_ROLE_KEY in Vercel to unlock private lead inbox data." }
@@ -428,6 +568,8 @@ export default async function AdminDashboardPage({
   searchParams?: {
     bannerStatus?: string;
     bannerId?: string;
+    leadStatus?: string;
+    leadId?: string;
     teamStatus?: string;
     teamMemberId?: string;
     testimonialStatus?: string;
@@ -438,11 +580,13 @@ export default async function AdminDashboardPage({
   const visibleErrors = Object.values(errors).filter(Boolean);
   const bannerStatus = searchParams?.bannerStatus;
   const savedBannerId = searchParams?.bannerId;
+  const leadStatus = searchParams?.leadStatus;
+  const savedLeadId = searchParams?.leadId;
   const teamStatus = searchParams?.teamStatus;
   const savedTeamMemberId = searchParams?.teamMemberId;
   const testimonialStatus = searchParams?.testimonialStatus;
   const savedTestimonialId = searchParams?.testimonialId;
-  const hasSavedStatus = bannerStatus === "saved" || teamStatus === "saved" || testimonialStatus === "saved";
+  const hasSavedStatus = bannerStatus === "saved" || leadStatus === "saved" || teamStatus === "saved" || testimonialStatus === "saved";
 
   return (
     <main className="admin-shell">
@@ -500,33 +644,166 @@ export default async function AdminDashboardPage({
       </section>
 
       <section className="admin-grid">
-        <article className="admin-card admin-card-wide">
+        <article className="admin-card admin-card-wide" id="lead-inbox">
           <div className="admin-card-header">
             <div>
-              <p className="admin-kicker">Lead Inbox</p>
-              <h2>Recent valuation requests</h2>
+              <p className="admin-kicker">Valuation Workspace</p>
+              <h2>Track home valuation requests</h2>
             </div>
-            <span>{leads.length ? "Live data" : "No leads visible"}</span>
+            <span>{leads.length ? "Live data" : "No valuations visible"}</span>
           </div>
-          <div className="admin-table">
-            <div className="admin-table-row admin-table-head">
-              <span>Name</span>
-              <span>Property</span>
-              <span>Assigned</span>
-              <span>Date</span>
+
+          {leadStatus === "error" ? (
+            <div className="admin-inline-alert" role="alert">
+              <strong>Valuation could not be saved.</strong>
+              <span>Please make sure there is a property address and at least one contact method.</span>
             </div>
-            {leads.map((lead) => (
-              <div className="admin-table-row" key={lead.id}>
-                <span>
-                  <strong>{lead.full_name || "No name"}</strong>
-                  <small>{lead.email}</small>
-                </span>
-                <span>{lead.property_address || "No property address"}</span>
-                <span>{getAssignedName(lead)}</span>
-                <span>{formatDate(lead.created_at)}</span>
+          ) : null}
+
+          <details className="admin-create-panel" id="new-valuation">
+            <summary>Add valuation request from phone, text, or email</summary>
+            <form className="admin-form-card" action={createValuationLead}>
+              <div className="admin-form-grid">
+                <label>
+                  Client name
+                  <input name="fullName" type="text" placeholder="Client name" />
+                </label>
+                <label>
+                  Property address
+                  <input name="propertyAddress" type="text" placeholder="Property address" required />
+                </label>
+                <label>
+                  Email
+                  <input name="email" type="email" placeholder="client@email.com" />
+                </label>
+                <label>
+                  Phone
+                  <input name="phone" type="tel" placeholder="(480) 555-0123" />
+                </label>
+                <label>
+                  Assigned team member
+                  <select name="assignedTeamMemberId" defaultValue="">
+                    <option value="">Unassigned</option>
+                    {teamMembers.map((member) => (
+                      <option key={member.id} value={member.id}>{member.full_name}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Status
+                  <select name="contactStatus" defaultValue="new">
+                    {leadStatusOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Contact method
+                  <select name="preferredContactMethod" defaultValue="">
+                    {contactMethodOptions.map((option) => (
+                      <option key={option.value || "none"} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Last contacted
+                  <input name="lastContactedAt" type="datetime-local" />
+                </label>
               </div>
+              <label>
+                Request details
+                <textarea name="message" placeholder="What did they ask for?" rows={3}></textarea>
+              </label>
+              <label>
+                Contact notes
+                <textarea name="contactNotes" placeholder="Follow-up notes, verification details, preferred timing, etc." rows={3}></textarea>
+              </label>
+              <div className="admin-form-footer">
+                <small>Email or phone is required so the request can be followed up.</small>
+                {leadStatus === "saved" && savedLeadId && !leads.some((lead) => lead.id === savedLeadId) ? (
+                  <span className="admin-save-confirmation" data-admin-status="saved">Saved successfully</span>
+                ) : null}
+                <button className="admin-save-button" type="submit">Add valuation</button>
+              </div>
+            </form>
+          </details>
+
+          <div className="admin-form-list">
+            {leads.map((lead) => (
+              <form className="admin-form-card" action={updateValuationLead} id={`lead-${lead.id}`} key={lead.id}>
+                <input name="leadId" type="hidden" value={lead.id} />
+                <div className="admin-card-header admin-form-title">
+                  <div>
+                    <p className="admin-kicker">{lead.contact_status || "new"} valuation</p>
+                    <h3>{lead.property_address || "No property address"}</h3>
+                  </div>
+                  <span>{formatDate(lead.created_at)}</span>
+                </div>
+                <div className="admin-form-grid">
+                  <label>
+                    Client name
+                    <input name="fullName" type="text" defaultValue={lead.full_name || ""} />
+                  </label>
+                  <label>
+                    Property address
+                    <input name="propertyAddress" type="text" defaultValue={lead.property_address || ""} required />
+                  </label>
+                  <label>
+                    Email
+                    <input name="email" type="email" defaultValue={lead.email || ""} />
+                  </label>
+                  <label>
+                    Phone
+                    <input name="phone" type="tel" defaultValue={lead.phone || ""} />
+                  </label>
+                  <label>
+                    Assigned team member
+                    <select name="assignedTeamMemberId" defaultValue={lead.assigned_team_member_id || ""}>
+                      <option value="">Unassigned</option>
+                      {teamMembers.map((member) => (
+                        <option key={member.id} value={member.id}>{member.full_name}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Status
+                    <select name="contactStatus" defaultValue={lead.contact_status || "new"}>
+                      {leadStatusOptions.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Contact method
+                    <select name="preferredContactMethod" defaultValue={lead.preferred_contact_method || ""}>
+                      {contactMethodOptions.map((option) => (
+                        <option key={option.value || "none"} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Last contacted
+                    <input name="lastContactedAt" type="datetime-local" defaultValue={formatDateTimeLocal(lead.last_contacted_at)} />
+                  </label>
+                </div>
+                <label>
+                  Request details
+                  <textarea name="message" rows={3} defaultValue={lead.message || ""}></textarea>
+                </label>
+                <label>
+                  Contact notes
+                  <textarea name="contactNotes" rows={3} defaultValue={lead.contact_notes || ""}></textarea>
+                </label>
+                <div className="admin-form-footer">
+                  <small>Assigned to {getAssignedName(lead)} - Source: {lead.source_page || "website"}</small>
+                  {leadStatus === "saved" && savedLeadId === lead.id ? (
+                    <span className="admin-save-confirmation" data-admin-status="saved">Saved successfully</span>
+                  ) : null}
+                  <button className="admin-save-button" type="submit">Save valuation</button>
+                </div>
+              </form>
             ))}
-            {!leads.length ? <p className="admin-empty">No recent leads are available to this dashboard yet.</p> : null}
+            {!leads.length ? <p className="admin-empty">No valuation requests are available to this dashboard yet.</p> : null}
           </div>
         </article>
 
@@ -658,7 +935,7 @@ export default async function AdminDashboardPage({
                   Active on site
                 </label>
                 <div className="admin-form-footer">
-                  <small>{banner.is_active ? "Currently active" : "Currently inactive"} · {formatDate(banner.start_date)} to {formatDate(banner.end_date)}</small>
+                  <small>{banner.is_active ? "Currently active" : "Currently inactive"} - {formatDate(banner.start_date)} to {formatDate(banner.end_date)}</small>
                   {bannerStatus === "saved" && savedBannerId === banner.id ? (
                     <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
                   ) : null}
@@ -776,7 +1053,7 @@ export default async function AdminDashboardPage({
                   Visible on site
                 </label>
                 <div className="admin-form-footer">
-                  <small>{member.is_active ? "Currently visible" : "Currently hidden"} · {member.slug}</small>
+                  <small>{member.is_active ? "Currently visible" : "Currently hidden"} - {member.slug}</small>
                   {teamStatus === "saved" && savedTeamMemberId === member.id ? (
                     <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
                   ) : null}
@@ -902,7 +1179,7 @@ export default async function AdminDashboardPage({
                   </label>
                 </div>
                 <div className="admin-form-footer">
-                  <small>{testimonial.is_published ? "Currently published" : "Currently draft"} Â· {testimonial.scope}</small>
+                  <small>{testimonial.is_published ? "Currently published" : "Currently draft"} - {testimonial.scope}</small>
                   {testimonialStatus === "saved" && savedTestimonialId === testimonial.id ? (
                     <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
                   ) : null}

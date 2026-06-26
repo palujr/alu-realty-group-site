@@ -798,6 +798,16 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   background: #f8f5ee;
   border: 1px solid var(--line);
 }
+.admin-form-title {
+  margin-bottom: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(27, 45, 38, .12);
+}
+.admin-form-title h3 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+}
 .admin-form-card label {
   display: grid;
   gap: 7px;
