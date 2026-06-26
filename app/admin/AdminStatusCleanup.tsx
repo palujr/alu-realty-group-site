@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 const statusParams = [
+  "siteStatus",
   "bannerStatus",
   "bannerId",
   "leadStatus",

@@ -146,6 +146,13 @@ function asSpecialtyArray(value: FormDataEntryValue | null) {
     .filter(Boolean);
 }
 
+function asEmailArray(value: FormDataEntryValue | null) {
+  return (value?.toString() || "")
+    .split(/[\n,]/)
+    .map((email) => email.trim())
+    .filter(Boolean);
+}
+
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -200,6 +207,101 @@ async function uploadTeamPhoto(
 
   const { data } = adminSupabase.storage.from(teamPhotoBucket).getPublicUrl(filePath);
   return data.publicUrl;
+}
+
+async function updateSiteSettings(formData: FormData) {
+  "use server";
+
+  const adminSupabase = createAdminClient();
+
+  if (!adminSupabase) {
+    redirect("/admin?siteStatus=error#site-settings");
+  }
+
+  const siteSlug = formData.get("siteSlug")?.toString() || "alu-realty-group";
+  const siteName = formData.get("siteName")?.toString().trim();
+
+  if (!siteName) {
+    redirect("/admin?siteStatus=error#site-settings");
+  }
+
+  const contactEmail = asOptionalString(formData.get("contactEmail"));
+  const leadReplyToEmail = asOptionalString(formData.get("leadReplyToEmail"));
+  const leadNotificationEmails = asEmailArray(formData.get("leadNotificationEmails"));
+  const safeLeadNotificationEmails = leadNotificationEmails.length
+    ? leadNotificationEmails
+    : contactEmail
+      ? [contactEmail]
+      : [];
+  const valuationNotificationEmails = asEmailArray(formData.get("valuationNotificationEmails"));
+
+  const homepageSections = {
+    propertiesEyebrow: formData.get("propertiesEyebrow")?.toString().trim(),
+    propertiesHeadline: formData.get("propertiesHeadline")?.toString().trim(),
+    ratesEyebrow: formData.get("ratesEyebrow")?.toString().trim(),
+    ratesHeadline: formData.get("ratesHeadline")?.toString().trim(),
+    ratesBody: formData.get("ratesBody")?.toString().trim(),
+    ratesStatus: formData.get("ratesStatus")?.toString().trim(),
+    teamEyebrow: formData.get("teamEyebrow")?.toString().trim(),
+    teamHeadline: formData.get("teamHeadline")?.toString().trim(),
+    teamBody: formData.get("teamBody")?.toString().trim(),
+    testimonialsEyebrow: formData.get("testimonialsEyebrow")?.toString().trim(),
+    testimonialsHeadline: formData.get("testimonialsHeadline")?.toString().trim(),
+    insightsEyebrow: formData.get("insightsEyebrow")?.toString().trim(),
+    insightsHeadline: formData.get("insightsHeadline")?.toString().trim(),
+    savedSearchEyebrow: formData.get("savedSearchEyebrow")?.toString().trim(),
+    savedSearchHeadline: formData.get("savedSearchHeadline")?.toString().trim(),
+    savedSearchBody: formData.get("savedSearchBody")?.toString().trim(),
+    sellEyebrow: formData.get("sellEyebrow")?.toString().trim(),
+    sellHeadline: formData.get("sellHeadline")?.toString().trim(),
+    sellBody: formData.get("sellBody")?.toString().trim(),
+    sellButtonText: formData.get("sellButtonText")?.toString().trim()
+  };
+
+  const leadRouting = {
+    defaultNotificationEmails: safeLeadNotificationEmails,
+    valuationNotificationEmails: valuationNotificationEmails.length ? valuationNotificationEmails : safeLeadNotificationEmails,
+    defaultAssignedTeamMemberSlug: formData.get("defaultAssignedTeamMemberSlug")?.toString().trim() || "",
+    valuationAssignedTeamMemberSlug: formData.get("valuationAssignedTeamMemberSlug")?.toString().trim() || "",
+    sendClientConfirmation: formData.get("sendClientConfirmation") === "on",
+    sendInternalNotification: formData.get("sendInternalNotification") === "on"
+  };
+
+  const { error } = await adminSupabase
+    .from("broker_sites")
+    .update({
+      site_name: siteName,
+      brokerage_name: asOptionalString(formData.get("brokerageName")),
+      primary_domain: asOptionalString(formData.get("primaryDomain")),
+      broker_logo_url: asOptionalString(formData.get("brokerLogoUrl")),
+      team_logo_url: asOptionalString(formData.get("teamLogoUrl")),
+      contact_email: contactEmail,
+      contact_phone: asOptionalString(formData.get("contactPhone")),
+      lead_notification_emails: safeLeadNotificationEmails,
+      resend_from_email: asOptionalString(formData.get("resendFromEmail")),
+      lead_reply_to_email: leadReplyToEmail,
+      hero_eyebrow: asOptionalString(formData.get("heroEyebrow")),
+      hero_headline: asOptionalString(formData.get("heroHeadline")),
+      hero_subheadline: asOptionalString(formData.get("heroSubheadline")),
+      promo_enabled: formData.get("promoEnabled") === "on",
+      promo_eyebrow: asOptionalString(formData.get("promoEyebrow")),
+      promo_headline: asOptionalString(formData.get("promoHeadline")),
+      promo_body: asOptionalString(formData.get("promoBody")),
+      brand_primary: formData.get("brandPrimary")?.toString().trim() || "#17221f",
+      brand_accent: formData.get("brandAccent")?.toString().trim() || "#d9784f",
+      homepage_sections: homepageSections,
+      lead_routing: leadRouting,
+      updated_at: new Date().toISOString()
+    })
+    .eq("slug", siteSlug);
+
+  if (error) {
+    redirect("/admin?siteStatus=error#site-settings");
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  redirect("/admin?siteStatus=saved#site-settings");
 }
 
 async function createValuationLead(formData: FormData) {
@@ -635,6 +737,7 @@ export default async function AdminDashboardPage({
   searchParams
 }: {
   searchParams?: {
+    siteStatus?: string;
     bannerStatus?: string;
     bannerId?: string;
     leadStatus?: string;
@@ -647,6 +750,7 @@ export default async function AdminDashboardPage({
 }) {
   const { siteSettings, activeBanner, leads, banners, teamMembers, testimonials, errors } = await getAdminData();
   const visibleErrors = Object.values(errors).filter(Boolean);
+  const siteStatus = searchParams?.siteStatus;
   const bannerStatus = searchParams?.bannerStatus;
   const savedBannerId = searchParams?.bannerId;
   const leadStatus = searchParams?.leadStatus;
@@ -655,7 +759,7 @@ export default async function AdminDashboardPage({
   const savedTeamMemberId = searchParams?.teamMemberId;
   const testimonialStatus = searchParams?.testimonialStatus;
   const savedTestimonialId = searchParams?.testimonialId;
-  const hasSavedStatus = bannerStatus === "saved" || leadStatus === "saved" || teamStatus === "saved" || testimonialStatus === "saved";
+  const hasSavedStatus = siteStatus === "saved" || bannerStatus === "saved" || leadStatus === "saved" || teamStatus === "saved" || testimonialStatus === "saved";
 
   return (
     <main className="admin-shell">
@@ -693,6 +797,13 @@ export default async function AdminDashboardPage({
         </section>
       ) : null}
 
+      {siteStatus === "error" ? (
+        <section className="admin-alert">
+          <strong>Site settings could not be saved yet.</strong>
+          <p>This usually means the Supabase admin update permission still needs to be applied.</p>
+        </section>
+      ) : null}
+
       <section className="admin-stats" aria-label="Dashboard summary">
         <article>
           <span>Recent leads</span>
@@ -713,6 +824,231 @@ export default async function AdminDashboardPage({
       </section>
 
       <section className="admin-grid">
+        <article className="admin-card admin-card-wide" id="site-settings">
+          <div className="admin-card-header">
+            <div>
+              <p className="admin-kicker">Site Settings</p>
+              <h2>Brand, contact, and homepage copy</h2>
+            </div>
+            <span>{siteSettings.primaryDomain}</span>
+          </div>
+          {siteStatus === "saved" ? (
+            <div className="admin-inline-success" data-admin-status="saved" role="status">
+              <strong>Site settings saved.</strong>
+              <span>The website settings have been updated.</span>
+            </div>
+          ) : null}
+          <details className="admin-edit-panel" open={siteStatus === "saved"}>
+            <summary className="admin-summary-row">
+              <span>
+                <strong>{siteSettings.siteName}</strong>
+                <small>{siteSettings.brokerageName} - {siteSettings.contactEmail}</small>
+              </span>
+              <span>{siteSettings.primaryDomain}</span>
+              <span>{siteSettings.brandPrimary}</span>
+              <span>{siteSettings.brandAccent}</span>
+            </summary>
+            <form className="admin-form-card" action={updateSiteSettings}>
+              <input name="siteSlug" type="hidden" value={siteSettings.slug} />
+              <div className="admin-form-grid">
+                <label>
+                  Site name
+                  <input name="siteName" type="text" defaultValue={siteSettings.siteName} required />
+                </label>
+                <label>
+                  Brokerage name
+                  <input name="brokerageName" type="text" defaultValue={siteSettings.brokerageName} />
+                </label>
+                <label>
+                  Primary domain
+                  <input name="primaryDomain" type="text" defaultValue={siteSettings.primaryDomain} />
+                </label>
+                <label>
+                  Contact phone
+                  <input name="contactPhone" type="tel" defaultValue={siteSettings.contactPhone} />
+                </label>
+                <label>
+                  Contact email
+                  <input name="contactEmail" type="email" defaultValue={siteSettings.contactEmail} />
+                </label>
+                <label>
+                  Reply-to email
+                  <input name="leadReplyToEmail" type="email" defaultValue={siteSettings.leadReplyToEmail} />
+                </label>
+                <label>
+                  Resend sender email
+                  <input name="resendFromEmail" type="text" defaultValue={siteSettings.resendFromEmail} />
+                </label>
+                <label>
+                  Broker logo URL
+                  <input name="brokerLogoUrl" type="text" defaultValue={siteSettings.brokerLogoUrl} />
+                </label>
+                <label>
+                  Team logo URL
+                  <input name="teamLogoUrl" type="text" defaultValue={siteSettings.teamLogoUrl} />
+                </label>
+                <label>
+                  Primary brand color
+                  <input name="brandPrimary" type="text" defaultValue={siteSettings.brandPrimary} />
+                </label>
+                <label>
+                  Accent brand color
+                  <input name="brandAccent" type="text" defaultValue={siteSettings.brandAccent} />
+                </label>
+              </div>
+              <label>
+                Lead notification emails
+                <textarea name="leadNotificationEmails" rows={2} defaultValue={siteSettings.leadNotificationEmails.join(", ")}></textarea>
+              </label>
+              <label>
+                Valuation notification emails
+                <textarea name="valuationNotificationEmails" rows={2} defaultValue={siteSettings.leadRouting.valuationNotificationEmails.join(", ")}></textarea>
+              </label>
+              <div className="admin-form-grid">
+                <label>
+                  Default assigned team member slug
+                  <input name="defaultAssignedTeamMemberSlug" type="text" defaultValue={siteSettings.leadRouting.defaultAssignedTeamMemberSlug} />
+                </label>
+                <label>
+                  Valuation assigned team member slug
+                  <input name="valuationAssignedTeamMemberSlug" type="text" defaultValue={siteSettings.leadRouting.valuationAssignedTeamMemberSlug} />
+                </label>
+              </div>
+              <div className="admin-checkbox-row">
+                <label className="admin-checkbox">
+                  <input name="sendClientConfirmation" type="checkbox" defaultChecked={siteSettings.leadRouting.sendClientConfirmation} />
+                  Send client confirmation emails
+                </label>
+                <label className="admin-checkbox">
+                  <input name="sendInternalNotification" type="checkbox" defaultChecked={siteSettings.leadRouting.sendInternalNotification} />
+                  Send internal lead notifications
+                </label>
+                <label className="admin-checkbox">
+                  <input name="promoEnabled" type="checkbox" defaultChecked={siteSettings.promoEnabled} />
+                  Enable fallback promo banner
+                </label>
+              </div>
+              <div className="admin-form-grid">
+                <label>
+                  Hero eyebrow
+                  <input name="heroEyebrow" type="text" defaultValue={siteSettings.heroEyebrow} />
+                </label>
+                <label>
+                  Hero subheadline
+                  <input name="heroSubheadline" type="text" defaultValue={siteSettings.heroSubheadline} />
+                </label>
+              </div>
+              <label>
+                Hero headline
+                <textarea name="heroHeadline" rows={2} defaultValue={siteSettings.heroHeadline}></textarea>
+              </label>
+              <div className="admin-form-grid">
+                <label>
+                  Fallback promo eyebrow
+                  <input name="promoEyebrow" type="text" defaultValue={siteSettings.promoEyebrow} />
+                </label>
+                <label>
+                  Fallback promo headline
+                  <input name="promoHeadline" type="text" defaultValue={siteSettings.promoHeadline} />
+                </label>
+              </div>
+              <label>
+                Fallback promo body
+                <textarea name="promoBody" rows={2} defaultValue={siteSettings.promoBody}></textarea>
+              </label>
+              <div className="admin-form-grid">
+                <label>
+                  Properties eyebrow
+                  <input name="propertiesEyebrow" type="text" defaultValue={siteSettings.homepageSections.propertiesEyebrow} />
+                </label>
+                <label>
+                  Properties headline
+                  <input name="propertiesHeadline" type="text" defaultValue={siteSettings.homepageSections.propertiesHeadline} />
+                </label>
+                <label>
+                  Mortgage eyebrow
+                  <input name="ratesEyebrow" type="text" defaultValue={siteSettings.homepageSections.ratesEyebrow} />
+                </label>
+                <label>
+                  Mortgage headline
+                  <input name="ratesHeadline" type="text" defaultValue={siteSettings.homepageSections.ratesHeadline} />
+                </label>
+                <label>
+                  Mortgage status
+                  <input name="ratesStatus" type="text" defaultValue={siteSettings.homepageSections.ratesStatus} />
+                </label>
+                <label>
+                  Team eyebrow
+                  <input name="teamEyebrow" type="text" defaultValue={siteSettings.homepageSections.teamEyebrow} />
+                </label>
+                <label>
+                  Team headline
+                  <input name="teamHeadline" type="text" defaultValue={siteSettings.homepageSections.teamHeadline} />
+                </label>
+                <label>
+                  Testimonials eyebrow
+                  <input name="testimonialsEyebrow" type="text" defaultValue={siteSettings.homepageSections.testimonialsEyebrow} />
+                </label>
+                <label>
+                  Testimonials headline
+                  <input name="testimonialsHeadline" type="text" defaultValue={siteSettings.homepageSections.testimonialsHeadline} />
+                </label>
+                <label>
+                  Insights eyebrow
+                  <input name="insightsEyebrow" type="text" defaultValue={siteSettings.homepageSections.insightsEyebrow} />
+                </label>
+                <label>
+                  Insights headline
+                  <input name="insightsHeadline" type="text" defaultValue={siteSettings.homepageSections.insightsHeadline} />
+                </label>
+                <label>
+                  Saved search eyebrow
+                  <input name="savedSearchEyebrow" type="text" defaultValue={siteSettings.homepageSections.savedSearchEyebrow} />
+                </label>
+                <label>
+                  Sell eyebrow
+                  <input name="sellEyebrow" type="text" defaultValue={siteSettings.homepageSections.sellEyebrow} />
+                </label>
+                <label>
+                  Sell button text
+                  <input name="sellButtonText" type="text" defaultValue={siteSettings.homepageSections.sellButtonText} />
+                </label>
+              </div>
+              <label>
+                Mortgage body
+                <textarea name="ratesBody" rows={3} defaultValue={siteSettings.homepageSections.ratesBody}></textarea>
+              </label>
+              <label>
+                Team body
+                <textarea name="teamBody" rows={3} defaultValue={siteSettings.homepageSections.teamBody}></textarea>
+              </label>
+              <label>
+                Saved search headline
+                <textarea name="savedSearchHeadline" rows={2} defaultValue={siteSettings.homepageSections.savedSearchHeadline}></textarea>
+              </label>
+              <label>
+                Saved search body
+                <textarea name="savedSearchBody" rows={3} defaultValue={siteSettings.homepageSections.savedSearchBody}></textarea>
+              </label>
+              <label>
+                Sell headline
+                <textarea name="sellHeadline" rows={2} defaultValue={siteSettings.homepageSections.sellHeadline}></textarea>
+              </label>
+              <label>
+                Sell body
+                <textarea name="sellBody" rows={3} defaultValue={siteSettings.homepageSections.sellBody}></textarea>
+              </label>
+              <div className="admin-form-footer">
+                <small>These settings power the reusable website template.</small>
+                {siteStatus === "saved" ? (
+                  <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
+                ) : null}
+                <button className="admin-save-button" type="submit">Save site settings</button>
+              </div>
+            </form>
+          </details>
+        </article>
+
         <article className="admin-card admin-card-wide" id="lead-inbox">
           <div className="admin-card-header">
             <div>
