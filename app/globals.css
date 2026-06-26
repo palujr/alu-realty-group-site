@@ -825,6 +825,11 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   height: 16px;
   padding: 0;
 }
+.admin-checkbox-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
 .admin-form-footer {
   display: flex;
   align-items: center;

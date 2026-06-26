@@ -48,8 +48,13 @@ type AdminTeamMember = {
 
 type AdminTestimonial = {
   id: string;
+  team_member_id: string | null;
+  scope: string;
   client_name: string;
   context: string | null;
+  quote: string;
+  rating: number | null;
+  is_featured: boolean;
   is_published: boolean;
 };
 
@@ -173,6 +178,49 @@ async function updateTeamMember(formData: FormData) {
   redirect(`/admin?teamStatus=saved&teamMemberId=${memberId}#team-member-${memberId}`);
 }
 
+async function updateTestimonial(formData: FormData) {
+  "use server";
+
+  const adminSupabase = createAdminClient();
+
+  if (!adminSupabase) {
+    redirect("/admin?testimonialStatus=error#testimonials");
+  }
+
+  const testimonialId = formData.get("testimonialId")?.toString();
+  const clientName = formData.get("clientName")?.toString().trim();
+  const quote = formData.get("quote")?.toString().trim();
+  const scope = formData.get("scope")?.toString() === "individual" ? "individual" : "team";
+  const ratingValue = Number.parseInt(formData.get("rating")?.toString() || "", 10);
+  const teamMemberId = asOptionalString(formData.get("teamMemberId"));
+
+  if (!testimonialId || !clientName || !quote) {
+    redirect("/admin?testimonialStatus=error#testimonials");
+  }
+
+  const { error } = await adminSupabase
+    .from("testimonials")
+    .update({
+      team_member_id: scope === "individual" ? teamMemberId : null,
+      scope,
+      client_name: clientName,
+      context: asOptionalString(formData.get("context")),
+      quote,
+      rating: Number.isNaN(ratingValue) ? null : ratingValue,
+      is_featured: formData.get("isFeatured") === "on",
+      is_published: formData.get("isPublished") === "on"
+    })
+    .eq("id", testimonialId);
+
+  if (error) {
+    redirect("/admin?testimonialStatus=error#testimonials");
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  redirect(`/admin?testimonialStatus=saved&testimonialId=${testimonialId}#testimonial-${testimonialId}`);
+}
+
 async function getAdminData() {
   const siteSettings = await getSiteSettings();
   const activeBanner = await getActiveSiteBanner(siteSettings.slug, siteSettings);
@@ -195,9 +243,9 @@ async function getAdminData() {
       .from("team_members")
       .select("id, slug, full_name, title, phone, email, bio, photo_url, specialties, display_order, is_active")
       .order("display_order", { ascending: true }),
-    supabase
+    adminDataClient
       .from("testimonials")
-      .select("id, client_name, context, is_published")
+      .select("id, team_member_id, scope, client_name, context, quote, rating, is_featured, is_published")
       .order("created_at", { ascending: false })
       .limit(8)
   ]);
@@ -237,7 +285,14 @@ async function getAdminData() {
 export default async function AdminDashboardPage({
   searchParams
 }: {
-  searchParams?: { bannerStatus?: string; bannerId?: string; teamStatus?: string; teamMemberId?: string };
+  searchParams?: {
+    bannerStatus?: string;
+    bannerId?: string;
+    teamStatus?: string;
+    teamMemberId?: string;
+    testimonialStatus?: string;
+    testimonialId?: string;
+  };
 }) {
   const { siteSettings, activeBanner, leads, banners, teamMembers, testimonials, errors } = await getAdminData();
   const visibleErrors = Object.values(errors).filter(Boolean);
@@ -245,6 +300,8 @@ export default async function AdminDashboardPage({
   const savedBannerId = searchParams?.bannerId;
   const teamStatus = searchParams?.teamStatus;
   const savedTeamMemberId = searchParams?.teamMemberId;
+  const testimonialStatus = searchParams?.testimonialStatus;
+  const savedTestimonialId = searchParams?.testimonialId;
 
   return (
     <main className="admin-shell">
@@ -486,20 +543,75 @@ export default async function AdminDashboardPage({
           </div>
         </article>
 
-        <article className="admin-card">
+        <article className="admin-card admin-card-wide" id="testimonials">
           <div className="admin-card-header">
             <div>
               <p className="admin-kicker">Feedback</p>
-              <h2>Testimonials</h2>
+              <h2>Edit testimonials</h2>
             </div>
           </div>
-          <div className="admin-list">
+          {testimonialStatus === "error" ? (
+            <div className="admin-inline-alert" role="alert">
+              <strong>Testimonial could not be saved.</strong>
+              <span>Please check the required client name and quote fields.</span>
+            </div>
+          ) : null}
+          <div className="admin-form-list">
             {testimonials.map((testimonial) => (
-              <div key={testimonial.id}>
-                <strong>{testimonial.client_name}</strong>
-                <span>{testimonial.context || "No context"}</span>
-                <small>{testimonial.is_published ? "Published" : "Draft"}</small>
-              </div>
+              <form className="admin-form-card" action={updateTestimonial} id={`testimonial-${testimonial.id}`} key={testimonial.id}>
+                <input name="testimonialId" type="hidden" value={testimonial.id} />
+                <div className="admin-form-grid">
+                  <label>
+                    Client name
+                    <input name="clientName" type="text" defaultValue={testimonial.client_name} required />
+                  </label>
+                  <label>
+                    Context
+                    <input name="context" type="text" defaultValue={testimonial.context || ""} placeholder="Scottsdale purchase" />
+                  </label>
+                  <label>
+                    Scope
+                    <select name="scope" defaultValue={testimonial.scope}>
+                      <option value="team">Team</option>
+                      <option value="individual">Individual agent</option>
+                    </select>
+                  </label>
+                  <label>
+                    Assigned team member
+                    <select name="teamMemberId" defaultValue={testimonial.team_member_id || ""}>
+                      <option value="">No individual assignment</option>
+                      {teamMembers.map((member) => (
+                        <option value={member.id} key={member.id}>{member.full_name}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Rating
+                    <input name="rating" type="number" defaultValue={testimonial.rating || ""} min="1" max="5" step="1" />
+                  </label>
+                </div>
+                <label>
+                  Quote
+                  <textarea name="quote" defaultValue={testimonial.quote} rows={3} required></textarea>
+                </label>
+                <div className="admin-checkbox-row">
+                  <label className="admin-checkbox">
+                    <input name="isPublished" type="checkbox" defaultChecked={testimonial.is_published} />
+                    Published on site
+                  </label>
+                  <label className="admin-checkbox">
+                    <input name="isFeatured" type="checkbox" defaultChecked={testimonial.is_featured} />
+                    Featured first
+                  </label>
+                </div>
+                <div className="admin-form-footer">
+                  <small>{testimonial.is_published ? "Currently published" : "Currently draft"} Â· {testimonial.scope}</small>
+                  {testimonialStatus === "saved" && savedTestimonialId === testimonial.id ? (
+                    <span className="admin-save-confirmation" role="status">Saved successfully</span>
+                  ) : null}
+                  <button className="admin-save-button" type="submit">Save testimonial</button>
+                </div>
+              </form>
             ))}
           </div>
         </article>
