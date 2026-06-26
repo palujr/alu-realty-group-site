@@ -4,6 +4,7 @@ import { useEffect } from "react";
 
 const statusParams = [
   "siteStatus",
+  "siteSection",
   "bannerStatus",
   "bannerId",
   "leadStatus",
@@ -31,7 +32,7 @@ export function AdminStatusCleanup({ active }: { active: boolean }) {
       document.querySelectorAll("[data-admin-status='saved']").forEach((element) => {
         element.setAttribute("hidden", "true");
       });
-    }, 6000);
+    }, 7000);
 
     return () => window.clearTimeout(timeout);
   }, [active]);

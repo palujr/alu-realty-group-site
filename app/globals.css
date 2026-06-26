@@ -776,6 +776,9 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
 .admin-inline-alert span {
   color: var(--muted);
 }
+[data-admin-status="saved"][hidden] {
+  display: none !important;
+}
 .admin-form-list {
   display: grid;
   gap: 10px;
