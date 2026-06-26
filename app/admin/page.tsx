@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getActiveSiteBanner, getSiteSettings } from "@/lib/site-settings";
 import { AdminStatusCleanup } from "./AdminStatusCleanup";
+import { BrandColorField } from "./BrandColorField";
 
 export const revalidate = 0;
 export const dynamic = "force-dynamic";
@@ -138,6 +139,12 @@ function truncateText(value?: string | null, maxLength = 86) {
 function asOptionalString(value: FormDataEntryValue | null) {
   const stringValue = value?.toString().trim() || "";
   return stringValue || null;
+}
+
+function asHexColor(value: FormDataEntryValue | null, fallback: string) {
+  const stringValue = value?.toString().trim() || "";
+  const withHash = stringValue.startsWith("#") ? stringValue : `#${stringValue}`;
+  return /^#[0-9a-fA-F]{6}$/.test(withHash) ? withHash.toLowerCase() : fallback;
 }
 
 function asSpecialtyArray(value: FormDataEntryValue | null) {
@@ -320,8 +327,8 @@ async function updateSiteSettings(formData: FormData) {
       promo_eyebrow: asOptionalString(formData.get("promoEyebrow")),
       promo_headline: asOptionalString(formData.get("promoHeadline")),
       promo_body: asOptionalString(formData.get("promoBody")),
-      brand_primary: formData.get("brandPrimary")?.toString().trim() || "#17221f",
-      brand_accent: formData.get("brandAccent")?.toString().trim() || "#d9784f",
+      brand_primary: asHexColor(formData.get("brandPrimary"), "#17221f"),
+      brand_accent: asHexColor(formData.get("brandAccent"), "#d9784f"),
       homepage_sections: homepageSections,
       lead_routing: leadRouting,
       updated_at: new Date().toISOString()
@@ -942,14 +949,8 @@ export default async function AdminDashboardPage({
                   Upload team logo
                   <input name="teamLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
                 </label>
-                <label className="admin-color-field">
-                  Primary brand color
-                  <input name="brandPrimary" type="color" defaultValue={siteSettings.brandPrimary} />
-                </label>
-                <label className="admin-color-field">
-                  Accent brand color
-                  <input name="brandAccent" type="color" defaultValue={siteSettings.brandAccent} />
-                </label>
+                <BrandColorField label="Primary brand color" name="brandPrimary" defaultValue={siteSettings.brandPrimary} />
+                <BrandColorField label="Accent brand color" name="brandAccent" defaultValue={siteSettings.brandAccent} />
               </div>
               <label>
                 Lead notification emails
