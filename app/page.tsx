@@ -82,12 +82,14 @@ export default async function HomePage() {
     <>
       <style dangerouslySetInnerHTML={{
         __html: `
-          :root {
-            --ink: ${siteSettings.brandPrimary};
-            --accent: ${siteSettings.brandAccent};
-          }
-        `
-      }} />
+            :root {
+             --ink: ${siteSettings.brandPrimary};
+             --accent: ${siteSettings.brandAccent};
+             --header-footer: ${siteSettings.brandHeaderFooter};
+             --section-background: ${siteSettings.brandSectionBackground};
+            }
+          `
+        }} />
       <div className="announcement">
         <span>Market brief</span>
         Scottsdale inventory is up 8.4% month over month

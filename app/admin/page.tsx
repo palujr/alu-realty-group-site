@@ -718,7 +718,9 @@ async function updateSiteSettings(formData: FormData) {
       broker_logo_url: brokerLogoUrl,
       team_logo_url: teamLogoUrl,
       brand_primary: asHexColor(formData.get("brandPrimary"), currentSiteSettings.brandPrimary),
-      brand_accent: asHexColor(formData.get("brandAccent"), currentSiteSettings.brandAccent)
+      brand_accent: asHexColor(formData.get("brandAccent"), currentSiteSettings.brandAccent),
+      brand_header_footer: asHexColor(formData.get("brandHeaderFooter"), currentSiteSettings.brandHeaderFooter),
+      brand_section_background: asHexColor(formData.get("brandSectionBackground"), currentSiteSettings.brandSectionBackground)
     });
   } else if (siteSection === "homepage-photo") {
     let heroImageUrl = asOptionalString(formData.get("heroImageUrl"));
@@ -1645,6 +1647,8 @@ export default async function AdminDashboardPage({
                   </label>
                   <BrandColorField label="Primary brand color" name="brandPrimary" defaultValue={siteSettings.brandPrimary} />
                   <BrandColorField label="Accent brand color" name="brandAccent" defaultValue={siteSettings.brandAccent} />
+                  <BrandColorField label="Header/footer color" name="brandHeaderFooter" defaultValue={siteSettings.brandHeaderFooter} />
+                  <BrandColorField label="Section/card background color" name="brandSectionBackground" defaultValue={siteSettings.brandSectionBackground} />
                 </div>
                 <div className="admin-property-image-grid admin-branding-media-grid">
                   <div className="admin-property-image-preview admin-branding-preview">

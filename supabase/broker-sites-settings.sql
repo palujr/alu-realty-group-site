@@ -22,6 +22,8 @@ create table if not exists public.broker_sites (
   promo_body text,
   brand_primary text,
   brand_accent text,
+  brand_header_footer text,
+  brand_section_background text,
   homepage_sections jsonb not null default '{}',
   lead_routing jsonb not null default '{}',
   is_active boolean not null default true,
@@ -40,6 +42,12 @@ alter table public.broker_sites
 
 alter table public.broker_sites
   add column if not exists hero_image_url text;
+
+alter table public.broker_sites
+  add column if not exists brand_header_footer text;
+
+alter table public.broker_sites
+  add column if not exists brand_section_background text;
 
 alter table public.broker_sites enable row level security;
 
@@ -74,6 +82,8 @@ insert into public.broker_sites (
   promo_body,
   brand_primary,
   brand_accent,
+  brand_header_footer,
+  brand_section_background,
   homepage_sections,
   lead_routing
 )
@@ -101,6 +111,8 @@ that feels like yours.',
   'Honoring the spirit of July 4th and the communities we call home.',
   '#17221f',
   '#d9784f',
+  '#1d2b27',
+  '#f5f1e8',
   '{
     "propertiesEyebrow": "CURATED FOR YOU",
     "propertiesHeadline": "Homes worth a closer look.",
@@ -137,4 +149,6 @@ that feels like yours.',
 on conflict (slug) do update set
   homepage_sections = public.broker_sites.homepage_sections || excluded.homepage_sections,
   lead_routing = public.broker_sites.lead_routing || excluded.lead_routing,
+  brand_header_footer = coalesce(public.broker_sites.brand_header_footer, excluded.brand_header_footer),
+  brand_section_background = coalesce(public.broker_sites.brand_section_background, excluded.brand_section_background),
   updated_at = now();
