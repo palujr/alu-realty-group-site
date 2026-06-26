@@ -22,6 +22,24 @@ function parseEmailList(value?: string) {
     .filter(Boolean);
 }
 
+function uniqueValues(values: string[]) {
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+}
+
+function uniqueEmails(values: string[]) {
+  const seen = new Set<string>();
+  return values.filter((value) => {
+    const normalized = value.trim().toLowerCase();
+
+    if (!normalized || seen.has(normalized)) {
+      return false;
+    }
+
+    seen.add(normalized);
+    return true;
+  });
+}
+
 function escapeHtml(value?: string | null) {
   return (value || "")
     .replace(/&/g, "&amp;")
@@ -100,11 +118,9 @@ export async function POST(request: Request) {
   const resendFromEmail = process.env.RESEND_FROM_EMAIL || siteSettings.resendFromEmail;
   const leadReplyToEmail = process.env.LEAD_REPLY_TO_EMAIL || siteSettings.leadReplyToEmail;
   const envLeadNotificationEmails = parseEmailList(process.env.LEAD_NOTIFICATION_EMAILS);
-  const leadNotificationEmails = envLeadNotificationEmails.length
-    ? envLeadNotificationEmails
-    : routing.valuationNotificationEmails.length
-      ? routing.valuationNotificationEmails
-      : routing.defaultNotificationEmails;
+  const manualLeadNotificationEmails = routing.valuationNotificationEmails.length
+    ? routing.valuationNotificationEmails
+    : routing.defaultNotificationEmails;
 
   if (!email || !propertyAddress) {
     return NextResponse.json(
@@ -116,17 +132,34 @@ export async function POST(request: Request) {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
   const assignedTeamMemberSlug = routing.valuationAssignedTeamMemberSlug || routing.defaultAssignedTeamMemberSlug;
   let assignedTeamMemberId: string | null = null;
+  let teamMemberNotificationEmails: string[] = [];
 
-  if (assignedTeamMemberSlug) {
-    const { data: assignedTeamMember } = await supabase
+  const notificationTeamMemberSlugs = routing.valuationNotificationTeamMemberSlugs.length
+    ? routing.valuationNotificationTeamMemberSlugs
+    : routing.defaultNotificationTeamMemberSlugs;
+  const routingTeamMemberSlugs = uniqueValues([
+    assignedTeamMemberSlug,
+    ...notificationTeamMemberSlugs
+  ]);
+
+  if (routingTeamMemberSlugs.length) {
+    const { data: routingTeamMembers } = await supabase
       .from("team_members")
-      .select("id")
-      .eq("slug", assignedTeamMemberSlug)
-      .eq("is_active", true)
-      .maybeSingle();
+      .select("id, slug, email")
+      .in("slug", routingTeamMemberSlugs)
+      .eq("is_active", true);
 
-    assignedTeamMemberId = assignedTeamMember?.id || null;
+    assignedTeamMemberId = routingTeamMembers?.find((member) => member.slug === assignedTeamMemberSlug)?.id || null;
+    teamMemberNotificationEmails = (routingTeamMembers || [])
+      .map((member) => member.email)
+      .filter(Boolean) as string[];
   }
+
+  const leadNotificationEmails = uniqueEmails([
+    ...envLeadNotificationEmails,
+    ...manualLeadNotificationEmails,
+    ...teamMemberNotificationEmails
+  ]);
 
   const { error } = await supabase.from("lead_submissions").insert({
     lead_type: "valuation",

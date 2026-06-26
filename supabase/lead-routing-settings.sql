@@ -6,6 +6,8 @@ set
   lead_routing = lead_routing || '{
     "defaultNotificationEmails": ["phil@alurealtygroup.com"],
     "valuationNotificationEmails": ["phil@alurealtygroup.com"],
+    "defaultNotificationTeamMemberSlugs": [],
+    "valuationNotificationTeamMemberSlugs": [],
     "defaultAssignedTeamMemberSlug": "",
     "valuationAssignedTeamMemberSlug": "",
     "sendClientConfirmation": true,

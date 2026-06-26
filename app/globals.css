@@ -905,6 +905,14 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   letter-spacing: .08em;
   text-transform: uppercase;
 }
+.admin-form-card label small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.4;
+  text-transform: none;
+}
 .admin-form-card input,
 .admin-form-card textarea,
 .admin-form-card select {
@@ -921,6 +929,9 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
 .admin-form-card textarea {
   resize: vertical;
   line-height: 1.5;
+}
+.admin-form-card select[multiple] {
+  min-height: 116px;
 }
 .admin-form-card input:focus,
 .admin-form-card textarea:focus,

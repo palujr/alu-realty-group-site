@@ -263,6 +263,8 @@ that feels like yours.',
   '{
     "defaultNotificationEmails": ["phil@alurealtygroup.com"],
     "valuationNotificationEmails": ["phil@alurealtygroup.com"],
+    "defaultNotificationTeamMemberSlugs": [],
+    "valuationNotificationTeamMemberSlugs": [],
     "defaultAssignedTeamMemberSlug": "",
     "valuationAssignedTeamMemberSlug": "",
     "sendClientConfirmation": true,

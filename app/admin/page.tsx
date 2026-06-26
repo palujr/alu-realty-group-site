@@ -161,6 +161,12 @@ function asEmailArray(value: FormDataEntryValue | null) {
     .filter(Boolean);
 }
 
+function asFormStringArray(values: FormDataEntryValue[]) {
+  return values
+    .map((value) => value.toString().trim())
+    .filter(Boolean);
+}
+
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -287,6 +293,8 @@ async function updateSiteSettings(formData: FormData) {
   const leadRouting = {
     defaultNotificationEmails: safeLeadNotificationEmails,
     valuationNotificationEmails: valuationNotificationEmails.length ? valuationNotificationEmails : safeLeadNotificationEmails,
+    defaultNotificationTeamMemberSlugs: asFormStringArray(formData.getAll("defaultNotificationTeamMemberSlugs")),
+    valuationNotificationTeamMemberSlugs: asFormStringArray(formData.getAll("valuationNotificationTeamMemberSlugs")),
     defaultAssignedTeamMemberSlug: formData.get("defaultAssignedTeamMemberSlug")?.toString().trim() || "",
     valuationAssignedTeamMemberSlug: formData.get("valuationAssignedTeamMemberSlug")?.toString().trim() || "",
     sendClientConfirmation: formData.get("sendClientConfirmation") === "on",
@@ -992,6 +1000,19 @@ export default async function AdminDashboardPage({
                     </select>
                   </label>
                   <label>
+                    Default notification team members
+                    <select
+                      name="defaultNotificationTeamMemberSlugs"
+                      multiple
+                      defaultValue={siteSettings.leadRouting.defaultNotificationTeamMemberSlugs}
+                    >
+                      {teamMembers.map((member) => (
+                        <option key={member.id} value={member.slug}>{member.full_name}</option>
+                      ))}
+                    </select>
+                    <small>Hold Ctrl while clicking to select more than one.</small>
+                  </label>
+                  <label>
                     Valuation assigned team member
                     <select name="valuationAssignedTeamMemberSlug" defaultValue={siteSettings.leadRouting.valuationAssignedTeamMemberSlug}>
                       <option value="">Use default assignment</option>
@@ -999,6 +1020,19 @@ export default async function AdminDashboardPage({
                         <option key={member.id} value={member.slug}>{member.full_name}</option>
                       ))}
                     </select>
+                  </label>
+                  <label>
+                    Valuation notification team members
+                    <select
+                      name="valuationNotificationTeamMemberSlugs"
+                      multiple
+                      defaultValue={siteSettings.leadRouting.valuationNotificationTeamMemberSlugs}
+                    >
+                      {teamMembers.map((member) => (
+                        <option key={member.id} value={member.slug}>{member.full_name}</option>
+                      ))}
+                    </select>
+                    <small>Leave blank to use the default notification team.</small>
                   </label>
                 </div>
                 <div className="admin-checkbox-row">

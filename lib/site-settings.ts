@@ -46,6 +46,8 @@ export type SiteSettings = {
   leadRouting: {
     defaultNotificationEmails: string[];
     valuationNotificationEmails: string[];
+    defaultNotificationTeamMemberSlugs: string[];
+    valuationNotificationTeamMemberSlugs: string[];
     defaultAssignedTeamMemberSlug: string;
     valuationAssignedTeamMemberSlug: string;
     sendClientConfirmation: boolean;
@@ -87,6 +89,8 @@ export const defaultHomepageSections: SiteSettings["homepageSections"] = {
 export const defaultLeadRouting: SiteSettings["leadRouting"] = {
   defaultNotificationEmails: ["phil@alurealtygroup.com"],
   valuationNotificationEmails: ["phil@alurealtygroup.com"],
+  defaultNotificationTeamMemberSlugs: [],
+  valuationNotificationTeamMemberSlugs: [],
   defaultAssignedTeamMemberSlug: "",
   valuationAssignedTeamMemberSlug: "",
   sendClientConfirmation: true,
