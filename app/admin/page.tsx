@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getActiveSiteBanner, getSiteSettings } from "@/lib/site-settings";
+import { AdminLeadFormReset } from "./AdminLeadFormReset";
 import { AdminStatusCleanup } from "./AdminStatusCleanup";
 import { BrandColorField } from "./BrandColorField";
 
@@ -137,6 +138,16 @@ const followUpFilterOptions = [
   { value: "none", label: "No follow-up" }
 ];
 
+const defaultAdminTimeZone = "America/Phoenix";
+
+const timeZoneOptions = [
+  { value: "America/Phoenix", label: "Mountain Standard Time - Arizona" },
+  { value: "America/Denver", label: "Mountain Time" },
+  { value: "America/Los_Angeles", label: "Pacific Time" },
+  { value: "America/Chicago", label: "Central Time" },
+  { value: "America/New_York", label: "Eastern Time" }
+];
+
 const leadActivityTypeOptions = [
   { value: "note", label: "Note" },
   { value: "call", label: "Call" },
@@ -151,40 +162,97 @@ const teamPhotoBucket = "team-photos";
 const siteLogoBucket = "site-logos";
 const maxAdminImageSize = 5 * 1024 * 1024;
 
-function formatDate(value?: string | null) {
+function formatDate(value?: string | null, timeZone = defaultAdminTimeZone) {
   if (!value) {
     return "Not set";
   }
 
   return new Intl.DateTimeFormat("en-US", {
+    timeZone,
     month: "short",
     day: "numeric",
     year: "numeric"
   }).format(new Date(value));
 }
 
-function formatDateTimeLocal(value?: string | null) {
+function getDateTimeLocalValue(value: Date, timeZone = defaultAdminTimeZone) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).formatToParts(value);
+  const partMap = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const hour = partMap.hour === "24" ? "00" : partMap.hour;
+
+  return `${partMap.year}-${partMap.month}-${partMap.day}T${hour}:${partMap.minute}`;
+}
+
+function formatDateTimeLocal(value?: string | null, timeZone = defaultAdminTimeZone) {
   if (!value) {
     return "";
   }
 
-  const date = new Date(value);
-  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  return localDate.toISOString().slice(0, 16);
+  return getDateTimeLocalValue(new Date(value), timeZone);
 }
 
-function formatDateTime(value?: string | null) {
+function formatDateTime(value?: string | null, timeZone = defaultAdminTimeZone) {
   if (!value) {
     return "Not set";
   }
 
   return new Intl.DateTimeFormat("en-US", {
+    timeZone,
     month: "short",
     day: "numeric",
     year: "numeric",
     hour: "numeric",
     minute: "2-digit"
   }).format(new Date(value));
+}
+
+function getTimeZoneOffsetMinutes(date: Date, timeZone = defaultAdminTimeZone) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  }).formatToParts(date);
+  const partMap = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const hour = partMap.hour === "24" ? "00" : partMap.hour;
+  const asUtc = Date.UTC(
+    Number(partMap.year),
+    Number(partMap.month) - 1,
+    Number(partMap.day),
+    Number(hour),
+    Number(partMap.minute),
+    Number(partMap.second)
+  );
+
+  return (asUtc - date.getTime()) / 60000;
+}
+
+function dateTimeLocalToIso(value: string, timeZone = defaultAdminTimeZone) {
+  const [datePart, timePart = "00:00"] = value.split("T");
+  const [year, month, day] = datePart.split("-").map(Number);
+  const [hour, minute] = timePart.split(":").map(Number);
+  const utcGuess = new Date(Date.UTC(year, month - 1, day, hour || 0, minute || 0));
+  const offsetMinutes = getTimeZoneOffsetMinutes(utcGuess, timeZone);
+
+  return new Date(utcGuess.getTime() - offsetMinutes * 60000).toISOString();
+}
+
+function addDaysToDateInput(dateInput: string, days: number) {
+  const [year, month, day] = dateInput.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + days));
+  return date.toISOString().slice(0, 10);
 }
 
 function getAssignedName(lead: AdminLead) {
@@ -273,12 +341,12 @@ function getLeadActivityTypeLabel(value?: string | null) {
   return leadActivityTypeOptions.find((option) => option.value === value)?.label || "Note";
 }
 
-function getLeadFollowUpLabel(lead: AdminLead) {
+function getLeadFollowUpLabel(lead: AdminLead, timeZone = defaultAdminTimeZone) {
   if (!lead.next_follow_up_at) {
     return "No follow-up";
   }
 
-  return `Next: ${formatDate(lead.next_follow_up_at)}`;
+  return `Next: ${formatDate(lead.next_follow_up_at, timeZone)}`;
 }
 
 function getSearchParamValue(
@@ -327,9 +395,14 @@ function normalizeLeadActivityType(value: FormDataEntryValue | null) {
   return allowedTypes.includes(activityType) ? activityType : "note";
 }
 
-function asOptionalDateTime(value: FormDataEntryValue | null) {
+function normalizeAdminTimeZone(value: FormDataEntryValue | null) {
+  const timeZone = value?.toString() || defaultAdminTimeZone;
+  return timeZoneOptions.some((option) => option.value === timeZone) ? timeZone : defaultAdminTimeZone;
+}
+
+function asOptionalDateTime(value: FormDataEntryValue | null, timeZone = defaultAdminTimeZone) {
   const stringValue = value?.toString().trim() || "";
-  return stringValue ? new Date(stringValue).toISOString() : null;
+  return stringValue ? dateTimeLocalToIso(stringValue, timeZone) : null;
 }
 
 async function uploadAdminImage(
@@ -478,6 +551,7 @@ async function updateSiteSettings(formData: FormData) {
       promo_body: asOptionalString(formData.get("promoBody")),
       brand_primary: asHexColor(formData.get("brandPrimary"), "#17221f"),
       brand_accent: asHexColor(formData.get("brandAccent"), "#d9784f"),
+      time_zone: normalizeAdminTimeZone(formData.get("timeZone")),
       homepage_sections: homepageSections,
       lead_routing: leadRouting,
       updated_at: new Date().toISOString()
@@ -497,6 +571,7 @@ async function createLead(formData: FormData) {
   "use server";
 
   const adminSupabase = createAdminClient();
+  const siteSettings = await getSiteSettings();
 
   if (!adminSupabase) {
     redirect("/admin?leadStatus=error#new-lead");
@@ -524,9 +599,9 @@ async function createLead(formData: FormData) {
       contact_status: normalizeLeadStatus(formData.get("contactStatus")),
       preferred_contact_method: normalizeContactMethod(formData.get("preferredContactMethod")),
       contact_notes: asOptionalString(formData.get("contactNotes")),
-      last_contacted_at: asOptionalDateTime(formData.get("lastContactedAt")),
+      last_contacted_at: asOptionalDateTime(formData.get("lastContactedAt"), siteSettings.timeZone),
       lead_priority: normalizeLeadPriority(formData.get("leadPriority")),
-      next_follow_up_at: asOptionalDateTime(formData.get("nextFollowUpAt")),
+      next_follow_up_at: asOptionalDateTime(formData.get("nextFollowUpAt"), siteSettings.timeZone),
       lead_source_detail: asOptionalString(formData.get("leadSourceDetail"))
     })
     .select("id")
@@ -544,6 +619,7 @@ async function updateLead(formData: FormData) {
   "use server";
 
   const adminSupabase = createAdminClient();
+  const siteSettings = await getSiteSettings();
 
   if (!adminSupabase) {
     redirect("/admin?leadStatus=error#lead-inbox");
@@ -571,9 +647,9 @@ async function updateLead(formData: FormData) {
       contact_status: normalizeLeadStatus(formData.get("contactStatus")),
       preferred_contact_method: normalizeContactMethod(formData.get("preferredContactMethod")),
       contact_notes: asOptionalString(formData.get("contactNotes")),
-      last_contacted_at: asOptionalDateTime(formData.get("lastContactedAt")),
+      last_contacted_at: asOptionalDateTime(formData.get("lastContactedAt"), siteSettings.timeZone),
       lead_priority: normalizeLeadPriority(formData.get("leadPriority")),
-      next_follow_up_at: asOptionalDateTime(formData.get("nextFollowUpAt")),
+      next_follow_up_at: asOptionalDateTime(formData.get("nextFollowUpAt"), siteSettings.timeZone),
       lead_source_detail: asOptionalString(formData.get("leadSourceDetail"))
     })
     .eq("id", leadId);
@@ -590,6 +666,7 @@ async function createLeadActivity(formData: FormData) {
   "use server";
 
   const adminSupabase = createAdminClient();
+  const siteSettings = await getSiteSettings();
 
   if (!adminSupabase) {
     redirect("/admin?leadActivityStatus=error#lead-inbox");
@@ -597,9 +674,25 @@ async function createLeadActivity(formData: FormData) {
 
   const leadId = formData.get("leadId")?.toString();
   const summary = formData.get("activitySummary")?.toString().trim();
+  const outcome = formData.get("activityOutcome")?.toString().trim();
 
-  if (!leadId || !summary) {
+  if (!leadId || !summary || !outcome) {
     redirect("/admin?leadActivityStatus=error#lead-inbox");
+  }
+
+  const createdByTeamMemberIds = asFormStringArray(formData.getAll("createdByTeamMemberIds"));
+  let createdByName = asOptionalString(formData.get("createdByName"));
+
+  if (createdByTeamMemberIds.length) {
+    const { data } = await adminSupabase
+      .from("team_members")
+      .select("id, full_name")
+      .in("id", createdByTeamMemberIds);
+    const namesById = new Map((data || []).map((member) => [member.id, member.full_name]));
+    createdByName = createdByTeamMemberIds
+      .map((id) => namesById.get(id))
+      .filter(Boolean)
+      .join(", ") || createdByName;
   }
 
   const { error } = await adminSupabase
@@ -607,10 +700,10 @@ async function createLeadActivity(formData: FormData) {
     .insert({
       lead_id: leadId,
       activity_type: normalizeLeadActivityType(formData.get("activityType")),
-      activity_at: asOptionalDateTime(formData.get("activityAt")) || new Date().toISOString(),
+      activity_at: asOptionalDateTime(formData.get("activityAt"), siteSettings.timeZone) || new Date().toISOString(),
       summary,
-      outcome: asOptionalString(formData.get("activityOutcome")),
-      created_by_name: asOptionalString(formData.get("createdByName"))
+      outcome,
+      created_by_name: createdByName
     });
 
   if (error) {
@@ -619,6 +712,36 @@ async function createLeadActivity(formData: FormData) {
 
   revalidatePath("/admin");
   redirect(`/admin?leadActivityStatus=saved&leadId=${leadId}#lead-${leadId}`);
+}
+
+async function deleteLeadActivity(formData: FormData) {
+  "use server";
+
+  const adminSupabase = createAdminClient();
+
+  if (!adminSupabase) {
+    redirect("/admin?leadActivityStatus=error#lead-inbox");
+  }
+
+  const leadId = formData.get("leadId")?.toString();
+  const activityId = formData.get("activityId")?.toString();
+
+  if (!leadId || !activityId) {
+    redirect("/admin?leadActivityStatus=error#lead-inbox");
+  }
+
+  const { error } = await adminSupabase
+    .from("lead_activities")
+    .delete()
+    .eq("id", activityId)
+    .eq("lead_id", leadId);
+
+  if (error) {
+    redirect(`/admin?leadActivityStatus=error#lead-${leadId}`);
+  }
+
+  revalidatePath("/admin");
+  redirect(`/admin?leadActivityStatus=deleted&leadId=${leadId}#lead-${leadId}`);
 }
 
 async function createBannerCampaign(formData: FormData) {
@@ -908,10 +1031,9 @@ async function getAdminData(leadFilters: LeadFilters) {
   const adminDataClient = adminSupabase || supabase;
   const cleanLeadSearch = sanitizeLeadSearch(leadFilters.search);
   const now = new Date();
-  const startOfToday = new Date(now);
-  startOfToday.setHours(0, 0, 0, 0);
-  const startOfTomorrow = new Date(startOfToday);
-  startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+  const todayInSiteTime = getDateTimeLocalValue(now, siteSettings.timeZone).slice(0, 10);
+  const startOfTodayIso = dateTimeLocalToIso(`${todayInSiteTime}T00:00`, siteSettings.timeZone);
+  const startOfTomorrowIso = dateTimeLocalToIso(`${addDaysToDateInput(todayInSiteTime, 1)}T00:00`, siteSettings.timeZone);
 
   const [
     bannersResult,
@@ -967,8 +1089,8 @@ async function getAdminData(leadFilters: LeadFilters) {
           leadsQuery = leadsQuery.lt("next_follow_up_at", now.toISOString());
         } else if (leadFilters.followUp === "today") {
           leadsQuery = leadsQuery
-            .gte("next_follow_up_at", startOfToday.toISOString())
-            .lt("next_follow_up_at", startOfTomorrow.toISOString());
+            .gte("next_follow_up_at", startOfTodayIso)
+            .lt("next_follow_up_at", startOfTomorrowIso);
         } else if (leadFilters.followUp === "upcoming") {
           leadsQuery = leadsQuery.gte("next_follow_up_at", now.toISOString());
         }
@@ -1068,11 +1190,12 @@ export default async function AdminDashboardPage({
   const savedTeamMemberId = searchParams?.teamMemberId;
   const testimonialStatus = searchParams?.testimonialStatus;
   const savedTestimonialId = searchParams?.testimonialId;
-  const hasSavedStatus = siteStatus === "saved" || bannerStatus === "saved" || leadStatus === "saved" || leadActivityStatus === "saved" || teamStatus === "saved" || testimonialStatus === "saved";
+  const hasSavedStatus = siteStatus === "saved" || bannerStatus === "saved" || leadStatus === "saved" || leadActivityStatus === "saved" || leadActivityStatus === "deleted" || teamStatus === "saved" || testimonialStatus === "saved";
 
   return (
     <main className="admin-shell">
       <AdminStatusCleanup active={hasSavedStatus} />
+      <AdminLeadFormReset activitySaved={leadActivityStatus === "saved"} savedLeadId={savedLeadId} />
       <header className="admin-hero">
         <div>
           <p className="admin-kicker">Admin Dashboard</p>
@@ -1233,6 +1356,15 @@ export default async function AdminDashboardPage({
                   <label>
                     Resend sender email
                     <input name="resendFromEmail" type="text" defaultValue={siteSettings.resendFromEmail} />
+                  </label>
+                  <label>
+                    Admin time zone
+                    <select name="timeZone" defaultValue={siteSettings.timeZone}>
+                      {timeZoneOptions.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                    <small>Used for lead follow-up dates and activity timeline entries.</small>
                   </label>
                 </div>
                 <label>
@@ -1620,7 +1752,13 @@ export default async function AdminDashboardPage({
 
           <div className="admin-form-list">
             {leads.map((lead) => (
-              <details className="admin-edit-panel" id={`lead-${lead.id}`} key={lead.id} open={leadStatus === "saved" && savedLeadId === lead.id}>
+              <details
+                className="admin-edit-panel"
+                id={`lead-${lead.id}`}
+                key={lead.id}
+                open={savedLeadId === lead.id && (leadStatus === "saved" || leadActivityStatus === "saved" || leadActivityStatus === "deleted")}
+                data-reset-on-close="true"
+              >
                 <summary className="admin-summary-row">
                   <span>
                     <strong>{lead.property_address || "No property address"}</strong>
@@ -1629,7 +1767,7 @@ export default async function AdminDashboardPage({
                   <span>{getLeadTypeLabel(lead.lead_type)}</span>
                   <span>{getAssignedName(lead)}</span>
                   <span>{getLeadPriorityLabel(lead.lead_priority)} - {lead.contact_status || "new"}</span>
-                  <span>{getLeadFollowUpLabel(lead)}</span>
+                  <span>{getLeadFollowUpLabel(lead, siteSettings.timeZone)}</span>
                 </summary>
               <form className="admin-form-card" action={updateLead}>
                 <input name="leadId" type="hidden" value={lead.id} />
@@ -1638,7 +1776,7 @@ export default async function AdminDashboardPage({
                     <p className="admin-kicker">{lead.contact_status || "new"} {getLeadTypeLabel(lead.lead_type)}</p>
                     <h3>{lead.property_address || "No property address"}</h3>
                   </div>
-                  <span>{formatDate(lead.created_at)}</span>
+                  <span>{formatDate(lead.created_at, siteSettings.timeZone)}</span>
                 </div>
                 <div className="admin-form-grid">
                   <label>
@@ -1700,11 +1838,11 @@ export default async function AdminDashboardPage({
                   </label>
                   <label>
                     Last contacted
-                    <input name="lastContactedAt" type="datetime-local" defaultValue={formatDateTimeLocal(lead.last_contacted_at)} />
+                    <input name="lastContactedAt" type="datetime-local" defaultValue={formatDateTimeLocal(lead.last_contacted_at, siteSettings.timeZone)} />
                   </label>
                   <label>
                     Next follow-up
-                    <input name="nextFollowUpAt" type="datetime-local" defaultValue={formatDateTimeLocal(lead.next_follow_up_at)} />
+                    <input name="nextFollowUpAt" type="datetime-local" defaultValue={formatDateTimeLocal(lead.next_follow_up_at, siteSettings.timeZone)} />
                   </label>
                   <label>
                     Source detail
@@ -1720,10 +1858,11 @@ export default async function AdminDashboardPage({
                   <textarea name="contactNotes" rows={3} defaultValue={lead.contact_notes || ""}></textarea>
                 </label>
                 <div className="admin-form-footer">
-                  <small>Assigned to {getAssignedName(lead)} - Priority: {getLeadPriorityLabel(lead.lead_priority)} - Next follow-up: {formatDateTime(lead.next_follow_up_at)} - Source: {lead.lead_source_detail || lead.source_page || "website"}</small>
+                  <small>Assigned to {getAssignedName(lead)} - Priority: {getLeadPriorityLabel(lead.lead_priority)} - Next follow-up: {formatDateTime(lead.next_follow_up_at, siteSettings.timeZone)} - Source: {lead.lead_source_detail || lead.source_page || "website"}</small>
                   {leadStatus === "saved" && savedLeadId === lead.id ? (
                     <span className="admin-save-confirmation" data-admin-status="saved">Saved successfully</span>
                   ) : null}
+                  <button className="admin-secondary-button" type="reset">Reset changes</button>
                   <button className="admin-save-button" type="submit">Save lead</button>
                 </div>
               </form>
@@ -1740,19 +1879,22 @@ export default async function AdminDashboardPage({
                     <div className="admin-timeline-item" key={activity.id}>
                       <div>
                         <strong>{getLeadActivityTypeLabel(activity.activity_type)}</strong>
-                        <time>{formatDateTime(activity.activity_at)}</time>
+                        <time>{formatDateTime(activity.activity_at, siteSettings.timeZone)}</time>
                       </div>
                       <p>{activity.summary}</p>
-                      {activity.outcome || activity.created_by_name ? (
-                        <small>{activity.outcome || "No outcome noted"}{activity.created_by_name ? ` - ${activity.created_by_name}` : ""}</small>
-                      ) : null}
+                      <small>{activity.outcome || "No outcome noted"}{activity.created_by_name ? ` - ${activity.created_by_name}` : ""}</small>
+                      <form action={deleteLeadActivity}>
+                        <input name="leadId" type="hidden" value={lead.id} />
+                        <input name="activityId" type="hidden" value={activity.id} />
+                        <button className="admin-danger-link" type="submit">Delete entry</button>
+                      </form>
                     </div>
                   ))}
                   {!leadActivitiesByLeadId[lead.id]?.length ? (
                     <p className="admin-empty">No timeline activity has been added for this lead yet.</p>
                   ) : null}
                 </div>
-                <form className="admin-form-card admin-activity-form" action={createLeadActivity}>
+                <form className="admin-form-card admin-activity-form" action={createLeadActivity} data-activity-form={lead.id}>
                   <input name="leadId" type="hidden" value={lead.id} />
                   <div className="admin-form-grid">
                     <label>
@@ -1769,7 +1911,16 @@ export default async function AdminDashboardPage({
                     </label>
                     <label>
                       Added by
-                      <input name="createdByName" type="text" placeholder="Phil, Denise, etc." />
+                      <select name="createdByTeamMemberIds" multiple>
+                        {teamMembers.map((member) => (
+                          <option key={member.id} value={member.id}>{member.full_name}</option>
+                        ))}
+                      </select>
+                      <small>Hold Ctrl while clicking to select more than one.</small>
+                    </label>
+                    <label>
+                      Other added by
+                      <input name="createdByName" type="text" placeholder="Manual name if needed" />
                     </label>
                   </div>
                   <label>
@@ -1778,13 +1929,17 @@ export default async function AdminDashboardPage({
                   </label>
                   <label>
                     Outcome
-                    <input name="activityOutcome" type="text" placeholder="Left voicemail, meeting set, waiting for reply" />
+                    <input name="activityOutcome" type="text" placeholder="Left voicemail, meeting set, waiting for reply" required />
                   </label>
                   <div className="admin-form-footer">
                     <small>Leave activity date blank to use the current time.</small>
                     {leadActivityStatus === "saved" && savedLeadId === lead.id ? (
                       <span className="admin-save-confirmation" data-admin-status="saved" role="status">Activity added</span>
                     ) : null}
+                    {leadActivityStatus === "deleted" && savedLeadId === lead.id ? (
+                      <span className="admin-save-confirmation" data-admin-status="saved" role="status">Activity deleted</span>
+                    ) : null}
+                    <button className="admin-secondary-button" type="reset">Clear entry</button>
                     <button className="admin-save-button" type="submit">Add activity</button>
                   </div>
                 </form>

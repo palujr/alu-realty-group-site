@@ -8,6 +8,7 @@ create table if not exists public.broker_sites (
   team_logo_url text,
   contact_email text,
   contact_phone text,
+  time_zone text not null default 'America/Phoenix',
   lead_notification_emails text[] not null default '{}',
   resend_from_email text,
   lead_reply_to_email text,
@@ -33,6 +34,9 @@ alter table public.broker_sites
 alter table public.broker_sites
   add column if not exists lead_routing jsonb not null default '{}';
 
+alter table public.broker_sites
+  add column if not exists time_zone text not null default 'America/Phoenix';
+
 alter table public.broker_sites enable row level security;
 
 grant usage on schema public to anon, authenticated;
@@ -52,6 +56,7 @@ insert into public.broker_sites (
   team_logo_url,
   contact_email,
   contact_phone,
+  time_zone,
   lead_notification_emails,
   resend_from_email,
   lead_reply_to_email,
@@ -76,6 +81,7 @@ values (
   '/assets/alu-realty-group-logo.png',
   'phil@alurealtygroup.com',
   null,
+  'America/Phoenix',
   array['phil@alurealtygroup.com'],
   'Alu Realty Group <noreply@contact.alurealtygroup.com>',
   'phil@alurealtygroup.com',

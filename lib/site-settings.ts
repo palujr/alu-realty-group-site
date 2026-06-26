@@ -9,6 +9,7 @@ export type SiteSettings = {
   teamLogoUrl: string;
   contactEmail: string;
   contactPhone: string;
+  timeZone: string;
   leadNotificationEmails: string[];
   resendFromEmail: string;
   leadReplyToEmail: string;
@@ -106,6 +107,7 @@ export const defaultSiteSettings: SiteSettings = {
   teamLogoUrl: "/assets/alu-realty-group-logo.png",
   contactEmail: "phil@alurealtygroup.com",
   contactPhone: "",
+  timeZone: "America/Phoenix",
   leadNotificationEmails: ["phil@alurealtygroup.com"],
   resendFromEmail: "Alu Realty Group <noreply@contact.alurealtygroup.com>",
   leadReplyToEmail: "phil@alurealtygroup.com",
@@ -134,6 +136,7 @@ type BrokerSiteRow = {
   team_logo_url: string | null;
   contact_email: string | null;
   contact_phone: string | null;
+  time_zone: string | null;
   lead_notification_emails: string[] | null;
   resend_from_email: string | null;
   lead_reply_to_email: string | null;
@@ -193,6 +196,7 @@ function mapBrokerSite(row: BrokerSiteRow): SiteSettings {
     teamLogoUrl: row.team_logo_url || defaultSiteSettings.teamLogoUrl,
     contactEmail: row.contact_email || defaultSiteSettings.contactEmail,
     contactPhone: row.contact_phone || defaultSiteSettings.contactPhone,
+    timeZone: row.time_zone || defaultSiteSettings.timeZone,
     leadNotificationEmails: row.lead_notification_emails?.length
       ? row.lead_notification_emails
       : defaultSiteSettings.leadNotificationEmails,
@@ -229,6 +233,7 @@ export async function getSiteSettings(slug = "alu-realty-group"): Promise<SiteSe
       team_logo_url,
       contact_email,
       contact_phone,
+      time_zone,
       lead_notification_emails,
       resend_from_email,
       lead_reply_to_email,

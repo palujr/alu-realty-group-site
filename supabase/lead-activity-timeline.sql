@@ -6,7 +6,7 @@ create table if not exists public.lead_activities (
   ),
   activity_at timestamptz not null default now(),
   summary text not null,
-  outcome text,
+  outcome text not null,
   created_by_name text,
   created_at timestamptz not null default now()
 );

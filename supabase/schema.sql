@@ -10,6 +10,7 @@ create table if not exists public.broker_sites (
   team_logo_url text,
   contact_email text,
   contact_phone text,
+  time_zone text not null default 'America/Phoenix',
   lead_notification_emails text[] not null default '{}',
   resend_from_email text,
   lead_reply_to_email text,
@@ -115,7 +116,7 @@ create table if not exists public.lead_activities (
   ),
   activity_at timestamptz not null default now(),
   summary text not null,
-  outcome text,
+  outcome text not null,
   created_by_name text,
   created_at timestamptz not null default now()
 );
