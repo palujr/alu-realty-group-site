@@ -1518,17 +1518,17 @@ export default async function AdminDashboardPage({
   const hasLeadFilters = Boolean(leadFilters.search || leadFilters.type || leadFilters.status || leadFilters.assigned || leadFilters.priority || leadFilters.followUp);
   const { siteSettings, activeBanner, leads, leadActivitiesByLeadId, banners, teamMembers, teamMemberOptions, testimonials, pagination, errors } = await getAdminData(leadFilters, adminPages);
   const visibleErrors = Object.values(errors).filter(Boolean);
-  const siteStatus = searchParams?.siteStatus;
-  const savedSiteSection = searchParams?.siteSection;
-  const bannerStatus = searchParams?.bannerStatus;
-  const savedBannerId = searchParams?.bannerId;
-  const leadStatus = searchParams?.leadStatus;
-  const leadActivityStatus = searchParams?.leadActivityStatus;
-  const savedLeadId = searchParams?.leadId;
-  const teamStatus = searchParams?.teamStatus;
-  const savedTeamMemberId = searchParams?.teamMemberId;
-  const testimonialStatus = searchParams?.testimonialStatus;
-  const savedTestimonialId = searchParams?.testimonialId;
+  const siteStatus = getSearchParamValue(searchParams, "siteStatus");
+  const savedSiteSection = getSearchParamValue(searchParams, "siteSection");
+  const bannerStatus = getSearchParamValue(searchParams, "bannerStatus");
+  const savedBannerId = getSearchParamValue(searchParams, "bannerId");
+  const leadStatus = getSearchParamValue(searchParams, "leadStatus");
+  const leadActivityStatus = getSearchParamValue(searchParams, "leadActivityStatus");
+  const savedLeadId = getSearchParamValue(searchParams, "leadId");
+  const teamStatus = getSearchParamValue(searchParams, "teamStatus");
+  const savedTeamMemberId = getSearchParamValue(searchParams, "teamMemberId");
+  const testimonialStatus = getSearchParamValue(searchParams, "testimonialStatus");
+  const savedTestimonialId = getSearchParamValue(searchParams, "testimonialId");
   const hasSavedStatus = siteStatus === "saved" || bannerStatus === "saved" || leadStatus === "saved" || leadActivityStatus === "saved" || leadActivityStatus === "updated" || leadActivityStatus === "deleted" || teamStatus === "saved" || testimonialStatus === "saved";
 
   return (

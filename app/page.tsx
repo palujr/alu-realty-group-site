@@ -401,8 +401,8 @@ export default async function HomePage() {
       </main>
 
       <footer>
-        <a className="brand fathom-brand footer-brand" href="#top" aria-label="Fathom Realty Elite home">
-          <img src="/assets/fathom-realty-elite-logo.png" alt="Fathom Realty Elite" />
+        <a className="brand fathom-brand footer-brand" href="#top" aria-label={`${siteSettings.brokerageName} home`}>
+          <img src={siteSettings.brokerLogoUrl} alt={siteSettings.brokerageName} />
         </a>
         <p>A modern real estate experience for Arizona buyers, sellers, and investors.</p>
         <div className="footer-links"><a href="#properties">Properties</a><a href="#rates">Mortgage</a><a href="#team">Team</a><a href="#sell">Contact</a></div>
