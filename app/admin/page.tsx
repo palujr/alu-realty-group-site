@@ -1001,17 +1001,6 @@ export default async function AdminDashboardPage({
                       </select>
                     </label>
                     <label>
-                      Valuation assigned team member
-                      <select name="valuationAssignedTeamMemberSlug" defaultValue={siteSettings.leadRouting.valuationAssignedTeamMemberSlug}>
-                        <option value="">Use default assignment</option>
-                        {teamMembers.map((member) => (
-                          <option key={member.id} value={member.slug}>{member.full_name}</option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                  <div className="admin-routing-stack">
-                    <label>
                       Default notification team members
                       <select
                         name="defaultNotificationTeamMemberSlugs"
@@ -1023,6 +1012,17 @@ export default async function AdminDashboardPage({
                         ))}
                       </select>
                       <small>Hold Ctrl while clicking to select more than one.</small>
+                    </label>
+                  </div>
+                  <div className="admin-routing-stack">
+                    <label>
+                      Valuation assigned team member
+                      <select name="valuationAssignedTeamMemberSlug" defaultValue={siteSettings.leadRouting.valuationAssignedTeamMemberSlug}>
+                        <option value="">Use default assignment</option>
+                        {teamMembers.map((member) => (
+                          <option key={member.id} value={member.slug}>{member.full_name}</option>
+                        ))}
+                      </select>
                     </label>
                     <label>
                       Valuation notification team members
