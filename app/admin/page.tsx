@@ -31,6 +31,17 @@ type AdminLead = {
   team_members: { full_name: string | null } | { full_name: string | null }[] | null;
 };
 
+type AdminLeadActivity = {
+  id: string;
+  lead_id: string;
+  activity_type: string;
+  activity_at: string;
+  summary: string;
+  outcome: string | null;
+  created_by_name: string | null;
+  created_at: string;
+};
+
 type AdminBanner = {
   id: string;
   campaign_name: string;
@@ -124,6 +135,16 @@ const followUpFilterOptions = [
   { value: "today", label: "Due today" },
   { value: "upcoming", label: "Upcoming" },
   { value: "none", label: "No follow-up" }
+];
+
+const leadActivityTypeOptions = [
+  { value: "note", label: "Note" },
+  { value: "call", label: "Call" },
+  { value: "email", label: "Email" },
+  { value: "text", label: "Text" },
+  { value: "meeting", label: "Meeting" },
+  { value: "task", label: "Task" },
+  { value: "status_update", label: "Status update" }
 ];
 
 const teamPhotoBucket = "team-photos";
@@ -248,6 +269,10 @@ function getLeadPriorityLabel(value?: string | null) {
   return leadPriorityOptions.find((option) => option.value === value)?.label || "Normal";
 }
 
+function getLeadActivityTypeLabel(value?: string | null) {
+  return leadActivityTypeOptions.find((option) => option.value === value)?.label || "Note";
+}
+
 function getLeadFollowUpLabel(lead: AdminLead) {
   if (!lead.next_follow_up_at) {
     return "No follow-up";
@@ -294,6 +319,12 @@ function normalizeLeadPriority(value: FormDataEntryValue | null) {
   const priority = value?.toString() || "normal";
   const allowedPriorities = leadPriorityOptions.map((option) => option.value);
   return allowedPriorities.includes(priority) ? priority : "normal";
+}
+
+function normalizeLeadActivityType(value: FormDataEntryValue | null) {
+  const activityType = value?.toString() || "note";
+  const allowedTypes = leadActivityTypeOptions.map((option) => option.value);
+  return allowedTypes.includes(activityType) ? activityType : "note";
 }
 
 function asOptionalDateTime(value: FormDataEntryValue | null) {
@@ -553,6 +584,41 @@ async function updateLead(formData: FormData) {
 
   revalidatePath("/admin");
   redirect(`/admin?leadStatus=saved&leadId=${leadId}#lead-${leadId}`);
+}
+
+async function createLeadActivity(formData: FormData) {
+  "use server";
+
+  const adminSupabase = createAdminClient();
+
+  if (!adminSupabase) {
+    redirect("/admin?leadActivityStatus=error#lead-inbox");
+  }
+
+  const leadId = formData.get("leadId")?.toString();
+  const summary = formData.get("activitySummary")?.toString().trim();
+
+  if (!leadId || !summary) {
+    redirect("/admin?leadActivityStatus=error#lead-inbox");
+  }
+
+  const { error } = await adminSupabase
+    .from("lead_activities")
+    .insert({
+      lead_id: leadId,
+      activity_type: normalizeLeadActivityType(formData.get("activityType")),
+      activity_at: asOptionalDateTime(formData.get("activityAt")) || new Date().toISOString(),
+      summary,
+      outcome: asOptionalString(formData.get("activityOutcome")),
+      created_by_name: asOptionalString(formData.get("createdByName"))
+    });
+
+  if (error) {
+    redirect(`/admin?leadActivityStatus=error#lead-${leadId}`);
+  }
+
+  revalidatePath("/admin");
+  redirect(`/admin?leadActivityStatus=saved&leadId=${leadId}#lead-${leadId}`);
 }
 
 async function createBannerCampaign(formData: FormData) {
@@ -923,6 +989,20 @@ async function getAdminData(leadFilters: LeadFilters) {
       };
 
   const leads = (leadsResult.data || []) as AdminLead[];
+  const leadIds = leads.map((lead) => lead.id);
+  const leadActivitiesResult = adminSupabase && leadIds.length
+    ? await adminSupabase
+        .from("lead_activities")
+        .select("id, lead_id, activity_type, activity_at, summary, outcome, created_by_name, created_at")
+        .in("lead_id", leadIds)
+        .order("activity_at", { ascending: false })
+        .limit(60)
+    : { data: [], error: null };
+  const leadActivities = (leadActivitiesResult.data || []) as AdminLeadActivity[];
+  const leadActivitiesByLeadId = leadActivities.reduce<Record<string, AdminLeadActivity[]>>((activityMap, activity) => {
+    activityMap[activity.lead_id] = [...(activityMap[activity.lead_id] || []), activity];
+    return activityMap;
+  }, {});
   const banners = (bannersResult.data || []) as AdminBanner[];
   const teamMembers = (teamMembersResult.data || []) as AdminTeamMember[];
   const testimonials = (testimonialsResult.data || []) as AdminTestimonial[];
@@ -931,11 +1011,12 @@ async function getAdminData(leadFilters: LeadFilters) {
     siteSettings,
     activeBanner,
     leads,
+    leadActivitiesByLeadId,
     banners,
     teamMembers,
     testimonials,
     errors: {
-      leads: leadsResult.error?.message,
+      leads: leadsResult.error?.message || leadActivitiesResult.error?.message,
       banners: bannersResult.error?.message,
       teamMembers: teamMembersResult.error?.message,
       testimonials: testimonialsResult.error?.message
@@ -953,6 +1034,7 @@ export default async function AdminDashboardPage({
     bannerId?: string;
     leadStatus?: string;
     leadId?: string;
+    leadActivityStatus?: string;
     teamStatus?: string;
     teamMemberId?: string;
     testimonialStatus?: string;
@@ -974,18 +1056,19 @@ export default async function AdminDashboardPage({
     followUp: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterFollowUp"), followUpFilterOptions.map((option) => option.value))
   };
   const hasLeadFilters = Boolean(leadFilters.search || leadFilters.type || leadFilters.status || leadFilters.assigned || leadFilters.priority || leadFilters.followUp);
-  const { siteSettings, activeBanner, leads, banners, teamMembers, testimonials, errors } = await getAdminData(leadFilters);
+  const { siteSettings, activeBanner, leads, leadActivitiesByLeadId, banners, teamMembers, testimonials, errors } = await getAdminData(leadFilters);
   const visibleErrors = Object.values(errors).filter(Boolean);
   const siteStatus = searchParams?.siteStatus;
   const bannerStatus = searchParams?.bannerStatus;
   const savedBannerId = searchParams?.bannerId;
   const leadStatus = searchParams?.leadStatus;
+  const leadActivityStatus = searchParams?.leadActivityStatus;
   const savedLeadId = searchParams?.leadId;
   const teamStatus = searchParams?.teamStatus;
   const savedTeamMemberId = searchParams?.teamMemberId;
   const testimonialStatus = searchParams?.testimonialStatus;
   const savedTestimonialId = searchParams?.testimonialId;
-  const hasSavedStatus = siteStatus === "saved" || bannerStatus === "saved" || leadStatus === "saved" || teamStatus === "saved" || testimonialStatus === "saved";
+  const hasSavedStatus = siteStatus === "saved" || bannerStatus === "saved" || leadStatus === "saved" || leadActivityStatus === "saved" || teamStatus === "saved" || testimonialStatus === "saved";
 
   return (
     <main className="admin-shell">
@@ -1644,6 +1727,68 @@ export default async function AdminDashboardPage({
                   <button className="admin-save-button" type="submit">Save lead</button>
                 </div>
               </form>
+              <section className="admin-timeline-panel">
+                <div className="admin-card-header admin-form-title">
+                  <div>
+                    <p className="admin-kicker">Activity Timeline</p>
+                    <h3>Recent follow-up history</h3>
+                  </div>
+                  <span>{leadActivitiesByLeadId[lead.id]?.length || 0} items</span>
+                </div>
+                <div className="admin-timeline-list">
+                  {(leadActivitiesByLeadId[lead.id] || []).slice(0, 6).map((activity) => (
+                    <div className="admin-timeline-item" key={activity.id}>
+                      <div>
+                        <strong>{getLeadActivityTypeLabel(activity.activity_type)}</strong>
+                        <time>{formatDateTime(activity.activity_at)}</time>
+                      </div>
+                      <p>{activity.summary}</p>
+                      {activity.outcome || activity.created_by_name ? (
+                        <small>{activity.outcome || "No outcome noted"}{activity.created_by_name ? ` - ${activity.created_by_name}` : ""}</small>
+                      ) : null}
+                    </div>
+                  ))}
+                  {!leadActivitiesByLeadId[lead.id]?.length ? (
+                    <p className="admin-empty">No timeline activity has been added for this lead yet.</p>
+                  ) : null}
+                </div>
+                <form className="admin-form-card admin-activity-form" action={createLeadActivity}>
+                  <input name="leadId" type="hidden" value={lead.id} />
+                  <div className="admin-form-grid">
+                    <label>
+                      Activity type
+                      <select name="activityType" defaultValue="note">
+                        {leadActivityTypeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Activity date
+                      <input name="activityAt" type="datetime-local" />
+                    </label>
+                    <label>
+                      Added by
+                      <input name="createdByName" type="text" placeholder="Phil, Denise, etc." />
+                    </label>
+                  </div>
+                  <label>
+                    Activity note
+                    <textarea name="activitySummary" rows={3} placeholder="Called client, sent CMA, left voicemail, scheduled showing..." required></textarea>
+                  </label>
+                  <label>
+                    Outcome
+                    <input name="activityOutcome" type="text" placeholder="Left voicemail, meeting set, waiting for reply" />
+                  </label>
+                  <div className="admin-form-footer">
+                    <small>Leave activity date blank to use the current time.</small>
+                    {leadActivityStatus === "saved" && savedLeadId === lead.id ? (
+                      <span className="admin-save-confirmation" data-admin-status="saved" role="status">Activity added</span>
+                    ) : null}
+                    <button className="admin-save-button" type="submit">Add activity</button>
+                  </div>
+                </form>
+              </section>
               </details>
             ))}
             {!leads.length ? (

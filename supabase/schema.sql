@@ -107,6 +107,19 @@ create table if not exists public.lead_submissions (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.lead_activities (
+  id uuid primary key default gen_random_uuid(),
+  lead_id uuid not null references public.lead_submissions(id) on delete cascade,
+  activity_type text not null default 'note' check (
+    activity_type in ('note', 'call', 'email', 'text', 'meeting', 'task', 'status_update')
+  ),
+  activity_at timestamptz not null default now(),
+  summary text not null,
+  outcome text,
+  created_by_name text,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.manual_listings (
   id uuid primary key default gen_random_uuid(),
   listing_source text not null default 'manual',
@@ -158,6 +171,7 @@ alter table public.site_banners enable row level security;
 alter table public.team_members enable row level security;
 alter table public.testimonials enable row level security;
 alter table public.lead_submissions enable row level security;
+alter table public.lead_activities enable row level security;
 alter table public.manual_listings enable row level security;
 alter table public.saved_searches enable row level security;
 alter table public.favorite_listings enable row level security;
@@ -166,6 +180,7 @@ grant usage on schema public to anon, authenticated;
 grant select on public.broker_sites to anon, authenticated;
 grant select on public.site_banners to anon, authenticated;
 grant insert on public.lead_submissions to anon, authenticated;
+grant select, insert, update, delete on public.lead_activities to service_role;
 grant select on public.team_members to anon, authenticated;
 grant select on public.testimonials to anon, authenticated;
 grant select on public.manual_listings to anon, authenticated;

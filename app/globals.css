@@ -839,6 +839,48 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   border: 0;
   border-top: 1px solid var(--line);
 }
+.admin-timeline-panel {
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+  border-top: 1px solid var(--line);
+  background: rgba(255, 255, 255, .74);
+}
+.admin-timeline-list {
+  display: grid;
+  gap: 10px;
+}
+.admin-timeline-item {
+  padding: 14px 16px;
+  display: grid;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+.admin-timeline-item > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+.admin-timeline-item strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+.admin-timeline-item time,
+.admin-timeline-item small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+.admin-timeline-item p {
+  margin: 0;
+  color: #34423d;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.admin-activity-form {
+  border: 1px solid rgba(27, 45, 38, .12) !important;
+}
 .admin-summary-row {
   padding: 14px 16px;
   display: grid;
