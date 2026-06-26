@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getActiveSiteBanner, getSiteSettings } from "@/lib/site-settings";
+import { AdminStatusCleanup } from "./AdminStatusCleanup";
 
 export const revalidate = 0;
 export const dynamic = "force-dynamic";
@@ -302,9 +303,11 @@ export default async function AdminDashboardPage({
   const savedTeamMemberId = searchParams?.teamMemberId;
   const testimonialStatus = searchParams?.testimonialStatus;
   const savedTestimonialId = searchParams?.testimonialId;
+  const hasSavedStatus = bannerStatus === "saved" || teamStatus === "saved" || testimonialStatus === "saved";
 
   return (
     <main className="admin-shell">
+      <AdminStatusCleanup active={hasSavedStatus} />
       <header className="admin-hero">
         <div>
           <p className="admin-kicker">Admin Dashboard</p>
@@ -325,7 +328,7 @@ export default async function AdminDashboardPage({
       ) : null}
 
       {bannerStatus === "saved" ? (
-        <section className="admin-success">
+        <section className="admin-success" data-admin-status="saved">
           <strong>Banner campaign saved.</strong>
           <p>Your website banner has been updated. Refresh the public site if you do not see it right away.</p>
         </section>
@@ -467,7 +470,7 @@ export default async function AdminDashboardPage({
                 <div className="admin-form-footer">
                   <small>{banner.is_active ? "Currently active" : "Currently inactive"} · {formatDate(banner.start_date)} to {formatDate(banner.end_date)}</small>
                   {bannerStatus === "saved" && savedBannerId === banner.id ? (
-                    <span className="admin-save-confirmation" role="status">Saved successfully</span>
+                    <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
                   ) : null}
                   <button className="admin-save-button" type="submit">Save banner</button>
                 </div>
@@ -534,7 +537,7 @@ export default async function AdminDashboardPage({
                 <div className="admin-form-footer">
                   <small>{member.is_active ? "Currently visible" : "Currently hidden"} · {member.slug}</small>
                   {teamStatus === "saved" && savedTeamMemberId === member.id ? (
-                    <span className="admin-save-confirmation" role="status">Saved successfully</span>
+                    <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
                   ) : null}
                   <button className="admin-save-button" type="submit">Save team member</button>
                 </div>
@@ -607,7 +610,7 @@ export default async function AdminDashboardPage({
                 <div className="admin-form-footer">
                   <small>{testimonial.is_published ? "Currently published" : "Currently draft"} Â· {testimonial.scope}</small>
                   {testimonialStatus === "saved" && savedTestimonialId === testimonial.id ? (
-                    <span className="admin-save-confirmation" role="status">Saved successfully</span>
+                    <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
                   ) : null}
                   <button className="admin-save-button" type="submit">Save testimonial</button>
                 </div>
