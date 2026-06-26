@@ -857,10 +857,26 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   background: #fff;
   border: 1px solid var(--line);
 }
-.admin-timeline-item > div {
+.admin-timeline-item[open] {
+  background: #fbfaf6;
+}
+.admin-timeline-summary {
   display: flex;
   justify-content: space-between;
   gap: 14px;
+  cursor: pointer;
+  list-style: none;
+}
+.admin-timeline-summary::-webkit-details-marker {
+  display: none;
+}
+.admin-timeline-summary > span {
+  display: grid;
+  gap: 5px;
+}
+.admin-timeline-summary > span:last-child {
+  justify-items: end;
+  text-align: right;
 }
 .admin-timeline-item strong {
   color: var(--ink);
@@ -880,6 +896,10 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
 }
 .admin-timeline-item form {
   margin: 0;
+}
+.admin-activity-edit-form {
+  margin-top: 8px !important;
+  border: 1px solid rgba(27, 45, 38, .12) !important;
 }
 .admin-danger-link {
   width: fit-content;
@@ -907,7 +927,14 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
 }
 .admin-activity-added-by-grid input,
 .admin-activity-added-by-grid select {
-  min-height: 132px;
+  height: 132px;
+}
+.admin-grid-help {
+  grid-column: 1 / -1;
+  margin-top: -2px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
 }
 .admin-summary-row {
   padding: 14px 16px;

@@ -8,6 +8,9 @@ create table if not exists public.lead_activities (
   summary text not null,
   outcome text not null,
   created_by_name text,
+  follow_up_at timestamptz,
+  updated_by_name text,
+  updated_at timestamptz,
   created_at timestamptz not null default now()
 );
 

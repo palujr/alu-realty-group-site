@@ -38,8 +38,11 @@ type AdminLeadActivity = {
   activity_type: string;
   activity_at: string;
   summary: string;
-  outcome: string | null;
+  outcome: string;
   created_by_name: string | null;
+  follow_up_at: string | null;
+  updated_by_name: string | null;
+  updated_at: string | null;
   created_at: string;
 };
 
@@ -269,6 +272,26 @@ function getTeamMemberNameById(teamMembers: AdminTeamMember[], id?: string | nul
   }
 
   return teamMembers.find((member) => member.id === id)?.full_name || "Team";
+}
+
+async function getTeamMemberNamesByIds(
+  adminSupabase: NonNullable<ReturnType<typeof createAdminClient>>,
+  ids: string[]
+) {
+  if (!ids.length) {
+    return null;
+  }
+
+  const { data } = await adminSupabase
+    .from("team_members")
+    .select("id, full_name")
+    .in("id", ids);
+  const namesById = new Map((data || []).map((member) => [member.id, member.full_name]));
+
+  return ids
+    .map((id) => namesById.get(id))
+    .filter(Boolean)
+    .join(", ") || null;
 }
 
 function truncateText(value?: string | null, maxLength = 86) {
@@ -684,15 +707,7 @@ async function createLeadActivity(formData: FormData) {
   let createdByName = asOptionalString(formData.get("createdByName"));
 
   if (createdByTeamMemberIds.length) {
-    const { data } = await adminSupabase
-      .from("team_members")
-      .select("id, full_name")
-      .in("id", createdByTeamMemberIds);
-    const namesById = new Map((data || []).map((member) => [member.id, member.full_name]));
-    createdByName = createdByTeamMemberIds
-      .map((id) => namesById.get(id))
-      .filter(Boolean)
-      .join(", ") || createdByName;
+    createdByName = (await getTeamMemberNamesByIds(adminSupabase, createdByTeamMemberIds)) || createdByName;
   }
 
   const { error } = await adminSupabase
@@ -703,7 +718,8 @@ async function createLeadActivity(formData: FormData) {
       activity_at: asOptionalDateTime(formData.get("activityAt"), siteSettings.timeZone) || new Date().toISOString(),
       summary,
       outcome,
-      created_by_name: createdByName
+      created_by_name: createdByName,
+      follow_up_at: asOptionalDateTime(formData.get("activityFollowUpAt"), siteSettings.timeZone)
     });
 
   if (error) {
@@ -712,6 +728,54 @@ async function createLeadActivity(formData: FormData) {
 
   revalidatePath("/admin");
   redirect(`/admin?leadActivityStatus=saved&leadId=${leadId}#lead-${leadId}`);
+}
+
+async function updateLeadActivity(formData: FormData) {
+  "use server";
+
+  const adminSupabase = createAdminClient();
+  const siteSettings = await getSiteSettings();
+
+  if (!adminSupabase) {
+    redirect("/admin?leadActivityStatus=error#lead-inbox");
+  }
+
+  const leadId = formData.get("leadId")?.toString();
+  const activityId = formData.get("activityId")?.toString();
+  const summary = formData.get("activitySummary")?.toString().trim();
+  const outcome = formData.get("activityOutcome")?.toString().trim();
+
+  if (!leadId || !activityId || !summary || !outcome) {
+    redirect("/admin?leadActivityStatus=error#lead-inbox");
+  }
+
+  const updatedByTeamMemberIds = asFormStringArray(formData.getAll("updatedByTeamMemberIds"));
+  let updatedByName = asOptionalString(formData.get("updatedByName"));
+
+  if (updatedByTeamMemberIds.length) {
+    updatedByName = (await getTeamMemberNamesByIds(adminSupabase, updatedByTeamMemberIds)) || updatedByName;
+  }
+
+  const { error } = await adminSupabase
+    .from("lead_activities")
+    .update({
+      activity_type: normalizeLeadActivityType(formData.get("activityType")),
+      activity_at: asOptionalDateTime(formData.get("activityAt"), siteSettings.timeZone) || new Date().toISOString(),
+      summary,
+      outcome,
+      follow_up_at: asOptionalDateTime(formData.get("activityFollowUpAt"), siteSettings.timeZone),
+      updated_by_name: updatedByName,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", activityId)
+    .eq("lead_id", leadId);
+
+  if (error) {
+    redirect(`/admin?leadActivityStatus=error#lead-${leadId}`);
+  }
+
+  revalidatePath("/admin");
+  redirect(`/admin?leadActivityStatus=updated&leadId=${leadId}#lead-${leadId}`);
 }
 
 async function deleteLeadActivity(formData: FormData) {
@@ -1115,7 +1179,7 @@ async function getAdminData(leadFilters: LeadFilters) {
   const leadActivitiesResult = adminSupabase && leadIds.length
     ? await adminSupabase
         .from("lead_activities")
-        .select("id, lead_id, activity_type, activity_at, summary, outcome, created_by_name, created_at")
+        .select("id, lead_id, activity_type, activity_at, summary, outcome, created_by_name, follow_up_at, updated_by_name, updated_at, created_at")
         .in("lead_id", leadIds)
         .order("activity_at", { ascending: false })
         .limit(60)
@@ -1190,7 +1254,7 @@ export default async function AdminDashboardPage({
   const savedTeamMemberId = searchParams?.teamMemberId;
   const testimonialStatus = searchParams?.testimonialStatus;
   const savedTestimonialId = searchParams?.testimonialId;
-  const hasSavedStatus = siteStatus === "saved" || bannerStatus === "saved" || leadStatus === "saved" || leadActivityStatus === "saved" || leadActivityStatus === "deleted" || teamStatus === "saved" || testimonialStatus === "saved";
+  const hasSavedStatus = siteStatus === "saved" || bannerStatus === "saved" || leadStatus === "saved" || leadActivityStatus === "saved" || leadActivityStatus === "updated" || leadActivityStatus === "deleted" || teamStatus === "saved" || testimonialStatus === "saved";
 
   return (
     <main className="admin-shell">
@@ -1756,7 +1820,7 @@ export default async function AdminDashboardPage({
                 className="admin-edit-panel"
                 id={`lead-${lead.id}`}
                 key={lead.id}
-                open={savedLeadId === lead.id && (leadStatus === "saved" || leadActivityStatus === "saved" || leadActivityStatus === "deleted")}
+                open={savedLeadId === lead.id && (leadStatus === "saved" || leadActivityStatus === "saved" || leadActivityStatus === "updated" || leadActivityStatus === "deleted")}
                 data-reset-on-close="true"
               >
                 <summary className="admin-summary-row">
@@ -1876,19 +1940,77 @@ export default async function AdminDashboardPage({
                 </div>
                 <div className="admin-timeline-list">
                   {(leadActivitiesByLeadId[lead.id] || []).slice(0, 6).map((activity) => (
-                    <div className="admin-timeline-item" key={activity.id}>
-                      <div>
-                        <strong>{getLeadActivityTypeLabel(activity.activity_type)}</strong>
-                        <time>{formatDateTime(activity.activity_at, siteSettings.timeZone)}</time>
-                      </div>
+                    <details className="admin-timeline-item" key={activity.id}>
+                      <summary className="admin-timeline-summary">
+                        <span>
+                          <strong>{getLeadActivityTypeLabel(activity.activity_type)}</strong>
+                          <small>{activity.outcome || "No outcome noted"}{activity.created_by_name ? ` - ${activity.created_by_name}` : ""}</small>
+                        </span>
+                        <span>
+                          <time>{formatDateTime(activity.activity_at, siteSettings.timeZone)}</time>
+                          {activity.updated_at ? (
+                            <small>Updated {formatDateTime(activity.updated_at, siteSettings.timeZone)}{activity.updated_by_name ? ` by ${activity.updated_by_name}` : ""}</small>
+                          ) : null}
+                        </span>
+                      </summary>
                       <p>{activity.summary}</p>
-                      <small>{activity.outcome || "No outcome noted"}{activity.created_by_name ? ` - ${activity.created_by_name}` : ""}</small>
+                      {activity.follow_up_at ? (
+                        <small>Activity follow-up: {formatDateTime(activity.follow_up_at, siteSettings.timeZone)}</small>
+                      ) : null}
+                      <form className="admin-form-card admin-activity-edit-form" action={updateLeadActivity}>
+                        <input name="leadId" type="hidden" value={lead.id} />
+                        <input name="activityId" type="hidden" value={activity.id} />
+                        <div className="admin-form-grid">
+                          <label>
+                            Activity type
+                            <select name="activityType" defaultValue={activity.activity_type}>
+                              {leadActivityTypeOptions.map((option) => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                              ))}
+                            </select>
+                          </label>
+                          <label>
+                            Activity date
+                            <input name="activityAt" type="datetime-local" defaultValue={formatDateTimeLocal(activity.activity_at, siteSettings.timeZone)} />
+                          </label>
+                          <label>
+                            Activity follow-up
+                            <input name="activityFollowUpAt" type="datetime-local" defaultValue={formatDateTimeLocal(activity.follow_up_at, siteSettings.timeZone)} />
+                          </label>
+                          <label>
+                            Updated by
+                            <select name="updatedByTeamMemberIds" defaultValue="">
+                              <option value="">Select team member</option>
+                              {teamMembers.map((member) => (
+                                <option key={member.id} value={member.id}>{member.full_name}</option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+                        <label>
+                          Other updated by
+                          <input name="updatedByName" type="text" defaultValue={activity.updated_by_name || ""} placeholder="Manual name if needed" />
+                        </label>
+                        <label>
+                          Activity note
+                          <textarea name="activitySummary" rows={3} defaultValue={activity.summary} required></textarea>
+                        </label>
+                        <label>
+                          Outcome
+                          <input name="activityOutcome" type="text" defaultValue={activity.outcome || ""} required />
+                        </label>
+                        <div className="admin-form-footer">
+                          <small>Saving records the current update date and time.</small>
+                          <button className="admin-secondary-button" type="reset">Reset activity</button>
+                          <button className="admin-save-button" type="submit">Save activity</button>
+                        </div>
+                      </form>
                       <form action={deleteLeadActivity}>
                         <input name="leadId" type="hidden" value={lead.id} />
                         <input name="activityId" type="hidden" value={activity.id} />
                         <button className="admin-danger-link" type="submit">Delete entry</button>
                       </form>
-                    </div>
+                    </details>
                   ))}
                   {!leadActivitiesByLeadId[lead.id]?.length ? (
                     <p className="admin-empty">No timeline activity has been added for this lead yet.</p>
@@ -1918,12 +2040,12 @@ export default async function AdminDashboardPage({
                           <option key={member.id} value={member.id}>{member.full_name}</option>
                         ))}
                       </select>
-                      <small>Hold Ctrl while clicking to select more than one.</small>
                     </label>
                     <label>
                       Other added by
                       <input name="createdByName" type="text" placeholder="Manual name if needed" />
                     </label>
+                    <small className="admin-grid-help">Hold Ctrl while clicking to select more than one team member.</small>
                   </div>
                   <label>
                     Activity note
@@ -1933,10 +2055,17 @@ export default async function AdminDashboardPage({
                     Outcome
                     <input name="activityOutcome" type="text" placeholder="Left voicemail, meeting set, waiting for reply" required />
                   </label>
+                  <label>
+                    Activity follow-up
+                    <input name="activityFollowUpAt" type="datetime-local" />
+                  </label>
                   <div className="admin-form-footer">
-                    <small>Leave activity date blank to use the current time.</small>
+                    <small>Leave activity date blank to use the current time. Use activity follow-up for a task tied to this note only.</small>
                     {leadActivityStatus === "saved" && savedLeadId === lead.id ? (
                       <span className="admin-save-confirmation" data-admin-status="saved" role="status">Activity added</span>
+                    ) : null}
+                    {leadActivityStatus === "updated" && savedLeadId === lead.id ? (
+                      <span className="admin-save-confirmation" data-admin-status="saved" role="status">Activity updated</span>
                     ) : null}
                     {leadActivityStatus === "deleted" && savedLeadId === lead.id ? (
                       <span className="admin-save-confirmation" data-admin-status="saved" role="status">Activity deleted</span>
