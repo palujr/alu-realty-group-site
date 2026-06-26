@@ -91,6 +91,57 @@ function asSpecialtyArray(value: FormDataEntryValue | null) {
     .filter(Boolean);
 }
 
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+async function createBannerCampaign(formData: FormData) {
+  "use server";
+
+  const adminSupabase = createAdminClient();
+
+  if (!adminSupabase) {
+    redirect("/admin?bannerStatus=error#new-banner-campaign");
+  }
+
+  const siteSettings = await getSiteSettings();
+  const campaignName = formData.get("campaignName")?.toString().trim();
+  const headline = formData.get("headline")?.toString().trim();
+  const priorityValue = Number.parseInt(formData.get("priority")?.toString() || "100", 10);
+
+  if (!campaignName || !headline) {
+    redirect("/admin?bannerStatus=error#new-banner-campaign");
+  }
+
+  const { data, error } = await adminSupabase
+    .from("site_banners")
+    .insert({
+      site_slug: siteSettings.slug,
+      campaign_name: campaignName,
+      eyebrow: asOptionalString(formData.get("eyebrow")),
+      headline,
+      body: asOptionalString(formData.get("body")),
+      theme: formData.get("theme")?.toString().trim() || "seasonal",
+      priority: Number.isNaN(priorityValue) ? 100 : priorityValue,
+      start_date: asOptionalString(formData.get("startDate")),
+      end_date: asOptionalString(formData.get("endDate")),
+      is_active: formData.get("isActive") === "on"
+    })
+    .select("id")
+    .single();
+
+  if (error || !data?.id) {
+    redirect("/admin?bannerStatus=error#new-banner-campaign");
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  redirect(`/admin?bannerStatus=saved&bannerId=${data.id}#banner-${data.id}`);
+}
+
 async function updateBannerCampaign(formData: FormData) {
   "use server";
 
@@ -135,6 +186,51 @@ async function updateBannerCampaign(formData: FormData) {
   redirect(`/admin?bannerStatus=saved&bannerId=${bannerId}#banner-${bannerId}`);
 }
 
+async function createTeamMember(formData: FormData) {
+  "use server";
+
+  const adminSupabase = createAdminClient();
+
+  if (!adminSupabase) {
+    redirect("/admin?teamStatus=error#new-team-member");
+  }
+
+  const fullName = formData.get("fullName")?.toString().trim();
+  const title = formData.get("title")?.toString().trim();
+  const requestedSlug = formData.get("slug")?.toString().trim();
+  const displayOrderValue = Number.parseInt(formData.get("displayOrder")?.toString() || "100", 10);
+
+  if (!fullName || !title) {
+    redirect("/admin?teamStatus=error#new-team-member");
+  }
+
+  const baseSlug = slugify(requestedSlug || fullName) || `team-member-${Date.now()}`;
+  const { data, error } = await adminSupabase
+    .from("team_members")
+    .insert({
+      slug: baseSlug,
+      full_name: fullName,
+      title,
+      phone: asOptionalString(formData.get("phone")),
+      email: asOptionalString(formData.get("email")),
+      bio: asOptionalString(formData.get("bio")),
+      photo_url: asOptionalString(formData.get("photoUrl")),
+      specialties: asSpecialtyArray(formData.get("specialties")),
+      display_order: Number.isNaN(displayOrderValue) ? 100 : displayOrderValue,
+      is_active: formData.get("isActive") === "on"
+    })
+    .select("id")
+    .single();
+
+  if (error || !data?.id) {
+    redirect("/admin?teamStatus=error#new-team-member");
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  redirect(`/admin?teamStatus=saved&teamMemberId=${data.id}#team-member-${data.id}`);
+}
+
 async function updateTeamMember(formData: FormData) {
   "use server";
 
@@ -177,6 +273,49 @@ async function updateTeamMember(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/admin");
   redirect(`/admin?teamStatus=saved&teamMemberId=${memberId}#team-member-${memberId}`);
+}
+
+async function createTestimonial(formData: FormData) {
+  "use server";
+
+  const adminSupabase = createAdminClient();
+
+  if (!adminSupabase) {
+    redirect("/admin?testimonialStatus=error#new-testimonial");
+  }
+
+  const clientName = formData.get("clientName")?.toString().trim();
+  const quote = formData.get("quote")?.toString().trim();
+  const scope = formData.get("scope")?.toString() === "individual" ? "individual" : "team";
+  const ratingValue = Number.parseInt(formData.get("rating")?.toString() || "", 10);
+  const teamMemberId = asOptionalString(formData.get("teamMemberId"));
+
+  if (!clientName || !quote) {
+    redirect("/admin?testimonialStatus=error#new-testimonial");
+  }
+
+  const { data, error } = await adminSupabase
+    .from("testimonials")
+    .insert({
+      team_member_id: scope === "individual" ? teamMemberId : null,
+      scope,
+      client_name: clientName,
+      context: asOptionalString(formData.get("context")),
+      quote,
+      rating: Number.isNaN(ratingValue) ? null : ratingValue,
+      is_featured: formData.get("isFeatured") === "on",
+      is_published: formData.get("isPublished") === "on"
+    })
+    .select("id")
+    .single();
+
+  if (error || !data?.id) {
+    redirect("/admin?testimonialStatus=error#new-testimonial");
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  redirect(`/admin?testimonialStatus=saved&testimonialId=${data.id}#testimonial-${data.id}`);
 }
 
 async function updateTestimonial(formData: FormData) {
@@ -421,6 +560,57 @@ export default async function AdminDashboardPage({
               <span>Please check the required fields or Supabase update permission.</span>
             </div>
           ) : null}
+          <details className="admin-create-panel" id="new-banner-campaign">
+            <summary>Add new banner campaign</summary>
+            <form className="admin-form-card" action={createBannerCampaign}>
+              <label>
+                Campaign name
+                <input name="campaignName" type="text" placeholder="Fall buyer campaign" required />
+              </label>
+              <label>
+                Eyebrow
+                <input name="eyebrow" type="text" placeholder="Seasonal update" />
+              </label>
+              <label>
+                Headline
+                <input name="headline" type="text" placeholder="A fresh season for your next move." required />
+              </label>
+              <label>
+                Body
+                <textarea name="body" placeholder="Short supporting line for the banner." rows={3}></textarea>
+              </label>
+              <div className="admin-form-grid">
+                <label>
+                  Start date
+                  <input name="startDate" type="date" />
+                </label>
+                <label>
+                  End date
+                  <input name="endDate" type="date" />
+                </label>
+                <label>
+                  Priority
+                  <input name="priority" type="number" defaultValue="100" min="1" step="1" />
+                </label>
+                <label>
+                  Theme
+                  <select name="theme" defaultValue="seasonal">
+                    <option value="patriotic">Patriotic</option>
+                    <option value="market">Market</option>
+                    <option value="seasonal">Seasonal</option>
+                  </select>
+                </label>
+              </div>
+              <label className="admin-checkbox">
+                <input name="isActive" type="checkbox" />
+                Active on site
+              </label>
+              <div className="admin-form-footer">
+                <small>New banners can stay inactive until you are ready to use them.</small>
+                <button className="admin-save-button" type="submit">Create banner</button>
+              </div>
+            </form>
+          </details>
           <div className="admin-form-list">
             {banners.map((banner) => (
               <form className="admin-form-card" action={updateBannerCampaign} id={`banner-${banner.id}`} key={banner.id}>
@@ -492,6 +682,57 @@ export default async function AdminDashboardPage({
               <span>Please check the required name and title fields or Supabase update permission.</span>
             </div>
           ) : null}
+          <details className="admin-create-panel" id="new-team-member">
+            <summary>Add new team member</summary>
+            <form className="admin-form-card" action={createTeamMember}>
+              <div className="admin-form-grid">
+                <label>
+                  Full name
+                  <input name="fullName" type="text" placeholder="New Agent" required />
+                </label>
+                <label>
+                  Title
+                  <input name="title" type="text" placeholder="Realtor | Alu Realty Group" required />
+                </label>
+                <label>
+                  Slug
+                  <input name="slug" type="text" placeholder="new-agent" />
+                </label>
+                <label>
+                  Phone
+                  <input name="phone" type="tel" />
+                </label>
+                <label>
+                  Email
+                  <input name="email" type="email" />
+                </label>
+                <label>
+                  Display order
+                  <input name="displayOrder" type="number" defaultValue="100" min="1" step="1" />
+                </label>
+                <label>
+                  Photo URL
+                  <input name="photoUrl" type="text" placeholder="/assets/agent-photo.jpg" />
+                </label>
+              </div>
+              <label>
+                Bio
+                <textarea name="bio" rows={4}></textarea>
+              </label>
+              <label>
+                Specialties
+                <textarea name="specialties" placeholder="Buyers, Sellers, Relocation" rows={2}></textarea>
+              </label>
+              <label className="admin-checkbox">
+                <input name="isActive" type="checkbox" defaultChecked />
+                Visible on site
+              </label>
+              <div className="admin-form-footer">
+                <small>Leave slug blank to create one from the name.</small>
+                <button className="admin-save-button" type="submit">Create team member</button>
+              </div>
+            </form>
+          </details>
           <div className="admin-form-list">
             {teamMembers.map((member) => (
               <form className="admin-form-card" action={updateTeamMember} id={`team-member-${member.id}`} key={member.id}>
@@ -559,6 +800,59 @@ export default async function AdminDashboardPage({
               <span>Please check the required client name and quote fields.</span>
             </div>
           ) : null}
+          <details className="admin-create-panel" id="new-testimonial">
+            <summary>Add new testimonial</summary>
+            <form className="admin-form-card" action={createTestimonial}>
+              <div className="admin-form-grid">
+                <label>
+                  Client name
+                  <input name="clientName" type="text" placeholder="Client name" required />
+                </label>
+                <label>
+                  Context
+                  <input name="context" type="text" placeholder="Scottsdale purchase" />
+                </label>
+                <label>
+                  Scope
+                  <select name="scope" defaultValue="team">
+                    <option value="team">Team</option>
+                    <option value="individual">Individual agent</option>
+                  </select>
+                </label>
+                <label>
+                  Assigned team member
+                  <select name="teamMemberId" defaultValue="">
+                    <option value="">No individual assignment</option>
+                    {teamMembers.map((member) => (
+                      <option value={member.id} key={member.id}>{member.full_name}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Rating
+                  <input name="rating" type="number" min="1" max="5" step="1" />
+                </label>
+              </div>
+              <label>
+                Quote
+                <textarea name="quote" placeholder="What did the client say?" rows={3} required></textarea>
+              </label>
+              <div className="admin-checkbox-row">
+                <label className="admin-checkbox">
+                  <input name="isPublished" type="checkbox" defaultChecked />
+                  Published on site
+                </label>
+                <label className="admin-checkbox">
+                  <input name="isFeatured" type="checkbox" />
+                  Featured first
+                </label>
+              </div>
+              <div className="admin-form-footer">
+                <small>New testimonials can be saved as drafts by unchecking published.</small>
+                <button className="admin-save-button" type="submit">Create testimonial</button>
+              </div>
+            </form>
+          </details>
           <div className="admin-form-list">
             {testimonials.map((testimonial) => (
               <form className="admin-form-card" action={updateTestimonial} id={`testimonial-${testimonial.id}`} key={testimonial.id}>
