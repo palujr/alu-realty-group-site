@@ -908,10 +908,36 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   outline: 2px solid rgba(217, 120, 79, .25);
   border-color: var(--accent);
 }
+.admin-form-card input[type="file"] {
+  padding: 9px 12px;
+  cursor: pointer;
+}
 .admin-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+.admin-photo-preview {
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+.admin-photo-preview img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 999px;
+  background: #edf1eb;
+}
+.admin-photo-preview span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 .admin-checkbox {
   display: flex !important;

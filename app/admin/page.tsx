@@ -85,6 +85,9 @@ const contactMethodOptions = [
   { value: "other", label: "Other" }
 ];
 
+const teamPhotoBucket = "team-photos";
+const maxTeamPhotoSize = 5 * 1024 * 1024;
+
 function formatDate(value?: string | null) {
   if (!value) {
     return "Not set";
@@ -165,6 +168,38 @@ function normalizeContactMethod(value: FormDataEntryValue | null) {
 function asOptionalDateTime(value: FormDataEntryValue | null) {
   const stringValue = value?.toString().trim() || "";
   return stringValue ? new Date(stringValue).toISOString() : null;
+}
+
+async function uploadTeamPhoto(
+  adminSupabase: NonNullable<ReturnType<typeof createAdminClient>>,
+  file: FormDataEntryValue | null,
+  slug: string
+) {
+  if (!(file instanceof File) || file.size === 0) {
+    return null;
+  }
+
+  if (!file.type.startsWith("image/") || file.size > maxTeamPhotoSize) {
+    throw new Error("Invalid team photo");
+  }
+
+  const extension = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const safeSlug = slugify(slug) || "team-member";
+  const filePath = `${safeSlug}/${Date.now()}.${extension}`;
+
+  const { error } = await adminSupabase.storage
+    .from(teamPhotoBucket)
+    .upload(filePath, file, {
+      contentType: file.type,
+      upsert: true
+    });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const { data } = adminSupabase.storage.from(teamPhotoBucket).getPublicUrl(filePath);
+  return data.publicUrl;
 }
 
 async function createValuationLead(formData: FormData) {
@@ -360,6 +395,14 @@ async function createTeamMember(formData: FormData) {
   }
 
   const baseSlug = slugify(requestedSlug || fullName) || `team-member-${Date.now()}`;
+  let photoUrl = asOptionalString(formData.get("photoUrl"));
+
+  try {
+    photoUrl = (await uploadTeamPhoto(adminSupabase, formData.get("photoFile"), baseSlug)) || photoUrl;
+  } catch {
+    redirect("/admin?teamStatus=error#new-team-member");
+  }
+
   const { data, error } = await adminSupabase
     .from("team_members")
     .insert({
@@ -369,7 +412,7 @@ async function createTeamMember(formData: FormData) {
       phone: asOptionalString(formData.get("phone")),
       email: asOptionalString(formData.get("email")),
       bio: asOptionalString(formData.get("bio")),
-      photo_url: asOptionalString(formData.get("photoUrl")),
+      photo_url: photoUrl,
       specialties: asSpecialtyArray(formData.get("specialties")),
       display_order: Number.isNaN(displayOrderValue) ? 100 : displayOrderValue,
       is_active: formData.get("isActive") === "on"
@@ -396,6 +439,7 @@ async function updateTeamMember(formData: FormData) {
   }
 
   const memberId = formData.get("memberId")?.toString();
+  const memberSlug = formData.get("memberSlug")?.toString() || memberId || "team-member";
   const fullName = formData.get("fullName")?.toString().trim();
   const title = formData.get("title")?.toString().trim();
 
@@ -404,6 +448,13 @@ async function updateTeamMember(formData: FormData) {
   }
 
   const displayOrderValue = Number.parseInt(formData.get("displayOrder")?.toString() || "100", 10);
+  let photoUrl = asOptionalString(formData.get("photoUrl"));
+
+  try {
+    photoUrl = (await uploadTeamPhoto(adminSupabase, formData.get("photoFile"), memberSlug)) || photoUrl;
+  } catch {
+    redirect("/admin?teamStatus=error#team-members");
+  }
 
   const { error } = await adminSupabase
     .from("team_members")
@@ -413,7 +464,7 @@ async function updateTeamMember(formData: FormData) {
       phone: asOptionalString(formData.get("phone")),
       email: asOptionalString(formData.get("email")),
       bio: asOptionalString(formData.get("bio")),
-      photo_url: asOptionalString(formData.get("photoUrl")),
+      photo_url: photoUrl,
       specialties: asSpecialtyArray(formData.get("specialties")),
       display_order: Number.isNaN(displayOrderValue) ? 100 : displayOrderValue,
       is_active: formData.get("isActive") === "on",
@@ -1001,7 +1052,7 @@ export default async function AdminDashboardPage({
           ) : null}
           <details className="admin-create-panel" id="new-team-member">
             <summary>Add new team member</summary>
-            <form className="admin-form-card" action={createTeamMember}>
+            <form className="admin-form-card" action={createTeamMember} encType="multipart/form-data">
               <div className="admin-form-grid">
                 <label>
                   Full name
@@ -1030,6 +1081,10 @@ export default async function AdminDashboardPage({
                 <label>
                   Photo URL
                   <input name="photoUrl" type="text" placeholder="/assets/agent-photo.jpg" />
+                </label>
+                <label>
+                  Upload photo
+                  <input name="photoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
                 </label>
               </div>
               <label>
@@ -1062,8 +1117,9 @@ export default async function AdminDashboardPage({
                   <span>{member.phone || "No phone"}</span>
                   <span>{member.email || "No email"}</span>
                 </summary>
-              <form className="admin-form-card" action={updateTeamMember}>
+              <form className="admin-form-card" action={updateTeamMember} encType="multipart/form-data">
                 <input name="memberId" type="hidden" value={member.id} />
+                <input name="memberSlug" type="hidden" value={member.slug} />
                 <div className="admin-form-grid">
                   <label>
                     Full name
@@ -1089,7 +1145,17 @@ export default async function AdminDashboardPage({
                     Photo URL
                     <input name="photoUrl" type="text" defaultValue={member.photo_url || ""} placeholder="/assets/agent-photo.jpg" />
                   </label>
+                  <label>
+                    Upload replacement photo
+                    <input name="photoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+                  </label>
                 </div>
+                {member.photo_url ? (
+                  <div className="admin-photo-preview">
+                    <img src={member.photo_url} alt="" />
+                    <span>Current profile photo</span>
+                  </div>
+                ) : null}
                 <label>
                   Bio
                   <textarea name="bio" defaultValue={member.bio || ""} rows={4}></textarea>
