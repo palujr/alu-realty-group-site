@@ -786,9 +786,11 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
 .admin-summary-row {
   padding: 14px 16px;
   display: grid;
-  grid-template-columns: minmax(220px, 1.7fr) repeat(3, minmax(100px, .7fr)) auto;
+  grid-template-columns: minmax(160px, 1.7fr) repeat(3, minmax(72px, .7fr)) auto;
   gap: 14px;
   align-items: center;
+  max-width: 100%;
+  min-width: 0;
   color: var(--ink);
   cursor: pointer;
   list-style: none;
@@ -799,6 +801,7 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
 .admin-summary-row::after {
   content: "Edit";
   justify-self: end;
+  min-width: 34px;
   padding: 7px 10px;
   color: #fff;
   background: var(--ink);
@@ -806,6 +809,12 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   font-weight: 900;
   letter-spacing: .06em;
   text-transform: uppercase;
+}
+.admin-card:not(.admin-card-wide) .admin-summary-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.admin-card:not(.admin-card-wide) .admin-summary-row span:nth-of-type(n+2) {
+  display: none;
 }
 .admin-summary-row span {
   min-width: 0;
