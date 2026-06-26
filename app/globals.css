@@ -1270,6 +1270,20 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   object-fit: cover;
   background: #edf1eb;
 }
+.admin-branding-media-grid {
+  margin-top: 4px;
+}
+.admin-branding-preview {
+  align-content: start;
+}
+.admin-property-image-preview .admin-brand-logo-image {
+  width: min(320px, 100%);
+  height: auto;
+  max-height: 112px;
+  object-fit: contain;
+  justify-self: start;
+  background: transparent;
+}
 .admin-property-image-preview span,
 .admin-property-image-editor span {
   color: var(--muted);

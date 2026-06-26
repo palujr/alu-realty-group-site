@@ -194,6 +194,7 @@ const adminPageSizeOptions = [10, 20, 50, 75];
 const maxAdminImageSize = 5 * 1024 * 1024;
 const transientAdminSearchParams = new Set([
   "siteStatus",
+  "siteSection",
   "bannerStatus",
   "bannerId",
   "leadStatus",
@@ -683,102 +684,133 @@ async function updateSiteSettings(formData: FormData) {
   }
 
   const siteSlug = formData.get("siteSlug")?.toString() || "alu-realty-group";
-  const siteName = formData.get("siteName")?.toString().trim();
-
-  if (!siteName) {
-    redirect("/admin?siteStatus=error#site-settings");
-  }
-
-  const contactEmail = asOptionalString(formData.get("contactEmail"));
-  const leadReplyToEmail = asOptionalString(formData.get("leadReplyToEmail"));
-  const leadNotificationEmails = asEmailArray(formData.get("leadNotificationEmails"));
-  const safeLeadNotificationEmails = leadNotificationEmails.length
-    ? leadNotificationEmails
-    : contactEmail
-      ? [contactEmail]
-      : [];
-  const valuationNotificationEmails = asEmailArray(formData.get("valuationNotificationEmails"));
-
-  const homepageSections = {
-    propertiesEyebrow: formData.get("propertiesEyebrow")?.toString().trim(),
-    propertiesHeadline: formData.get("propertiesHeadline")?.toString().trim(),
-    ratesEyebrow: formData.get("ratesEyebrow")?.toString().trim(),
-    ratesHeadline: formData.get("ratesHeadline")?.toString().trim(),
-    ratesBody: formData.get("ratesBody")?.toString().trim(),
-    ratesStatus: formData.get("ratesStatus")?.toString().trim(),
-    teamEyebrow: formData.get("teamEyebrow")?.toString().trim(),
-    teamHeadline: formData.get("teamHeadline")?.toString().trim(),
-    teamBody: formData.get("teamBody")?.toString().trim(),
-    testimonialsEyebrow: formData.get("testimonialsEyebrow")?.toString().trim(),
-    testimonialsHeadline: formData.get("testimonialsHeadline")?.toString().trim(),
-    insightsEyebrow: formData.get("insightsEyebrow")?.toString().trim(),
-    insightsHeadline: formData.get("insightsHeadline")?.toString().trim(),
-    savedSearchEyebrow: formData.get("savedSearchEyebrow")?.toString().trim(),
-    savedSearchHeadline: formData.get("savedSearchHeadline")?.toString().trim(),
-    savedSearchBody: formData.get("savedSearchBody")?.toString().trim(),
-    sellEyebrow: formData.get("sellEyebrow")?.toString().trim(),
-    sellHeadline: formData.get("sellHeadline")?.toString().trim(),
-    sellBody: formData.get("sellBody")?.toString().trim(),
-    sellButtonText: formData.get("sellButtonText")?.toString().trim()
+  const siteSection = formData.get("siteSection")?.toString() || "site-settings";
+  const currentSiteSettings = await getSiteSettings(siteSlug);
+  const updatePayload: Record<string, unknown> = {
+    updated_at: new Date().toISOString()
   };
 
-  const leadRouting = {
-    defaultNotificationEmails: safeLeadNotificationEmails,
-    valuationNotificationEmails: valuationNotificationEmails.length ? valuationNotificationEmails : safeLeadNotificationEmails,
-    defaultNotificationTeamMemberSlugs: asFormStringArray(formData.getAll("defaultNotificationTeamMemberSlugs")),
-    valuationNotificationTeamMemberSlugs: asFormStringArray(formData.getAll("valuationNotificationTeamMemberSlugs")),
-    defaultAssignedTeamMemberSlug: formData.get("defaultAssignedTeamMemberSlug")?.toString().trim() || "",
-    valuationAssignedTeamMemberSlug: formData.get("valuationAssignedTeamMemberSlug")?.toString().trim() || "",
-    sendClientConfirmation: formData.get("sendClientConfirmation") === "on",
-    sendInternalNotification: formData.get("sendInternalNotification") === "on"
-  };
+  if (siteSection === "branding") {
+    const siteName = formData.get("siteName")?.toString().trim();
 
-  let brokerLogoUrl = asOptionalString(formData.get("brokerLogoUrl"));
-  let teamLogoUrl = asOptionalString(formData.get("teamLogoUrl"));
-  let heroImageUrl = asOptionalString(formData.get("heroImageUrl"));
+    if (!siteName) {
+      redirect("/admin?siteStatus=error#site-settings");
+    }
 
-  try {
-    brokerLogoUrl =
-      (await uploadSiteLogo(adminSupabase, formData.get("brokerLogoFile"), `${siteSlug}-broker-logo`)) ||
-      brokerLogoUrl;
-    teamLogoUrl =
-      (await uploadSiteLogo(adminSupabase, formData.get("teamLogoFile"), `${siteSlug}-team-logo`)) ||
-      teamLogoUrl;
-    heroImageUrl =
-      (await uploadSiteHeroImage(adminSupabase, formData.get("heroImageFile"), `${siteSlug}-home-property`)) ||
-      heroImageUrl;
-  } catch {
-    redirect("/admin?siteStatus=error#site-settings");
-  }
+    let brokerLogoUrl = asOptionalString(formData.get("brokerLogoUrl"));
+    let teamLogoUrl = asOptionalString(formData.get("teamLogoUrl"));
 
-  const { error } = await adminSupabase
-    .from("broker_sites")
-    .update({
+    try {
+      brokerLogoUrl =
+        (await uploadSiteLogo(adminSupabase, formData.get("brokerLogoFile"), `${siteSlug}-broker-logo`)) ||
+        brokerLogoUrl;
+      teamLogoUrl =
+        (await uploadSiteLogo(adminSupabase, formData.get("teamLogoFile"), `${siteSlug}-team-logo`)) ||
+        teamLogoUrl;
+    } catch {
+      redirect("/admin?siteStatus=error#site-settings");
+    }
+
+    Object.assign(updatePayload, {
       site_name: siteName,
       brokerage_name: asOptionalString(formData.get("brokerageName")),
       primary_domain: asOptionalString(formData.get("primaryDomain")),
       broker_logo_url: brokerLogoUrl,
       team_logo_url: teamLogoUrl,
-      contact_email: contactEmail,
-      contact_phone: asOptionalString(formData.get("contactPhone")),
-      lead_notification_emails: safeLeadNotificationEmails,
-      resend_from_email: asOptionalString(formData.get("resendFromEmail")),
-      lead_reply_to_email: leadReplyToEmail,
-      hero_image_url: heroImageUrl,
+      brand_primary: asHexColor(formData.get("brandPrimary"), currentSiteSettings.brandPrimary),
+      brand_accent: asHexColor(formData.get("brandAccent"), currentSiteSettings.brandAccent)
+    });
+  } else if (siteSection === "homepage-photo") {
+    let heroImageUrl = asOptionalString(formData.get("heroImageUrl"));
+
+    try {
+      heroImageUrl =
+        (await uploadSiteHeroImage(adminSupabase, formData.get("heroImageFile"), `${siteSlug}-home-property`)) ||
+        heroImageUrl;
+    } catch {
+      redirect("/admin?siteStatus=error#site-settings");
+    }
+
+    Object.assign(updatePayload, {
+      hero_image_url: heroImageUrl || currentSiteSettings.heroImageUrl
+    });
+  } else if (siteSection === "hero-promo") {
+    Object.assign(updatePayload, {
       hero_eyebrow: asOptionalString(formData.get("heroEyebrow")),
       hero_headline: asOptionalString(formData.get("heroHeadline")),
       hero_subheadline: asOptionalString(formData.get("heroSubheadline")),
       promo_enabled: formData.get("promoEnabled") === "on",
       promo_eyebrow: asOptionalString(formData.get("promoEyebrow")),
       promo_headline: asOptionalString(formData.get("promoHeadline")),
-      promo_body: asOptionalString(formData.get("promoBody")),
-      brand_primary: asHexColor(formData.get("brandPrimary"), "#17221f"),
-      brand_accent: asHexColor(formData.get("brandAccent"), "#d9784f"),
+      promo_body: asOptionalString(formData.get("promoBody"))
+    });
+  } else if (siteSection === "contact") {
+    const contactEmail = asOptionalString(formData.get("contactEmail"));
+    const leadNotificationEmails = asEmailArray(formData.get("leadNotificationEmails"));
+    const safeLeadNotificationEmails = leadNotificationEmails.length
+      ? leadNotificationEmails
+      : contactEmail
+        ? [contactEmail]
+        : [];
+    const valuationNotificationEmails = asEmailArray(formData.get("valuationNotificationEmails"));
+
+    Object.assign(updatePayload, {
+      contact_email: contactEmail,
+      contact_phone: asOptionalString(formData.get("contactPhone")),
+      lead_notification_emails: safeLeadNotificationEmails,
+      resend_from_email: asOptionalString(formData.get("resendFromEmail")),
+      lead_reply_to_email: asOptionalString(formData.get("leadReplyToEmail")),
       time_zone: normalizeAdminTimeZone(formData.get("timeZone")),
-      homepage_sections: homepageSections,
-      lead_routing: leadRouting,
-      updated_at: new Date().toISOString()
-    })
+      lead_routing: {
+        ...currentSiteSettings.leadRouting,
+        defaultNotificationEmails: safeLeadNotificationEmails,
+        valuationNotificationEmails: valuationNotificationEmails.length ? valuationNotificationEmails : safeLeadNotificationEmails
+      }
+    });
+  } else if (siteSection === "homepage-copy") {
+    Object.assign(updatePayload, {
+      homepage_sections: {
+        propertiesEyebrow: formData.get("propertiesEyebrow")?.toString().trim(),
+        propertiesHeadline: formData.get("propertiesHeadline")?.toString().trim(),
+        ratesEyebrow: formData.get("ratesEyebrow")?.toString().trim(),
+        ratesHeadline: formData.get("ratesHeadline")?.toString().trim(),
+        ratesBody: formData.get("ratesBody")?.toString().trim(),
+        ratesStatus: formData.get("ratesStatus")?.toString().trim(),
+        teamEyebrow: formData.get("teamEyebrow")?.toString().trim(),
+        teamHeadline: formData.get("teamHeadline")?.toString().trim(),
+        teamBody: formData.get("teamBody")?.toString().trim(),
+        testimonialsEyebrow: formData.get("testimonialsEyebrow")?.toString().trim(),
+        testimonialsHeadline: formData.get("testimonialsHeadline")?.toString().trim(),
+        insightsEyebrow: formData.get("insightsEyebrow")?.toString().trim(),
+        insightsHeadline: formData.get("insightsHeadline")?.toString().trim(),
+        savedSearchEyebrow: formData.get("savedSearchEyebrow")?.toString().trim(),
+        savedSearchHeadline: formData.get("savedSearchHeadline")?.toString().trim(),
+        savedSearchBody: formData.get("savedSearchBody")?.toString().trim(),
+        sellEyebrow: formData.get("sellEyebrow")?.toString().trim(),
+        sellHeadline: formData.get("sellHeadline")?.toString().trim(),
+        sellBody: formData.get("sellBody")?.toString().trim(),
+        sellButtonText: formData.get("sellButtonText")?.toString().trim()
+      }
+    });
+  } else if (siteSection === "lead-routing") {
+    Object.assign(updatePayload, {
+      lead_routing: {
+        ...currentSiteSettings.leadRouting,
+        defaultNotificationTeamMemberSlugs: asFormStringArray(formData.getAll("defaultNotificationTeamMemberSlugs")),
+        valuationNotificationTeamMemberSlugs: asFormStringArray(formData.getAll("valuationNotificationTeamMemberSlugs")),
+        defaultAssignedTeamMemberSlug: formData.get("defaultAssignedTeamMemberSlug")?.toString().trim() || "",
+        valuationAssignedTeamMemberSlug: formData.get("valuationAssignedTeamMemberSlug")?.toString().trim() || "",
+        sendClientConfirmation: formData.get("sendClientConfirmation") === "on",
+        sendInternalNotification: formData.get("sendInternalNotification") === "on"
+      }
+    });
+  } else {
+    redirect("/admin?siteStatus=error#site-settings");
+  }
+
+  const { error } = await adminSupabase
+    .from("broker_sites")
+    .update(updatePayload)
     .eq("slug", siteSlug);
 
   if (error) {
@@ -787,7 +819,7 @@ async function updateSiteSettings(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect("/admin?siteStatus=saved#site-settings");
+  redirect(`/admin?siteStatus=saved&siteSection=${siteSection}#site-settings`);
 }
 
 async function createLead(formData: FormData) {
@@ -1485,6 +1517,7 @@ export default async function AdminDashboardPage({
   const { siteSettings, activeBanner, leads, leadActivitiesByLeadId, banners, teamMembers, teamMemberOptions, testimonials, pagination, errors } = await getAdminData(leadFilters, adminPages);
   const visibleErrors = Object.values(errors).filter(Boolean);
   const siteStatus = searchParams?.siteStatus;
+  const savedSiteSection = searchParams?.siteSection;
   const bannerStatus = searchParams?.bannerStatus;
   const savedBannerId = searchParams?.bannerId;
   const leadStatus = searchParams?.leadStatus;
@@ -1579,7 +1612,7 @@ export default async function AdminDashboardPage({
               <span>The website settings have been updated.</span>
             </div>
           ) : null}
-          <details className="admin-edit-panel" open={siteStatus === "saved"}>
+          <details className="admin-edit-panel" open={siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error"}>
             <summary className="admin-summary-row">
               <span>
                 <strong>{siteSettings.siteName}</strong>
@@ -1591,20 +1624,230 @@ export default async function AdminDashboardPage({
             </summary>
             <form className="admin-form-card" action={updateSiteSettings} encType="multipart/form-data">
               <input name="siteSlug" type="hidden" value={siteSettings.slug} />
-              <div className="admin-logo-preview-grid">
-                {siteSettings.brokerLogoUrl ? (
-                  <div className="admin-logo-preview">
-                    <img src={siteSettings.brokerLogoUrl} alt={`${siteSettings.brokerageName} broker logo`} />
-                    <span>Current broker logo</span>
+              <input name="siteSection" type="hidden" value="branding" />
+              <section className="admin-settings-section">
+                <div className="admin-settings-section-heading">
+                  <p className="admin-kicker">Branding</p>
+                  <h3>Names, logos, and colors</h3>
+                </div>
+                <div className="admin-form-grid">
+                  <label>
+                    Site name
+                    <input name="siteName" type="text" defaultValue={siteSettings.siteName} required />
+                  </label>
+                  <label>
+                    Brokerage name
+                    <input name="brokerageName" type="text" defaultValue={siteSettings.brokerageName} />
+                  </label>
+                  <label>
+                    Primary domain
+                    <input name="primaryDomain" type="text" defaultValue={siteSettings.primaryDomain} />
+                  </label>
+                  <BrandColorField label="Primary brand color" name="brandPrimary" defaultValue={siteSettings.brandPrimary} />
+                  <BrandColorField label="Accent brand color" name="brandAccent" defaultValue={siteSettings.brandAccent} />
+                </div>
+                <div className="admin-property-image-grid admin-branding-media-grid">
+                  <div className="admin-property-image-preview admin-branding-preview">
+                    <span>Current Broker Logo</span>
+                    {siteSettings.brokerLogoUrl ? (
+                      <img className="admin-brand-logo-image" src={siteSettings.brokerLogoUrl} alt={`${siteSettings.brokerageName} broker logo`} />
+                    ) : (
+                      <small>No broker logo is currently set.</small>
+                    )}
+                    <span>Current Team Logo</span>
+                    {siteSettings.teamLogoUrl ? (
+                      <img className="admin-brand-logo-image" src={siteSettings.teamLogoUrl} alt={`${siteSettings.siteName} team logo`} />
+                    ) : (
+                      <small>No team logo is currently set.</small>
+                    )}
                   </div>
-                ) : null}
-                {siteSettings.teamLogoUrl ? (
-                  <div className="admin-logo-preview">
-                    <img src={siteSettings.teamLogoUrl} alt={`${siteSettings.siteName} team logo`} />
-                    <span>Current team logo</span>
+                  <div className="admin-property-image-editor">
+                    <span>Edit Brand Logos</span>
+                    <label>
+                      Broker logo URL
+                      <input name="brokerLogoUrl" type="text" defaultValue={siteSettings.brokerLogoUrl} />
+                    </label>
+                    <label>
+                      Upload broker logo
+                      <input name="brokerLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+                    </label>
+                    <label>
+                      Team logo URL
+                      <input name="teamLogoUrl" type="text" defaultValue={siteSettings.teamLogoUrl} />
+                    </label>
+                    <label>
+                      Upload team logo
+                      <input name="teamLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+                    </label>
+                    <small>Transparent PNG or clean white-background logo files will usually look best in the public header.</small>
                   </div>
+                </div>
+              </section>
+              <div className="admin-form-footer">
+                <small>These branding settings control the reusable website identity.</small>
+                {siteStatus === "saved" && savedSiteSection === "branding" ? (
+                  <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
                 ) : null}
+                <button className="admin-save-button" type="submit">Save branding</button>
               </div>
+            </form>
+
+            <section className="admin-form-card" id="banner-campaigns">
+              <section className="admin-settings-section">
+                <div className="admin-settings-section-heading">
+                  <div>
+                    <p className="admin-kicker">Homepage Banner</p>
+                    <h3>Active banner and campaigns</h3>
+                  </div>
+                  <span>{activeBanner?.headline || "No active banner"}</span>
+                </div>
+                <div className="admin-property-image-grid">
+                  <div>
+                    <p className="admin-kicker">Active Banner</p>
+                    {activeBanner ? (
+                      <div className={`admin-banner-preview banner-theme-${activeBanner.theme}`}>
+                        <p>{activeBanner.eyebrow}</p>
+                        <h3>{activeBanner.headline}</h3>
+                        <span>{activeBanner.body}</span>
+                      </div>
+                    ) : null}
+                    <p>{activeBanner ? "This is the banner currently displayed beneath the team logo on the website." : "The site will use fallback banner settings or hide the banner when no active campaign is available."}</p>
+                  </div>
+                  <div>
+                    <p className="admin-kicker">Campaigns</p>
+                    <h3>Edit banner campaigns</h3>
+                    {bannerStatus === "error" ? (
+                      <div className="admin-inline-alert" role="alert">
+                        <strong>Save did not complete.</strong>
+                        <span>Please check the required fields or Supabase update permission.</span>
+                      </div>
+                    ) : null}
+                    <details className="admin-create-panel" id="new-banner-campaign">
+                      <summary>Add new banner campaign</summary>
+                      <form className="admin-form-card" action={createBannerCampaign}>
+                        <label>
+                          Campaign name
+                          <input name="campaignName" type="text" placeholder="Fall buyer campaign" required />
+                        </label>
+                        <label>
+                          Eyebrow
+                          <input name="eyebrow" type="text" placeholder="Seasonal update" />
+                        </label>
+                        <label>
+                          Headline
+                          <input name="headline" type="text" placeholder="A fresh season for your next move." required />
+                        </label>
+                        <label>
+                          Body
+                          <textarea name="body" placeholder="Short supporting line for the banner." rows={3}></textarea>
+                        </label>
+                        <div className="admin-form-grid">
+                          <label>
+                            Start date
+                            <input name="startDate" type="date" />
+                          </label>
+                          <label>
+                            End date
+                            <input name="endDate" type="date" />
+                          </label>
+                          <label>
+                            Priority
+                            <input name="priority" type="number" defaultValue="100" min="1" step="1" />
+                          </label>
+                          <label>
+                            Theme
+                            <select name="theme" defaultValue="seasonal">
+                              <option value="patriotic">Patriotic</option>
+                              <option value="market">Market</option>
+                              <option value="seasonal">Seasonal</option>
+                            </select>
+                          </label>
+                        </div>
+                        <label className="admin-checkbox">
+                          <input name="isActive" type="checkbox" />
+                          Active on site
+                        </label>
+                        <div className="admin-form-footer">
+                          <small>New banners can stay inactive until you are ready to use them.</small>
+                          <button className="admin-save-button" type="submit">Create banner</button>
+                        </div>
+                      </form>
+                    </details>
+                    <div className="admin-form-list">
+                      {banners.map((banner) => (
+                        <details className="admin-edit-panel" id={`banner-${banner.id}`} key={banner.id} open={bannerStatus === "saved" && savedBannerId === banner.id}>
+                          <summary className="admin-summary-row">
+                            <span>
+                              <strong>{banner.campaign_name}</strong>
+                              <small>{banner.headline}</small>
+                            </span>
+                            <span>{banner.is_active ? "Active" : "Inactive"}</span>
+                            <span>{banner.theme}</span>
+                            <span>{formatDate(banner.start_date)}</span>
+                          </summary>
+                          <form className="admin-form-card" action={updateBannerCampaign}>
+                            <input name="bannerId" type="hidden" value={banner.id} />
+                            <label>
+                              Campaign name
+                              <input name="campaignName" type="text" defaultValue={banner.campaign_name} required />
+                            </label>
+                            <label>
+                              Eyebrow
+                              <input name="eyebrow" type="text" defaultValue={banner.eyebrow || ""} />
+                            </label>
+                            <label>
+                              Headline
+                              <input name="headline" type="text" defaultValue={banner.headline} required />
+                            </label>
+                            <label>
+                              Body
+                              <textarea name="body" defaultValue={banner.body || ""} rows={3}></textarea>
+                            </label>
+                            <div className="admin-form-grid">
+                              <label>
+                                Start date
+                                <input name="startDate" type="date" defaultValue={banner.start_date || ""} />
+                              </label>
+                              <label>
+                                End date
+                                <input name="endDate" type="date" defaultValue={banner.end_date || ""} />
+                              </label>
+                              <label>
+                                Priority
+                                <input name="priority" type="number" defaultValue={banner.priority} min="1" step="1" />
+                              </label>
+                              <label>
+                                Theme
+                                <select name="theme" defaultValue={banner.theme}>
+                                  <option value="patriotic">Patriotic</option>
+                                  <option value="market">Market</option>
+                                  <option value="seasonal">Seasonal</option>
+                                </select>
+                              </label>
+                            </div>
+                            <label className="admin-checkbox">
+                              <input name="isActive" type="checkbox" defaultChecked={banner.is_active} />
+                              Active on site
+                            </label>
+                            <div className="admin-form-footer">
+                              <small>{banner.is_active ? "Currently active" : "Currently inactive"} - {formatDate(banner.start_date)} to {formatDate(banner.end_date)}</small>
+                              {bannerStatus === "saved" && savedBannerId === banner.id ? (
+                                <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
+                              ) : null}
+                              <button className="admin-save-button" type="submit">Save banner</button>
+                            </div>
+                          </form>
+                        </details>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </section>
+
+            <form className="admin-form-card" action={updateSiteSettings} encType="multipart/form-data">
+              <input name="siteSlug" type="hidden" value={siteSettings.slug} />
+              <input name="siteSection" type="hidden" value="homepage-photo" />
               <section className="admin-settings-section">
                 <div className="admin-settings-section-heading">
                   <p className="admin-kicker">Home Page Property</p>
@@ -1630,45 +1873,70 @@ export default async function AdminDashboardPage({
                   </div>
                 </div>
               </section>
+              <div className="admin-form-footer">
+                <small>Controls the main image behind the homepage search panel.</small>
+                {siteStatus === "saved" && savedSiteSection === "homepage-photo" ? (
+                  <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
+                ) : null}
+                <button className="admin-save-button" type="submit">Save homepage photo</button>
+              </div>
+            </form>
+
+            <form className="admin-form-card" action={updateSiteSettings}>
+              <input name="siteSlug" type="hidden" value={siteSettings.slug} />
+              <input name="siteSection" type="hidden" value="hero-promo" />
               <section className="admin-settings-section">
                 <div className="admin-settings-section-heading">
-                  <p className="admin-kicker">Branding</p>
-                  <h3>Names, logos, and colors</h3>
+                  <p className="admin-kicker">Hero & Promo</p>
+                  <h3>Top-of-page copy</h3>
                 </div>
                 <div className="admin-form-grid">
                   <label>
-                    Site name
-                    <input name="siteName" type="text" defaultValue={siteSettings.siteName} required />
+                    Hero eyebrow
+                    <input name="heroEyebrow" type="text" defaultValue={siteSettings.heroEyebrow} />
                   </label>
                   <label>
-                    Brokerage name
-                    <input name="brokerageName" type="text" defaultValue={siteSettings.brokerageName} />
-                  </label>
-                  <label>
-                    Primary domain
-                    <input name="primaryDomain" type="text" defaultValue={siteSettings.primaryDomain} />
-                  </label>
-                  <BrandColorField label="Primary brand color" name="brandPrimary" defaultValue={siteSettings.brandPrimary} />
-                  <BrandColorField label="Accent brand color" name="brandAccent" defaultValue={siteSettings.brandAccent} />
-                  <label>
-                    Broker logo URL
-                    <input name="brokerLogoUrl" type="text" defaultValue={siteSettings.brokerLogoUrl} />
-                  </label>
-                  <label>
-                    Upload broker logo
-                    <input name="brokerLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
-                  </label>
-                  <label>
-                    Team logo URL
-                    <input name="teamLogoUrl" type="text" defaultValue={siteSettings.teamLogoUrl} />
-                  </label>
-                  <label>
-                    Upload team logo
-                    <input name="teamLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+                    Hero subheadline
+                    <input name="heroSubheadline" type="text" defaultValue={siteSettings.heroSubheadline} />
                   </label>
                 </div>
+                <label>
+                  Hero headline
+                  <textarea name="heroHeadline" rows={2} defaultValue={siteSettings.heroHeadline}></textarea>
+                </label>
+                <div className="admin-checkbox-row">
+                  <label className="admin-checkbox">
+                    <input name="promoEnabled" type="checkbox" defaultChecked={siteSettings.promoEnabled} />
+                    Enable fallback promo banner
+                  </label>
+                </div>
+                <div className="admin-form-grid">
+                  <label>
+                    Fallback promo eyebrow
+                    <input name="promoEyebrow" type="text" defaultValue={siteSettings.promoEyebrow} />
+                  </label>
+                  <label>
+                    Fallback promo headline
+                    <input name="promoHeadline" type="text" defaultValue={siteSettings.promoHeadline} />
+                  </label>
+                </div>
+                <label>
+                  Fallback promo body
+                  <textarea name="promoBody" rows={2} defaultValue={siteSettings.promoBody}></textarea>
+                </label>
               </section>
+              <div className="admin-form-footer">
+                <small>Controls the homepage opening message and fallback promo banner.</small>
+                {siteStatus === "saved" && savedSiteSection === "hero-promo" ? (
+                  <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
+                ) : null}
+                <button className="admin-save-button" type="submit">Save hero & promo</button>
+              </div>
+            </form>
 
+            <form className="admin-form-card" action={updateSiteSettings}>
+              <input name="siteSlug" type="hidden" value={siteSettings.slug} />
+              <input name="siteSection" type="hidden" value="contact" />
               <section className="admin-settings-section">
                 <div className="admin-settings-section-heading">
                   <p className="admin-kicker">Contact</p>
@@ -1710,115 +1978,18 @@ export default async function AdminDashboardPage({
                   <textarea name="valuationNotificationEmails" rows={2} defaultValue={siteSettings.leadRouting.valuationNotificationEmails.join(", ")}></textarea>
                 </label>
               </section>
+              <div className="admin-form-footer">
+                <small>Controls public contact details and email notification behavior.</small>
+                {siteStatus === "saved" && savedSiteSection === "contact" ? (
+                  <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
+                ) : null}
+                <button className="admin-save-button" type="submit">Save contact</button>
+              </div>
+            </form>
 
-              <section className="admin-settings-section">
-                <div className="admin-settings-section-heading">
-                  <p className="admin-kicker">Lead Routing</p>
-                  <h3>Assignments and email behavior</h3>
-                </div>
-                <div className="admin-routing-grid">
-                  <div className="admin-routing-stack">
-                    <label>
-                      Default assigned team member
-                      <select name="defaultAssignedTeamMemberSlug" defaultValue={siteSettings.leadRouting.defaultAssignedTeamMemberSlug}>
-                        <option value="">No default assignment</option>
-                        {teamMemberOptions.map((member) => (
-                          <option key={member.id} value={member.slug}>{member.full_name}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Default notification team members
-                      <select
-                        name="defaultNotificationTeamMemberSlugs"
-                        multiple
-                        defaultValue={siteSettings.leadRouting.defaultNotificationTeamMemberSlugs}
-                      >
-                        {teamMemberOptions.map((member) => (
-                          <option key={member.id} value={member.slug}>{member.full_name}</option>
-                        ))}
-                      </select>
-                      <small>Hold Ctrl while clicking to select more than one.</small>
-                    </label>
-                  </div>
-                  <div className="admin-routing-stack">
-                    <label>
-                      Valuation assigned team member
-                      <select name="valuationAssignedTeamMemberSlug" defaultValue={siteSettings.leadRouting.valuationAssignedTeamMemberSlug}>
-                        <option value="">Use default assignment</option>
-                        {teamMemberOptions.map((member) => (
-                          <option key={member.id} value={member.slug}>{member.full_name}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Valuation notification team members
-                      <select
-                        name="valuationNotificationTeamMemberSlugs"
-                        multiple
-                        defaultValue={siteSettings.leadRouting.valuationNotificationTeamMemberSlugs}
-                      >
-                        {teamMemberOptions.map((member) => (
-                          <option key={member.id} value={member.slug}>{member.full_name}</option>
-                        ))}
-                      </select>
-                      <small>Leave blank to use the default notification team.</small>
-                    </label>
-                  </div>
-                </div>
-                <div className="admin-checkbox-row">
-                  <label className="admin-checkbox">
-                    <input name="sendClientConfirmation" type="checkbox" defaultChecked={siteSettings.leadRouting.sendClientConfirmation} />
-                    Send client confirmation emails
-                  </label>
-                  <label className="admin-checkbox">
-                    <input name="sendInternalNotification" type="checkbox" defaultChecked={siteSettings.leadRouting.sendInternalNotification} />
-                    Send internal lead notifications
-                  </label>
-                </div>
-              </section>
-
-              <section className="admin-settings-section">
-                <div className="admin-settings-section-heading">
-                  <p className="admin-kicker">Hero & Promo</p>
-                  <h3>Top-of-page copy</h3>
-                </div>
-                <div className="admin-form-grid">
-                  <label>
-                    Hero eyebrow
-                    <input name="heroEyebrow" type="text" defaultValue={siteSettings.heroEyebrow} />
-                  </label>
-                  <label>
-                    Hero subheadline
-                    <input name="heroSubheadline" type="text" defaultValue={siteSettings.heroSubheadline} />
-                  </label>
-                </div>
-                <label>
-                  Hero headline
-                  <textarea name="heroHeadline" rows={2} defaultValue={siteSettings.heroHeadline}></textarea>
-                </label>
-                <div className="admin-checkbox-row">
-                  <label className="admin-checkbox">
-                    <input name="promoEnabled" type="checkbox" defaultChecked={siteSettings.promoEnabled} />
-                    Enable fallback promo banner
-                  </label>
-                </div>
-                <div className="admin-form-grid">
-                  <label>
-                    Fallback promo eyebrow
-                    <input name="promoEyebrow" type="text" defaultValue={siteSettings.promoEyebrow} />
-                  </label>
-                  <label>
-                    Fallback promo headline
-                    <input name="promoHeadline" type="text" defaultValue={siteSettings.promoHeadline} />
-                  </label>
-                </div>
-                <label>
-                  Fallback promo body
-                  <textarea name="promoBody" rows={2} defaultValue={siteSettings.promoBody}></textarea>
-                </label>
-              </section>
-
+            <form className="admin-form-card" action={updateSiteSettings}>
+              <input name="siteSlug" type="hidden" value={siteSettings.slug} />
+              <input name="siteSection" type="hidden" value="homepage-copy" />
               <section className="admin-settings-section">
                 <div className="admin-settings-section-heading">
                   <p className="admin-kicker">Homepage Copy</p>
@@ -1908,163 +2079,91 @@ export default async function AdminDashboardPage({
                 </label>
               </section>
               <div className="admin-form-footer">
-                <small>These settings power the reusable website template.</small>
-                {siteStatus === "saved" ? (
+                <small>Controls the reusable homepage section wording.</small>
+                {siteStatus === "saved" && savedSiteSection === "homepage-copy" ? (
                   <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
                 ) : null}
-                <button className="admin-save-button" type="submit">Save site settings</button>
+                <button className="admin-save-button" type="submit">Save homepage copy</button>
               </div>
             </form>
-          <section className="admin-settings-section" id="banner-campaigns">
-            <div className="admin-settings-section-heading">
-              <div>
-                <p className="admin-kicker">Homepage Banner</p>
-                <h3>Active banner and campaigns</h3>
-              </div>
-              <span>{activeBanner?.headline || "No active banner"}</span>
-            </div>
-            <div className="admin-property-image-grid">
-              <div>
-                <p className="admin-kicker">Active Banner</p>
-                {activeBanner ? (
-                  <div className={`admin-banner-preview banner-theme-${activeBanner.theme}`}>
-                    <p>{activeBanner.eyebrow}</p>
-                    <h3>{activeBanner.headline}</h3>
-                    <span>{activeBanner.body}</span>
-                  </div>
-                ) : null}
-                <p>{activeBanner ? "This is the banner currently displayed beneath the team logo on the website." : "The site will use fallback banner settings or hide the banner when no active campaign is available."}</p>
-              </div>
-              <div>
-                <p className="admin-kicker">Campaigns</p>
-                <h3>Edit banner campaigns</h3>
-                {bannerStatus === "error" ? (
-                  <div className="admin-inline-alert" role="alert">
-                    <strong>Save did not complete.</strong>
-                    <span>Please check the required fields or Supabase update permission.</span>
-                  </div>
-                ) : null}
-                <details className="admin-create-panel" id="new-banner-campaign">
-                  <summary>Add new banner campaign</summary>
-                  <form className="admin-form-card" action={createBannerCampaign}>
-                    <label>
-                      Campaign name
-                      <input name="campaignName" type="text" placeholder="Fall buyer campaign" required />
-                    </label>
-                    <label>
-                      Eyebrow
-                      <input name="eyebrow" type="text" placeholder="Seasonal update" />
-                    </label>
-                    <label>
-                      Headline
-                      <input name="headline" type="text" placeholder="A fresh season for your next move." required />
-                    </label>
-                    <label>
-                      Body
-                      <textarea name="body" placeholder="Short supporting line for the banner." rows={3}></textarea>
-                    </label>
-                    <div className="admin-form-grid">
-                      <label>
-                        Start date
-                        <input name="startDate" type="date" />
-                      </label>
-                      <label>
-                        End date
-                        <input name="endDate" type="date" />
-                      </label>
-                      <label>
-                        Priority
-                        <input name="priority" type="number" defaultValue="100" min="1" step="1" />
-                      </label>
-                      <label>
-                        Theme
-                        <select name="theme" defaultValue="seasonal">
-                          <option value="patriotic">Patriotic</option>
-                          <option value="market">Market</option>
-                          <option value="seasonal">Seasonal</option>
-                        </select>
-                      </label>
-                    </div>
-                    <label className="admin-checkbox">
-                      <input name="isActive" type="checkbox" />
-                      Active on site
-                    </label>
-                    <div className="admin-form-footer">
-                      <small>New banners can stay inactive until you are ready to use them.</small>
-                      <button className="admin-save-button" type="submit">Create banner</button>
-                    </div>
-                  </form>
-                </details>
-                <div className="admin-form-list">
-                  {banners.map((banner) => (
-                    <details className="admin-edit-panel" id={`banner-${banner.id}`} key={banner.id} open={bannerStatus === "saved" && savedBannerId === banner.id}>
-                      <summary className="admin-summary-row">
-                        <span>
-                          <strong>{banner.campaign_name}</strong>
-                          <small>{banner.headline}</small>
-                        </span>
-                        <span>{banner.is_active ? "Active" : "Inactive"}</span>
-                        <span>{banner.theme}</span>
-                        <span>{formatDate(banner.start_date)}</span>
-                      </summary>
-                      <form className="admin-form-card" action={updateBannerCampaign}>
-                        <input name="bannerId" type="hidden" value={banner.id} />
-                        <label>
-                          Campaign name
-                          <input name="campaignName" type="text" defaultValue={banner.campaign_name} required />
-                        </label>
-                        <label>
-                          Eyebrow
-                          <input name="eyebrow" type="text" defaultValue={banner.eyebrow || ""} />
-                        </label>
-                        <label>
-                          Headline
-                          <input name="headline" type="text" defaultValue={banner.headline} required />
-                        </label>
-                        <label>
-                          Body
-                          <textarea name="body" defaultValue={banner.body || ""} rows={3}></textarea>
-                        </label>
-                        <div className="admin-form-grid">
-                          <label>
-                            Start date
-                            <input name="startDate" type="date" defaultValue={banner.start_date || ""} />
-                          </label>
-                          <label>
-                            End date
-                            <input name="endDate" type="date" defaultValue={banner.end_date || ""} />
-                          </label>
-                          <label>
-                            Priority
-                            <input name="priority" type="number" defaultValue={banner.priority} min="1" step="1" />
-                          </label>
-                          <label>
-                            Theme
-                            <select name="theme" defaultValue={banner.theme}>
-                              <option value="patriotic">Patriotic</option>
-                              <option value="market">Market</option>
-                              <option value="seasonal">Seasonal</option>
-                            </select>
-                          </label>
-                        </div>
-                        <label className="admin-checkbox">
-                          <input name="isActive" type="checkbox" defaultChecked={banner.is_active} />
-                          Active on site
-                        </label>
-                        <div className="admin-form-footer">
-                          <small>{banner.is_active ? "Currently active" : "Currently inactive"} - {formatDate(banner.start_date)} to {formatDate(banner.end_date)}</small>
-                          {bannerStatus === "saved" && savedBannerId === banner.id ? (
-                            <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
-                          ) : null}
-                          <button className="admin-save-button" type="submit">Save banner</button>
-                        </div>
-                      </form>
-                    </details>
-                  ))}
+
+            <form className="admin-form-card" action={updateSiteSettings}>
+              <input name="siteSlug" type="hidden" value={siteSettings.slug} />
+              <input name="siteSection" type="hidden" value="lead-routing" />
+              <section className="admin-settings-section">
+                <div className="admin-settings-section-heading">
+                  <p className="admin-kicker">Lead Routing</p>
+                  <h3>Assignments and email behavior</h3>
                 </div>
+                <div className="admin-routing-grid">
+                  <div className="admin-routing-stack">
+                    <label>
+                      Default assigned team member
+                      <select name="defaultAssignedTeamMemberSlug" defaultValue={siteSettings.leadRouting.defaultAssignedTeamMemberSlug}>
+                        <option value="">No default assignment</option>
+                        {teamMemberOptions.map((member) => (
+                          <option key={member.id} value={member.slug}>{member.full_name}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Default notification team members
+                      <select
+                        name="defaultNotificationTeamMemberSlugs"
+                        multiple
+                        defaultValue={siteSettings.leadRouting.defaultNotificationTeamMemberSlugs}
+                      >
+                        {teamMemberOptions.map((member) => (
+                          <option key={member.id} value={member.slug}>{member.full_name}</option>
+                        ))}
+                      </select>
+                      <small>Hold Ctrl while clicking to select more than one.</small>
+                    </label>
+                  </div>
+                  <div className="admin-routing-stack">
+                    <label>
+                      Valuation assigned team member
+                      <select name="valuationAssignedTeamMemberSlug" defaultValue={siteSettings.leadRouting.valuationAssignedTeamMemberSlug}>
+                        <option value="">Use default assignment</option>
+                        {teamMemberOptions.map((member) => (
+                          <option key={member.id} value={member.slug}>{member.full_name}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Valuation notification team members
+                      <select
+                        name="valuationNotificationTeamMemberSlugs"
+                        multiple
+                        defaultValue={siteSettings.leadRouting.valuationNotificationTeamMemberSlugs}
+                      >
+                        {teamMemberOptions.map((member) => (
+                          <option key={member.id} value={member.slug}>{member.full_name}</option>
+                        ))}
+                      </select>
+                      <small>Leave blank to use the default notification team.</small>
+                    </label>
+                  </div>
+                </div>
+                <div className="admin-checkbox-row">
+                  <label className="admin-checkbox">
+                    <input name="sendClientConfirmation" type="checkbox" defaultChecked={siteSettings.leadRouting.sendClientConfirmation} />
+                    Send client confirmation emails
+                  </label>
+                  <label className="admin-checkbox">
+                    <input name="sendInternalNotification" type="checkbox" defaultChecked={siteSettings.leadRouting.sendInternalNotification} />
+                    Send internal lead notifications
+                  </label>
+                </div>
+              </section>
+              <div className="admin-form-footer">
+                <small>Controls who gets assigned and notified when new leads arrive.</small>
+                {siteStatus === "saved" && savedSiteSection === "lead-routing" ? (
+                  <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
+                ) : null}
+                <button className="admin-save-button" type="submit">Save lead routing</button>
               </div>
-            </div>
-          </section>
+            </form>
           </details>
         </article>
 
