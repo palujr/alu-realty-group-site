@@ -95,6 +95,30 @@ type LeadFilters = {
   followUp: string;
 };
 
+type AdminPageRequest = {
+  page: number;
+  pageSize: number;
+};
+
+type AdminPages = {
+  leads: AdminPageRequest;
+  teamMembers: AdminPageRequest;
+  testimonials: AdminPageRequest;
+};
+
+type AdminPagination = {
+  page: number;
+  totalPages: number;
+  totalCount: number;
+  pageSize: number;
+  from: number;
+  to: number;
+  pageParam: string;
+  pageSizeParam: string;
+  selectedPageSize: string;
+  anchor: string;
+};
+
 const leadStatusOptions = [
   { value: "new", label: "New" },
   { value: "assigned", label: "Assigned" },
@@ -164,7 +188,21 @@ const leadActivityTypeOptions = [
 
 const teamPhotoBucket = "team-photos";
 const siteLogoBucket = "site-logos";
+const adminPageSize = 10;
+const adminPageSizeOptions = [10, 20, 50, 75];
 const maxAdminImageSize = 5 * 1024 * 1024;
+const transientAdminSearchParams = new Set([
+  "siteStatus",
+  "bannerStatus",
+  "bannerId",
+  "leadStatus",
+  "leadId",
+  "leadActivityStatus",
+  "teamStatus",
+  "teamMemberId",
+  "testimonialStatus",
+  "testimonialId"
+]);
 
 function formatDate(value?: string | null, timeZone = defaultAdminTimeZone) {
   if (!value) {
@@ -379,6 +417,153 @@ function getSearchParamValue(
 ) {
   const value = searchParams?.[key];
   return Array.isArray(value) ? value[0] || "" : value || "";
+}
+
+function normalizePageParam(value: string) {
+  const page = Number.parseInt(value, 10);
+  return Number.isFinite(page) && page > 0 ? page : 1;
+}
+
+function normalizePageSizeParam(value: string) {
+  if (value === "all") {
+    return 0;
+  }
+
+  const pageSize = Number.parseInt(value, 10);
+  return adminPageSizeOptions.includes(pageSize) ? pageSize : adminPageSize;
+}
+
+function getSelectedPageSizeLabel(pageSize: number) {
+  return pageSize === 0 ? "all" : pageSize.toString();
+}
+
+function getRangeEnd(start: number, pageSize: number) {
+  return pageSize === 0 ? undefined : start + pageSize - 1;
+}
+
+function getPagination(page: number, pageSize: number, totalCount: number, pageParam: string, pageSizeParam: string, anchor: string): AdminPagination {
+  const effectivePageSize = pageSize === 0 ? Math.max(totalCount, 1) : pageSize;
+  const totalPages = pageSize === 0 ? 1 : Math.max(1, Math.ceil(totalCount / effectivePageSize));
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const from = totalCount ? (safePage - 1) * effectivePageSize + 1 : 0;
+  const to = totalCount ? Math.min(safePage * effectivePageSize, totalCount) : 0;
+
+  return {
+    page: safePage,
+    totalPages,
+    totalCount,
+    pageSize: effectivePageSize,
+    from,
+    to,
+    pageParam,
+    pageSizeParam,
+    selectedPageSize: getSelectedPageSizeLabel(pageSize),
+    anchor
+  };
+}
+
+function buildAdminPageHref(
+  searchParams: Record<string, string | string[] | undefined> | undefined,
+  pageParam: string,
+  page: number,
+  anchor: string
+) {
+  const params = new URLSearchParams();
+
+  Object.entries(searchParams || {}).forEach(([key, value]) => {
+    if (transientAdminSearchParams.has(key)) {
+      return;
+    }
+
+    const stringValue = Array.isArray(value) ? value[0] : value;
+
+    if (stringValue) {
+      params.set(key, stringValue);
+    }
+  });
+
+  if (page <= 1) {
+    params.delete(pageParam);
+  } else {
+    params.set(pageParam, page.toString());
+  }
+
+  const query = params.toString();
+  return query ? `/admin?${query}#${anchor}` : `/admin#${anchor}`;
+}
+
+function buildAdminPageSizeHref(
+  searchParams: Record<string, string | string[] | undefined> | undefined,
+  pageParam: string,
+  pageSizeParam: string,
+  pageSize: string,
+  anchor: string
+) {
+  const params = new URLSearchParams();
+
+  Object.entries(searchParams || {}).forEach(([key, value]) => {
+    if (transientAdminSearchParams.has(key) || key === pageParam || key === pageSizeParam) {
+      return;
+    }
+
+    const stringValue = Array.isArray(value) ? value[0] : value;
+
+    if (stringValue) {
+      params.set(key, stringValue);
+    }
+  });
+
+  if (pageSize !== adminPageSize.toString()) {
+    params.set(pageSizeParam, pageSize);
+  }
+
+  const query = params.toString();
+  return query ? `/admin?${query}#${anchor}` : `/admin#${anchor}`;
+}
+
+function AdminPaginationControls({
+  pagination,
+  searchParams
+}: {
+  pagination: AdminPagination;
+  searchParams: Record<string, string | string[] | undefined> | undefined;
+}) {
+  if (pagination.totalCount <= adminPageSize) {
+    return null;
+  }
+
+  return (
+    <nav className="admin-pagination" aria-label={`${pagination.anchor} pages`}>
+      <span>
+        Showing {pagination.from}-{pagination.to} of {pagination.totalCount} records
+      </span>
+      <div className="admin-page-size-controls">
+        <span>Show</span>
+        {[...adminPageSizeOptions.map((option) => option.toString()), "all"].map((pageSize) => (
+          pagination.selectedPageSize === pageSize ? (
+            <strong key={pageSize}>{pageSize === "all" ? "All" : pageSize}</strong>
+          ) : (
+            <Link key={pageSize} href={buildAdminPageSizeHref(searchParams, pagination.pageParam, pagination.pageSizeParam, pageSize, pagination.anchor)}>
+              {pageSize === "all" ? "All" : pageSize}
+            </Link>
+          )
+        ))}
+      </div>
+      <div>
+        {pagination.page > 1 ? (
+          <Link href={buildAdminPageHref(searchParams, pagination.pageParam, pagination.page - 1, pagination.anchor)}>Previous</Link>
+        ) : (
+          <span className="admin-pagination-disabled">Previous</span>
+        )}
+        <strong>Page {pagination.page} of {pagination.totalPages}</strong>
+        {pagination.page < pagination.totalPages ? (
+          <Link href={buildAdminPageHref(searchParams, pagination.pageParam, pagination.page + 1, pagination.anchor)}>Next</Link>
+        ) : (
+          <span className="admin-pagination-disabled">Next</span>
+        )}
+      </div>
+    </nav>
+  );
 }
 
 function normalizeLeadFilter(value: string, allowedValues: string[]) {
@@ -1088,13 +1273,19 @@ async function updateTestimonial(formData: FormData) {
   redirect(`/admin?testimonialStatus=saved&testimonialId=${testimonialId}#testimonial-${testimonialId}`);
 }
 
-async function getAdminData(leadFilters: LeadFilters) {
+async function getAdminData(leadFilters: LeadFilters, pages: AdminPages) {
   const siteSettings = await getSiteSettings();
   const activeBanner = await getActiveSiteBanner(siteSettings.slug, siteSettings);
   const supabase = createClient();
   const adminSupabase = createAdminClient();
   const adminDataClient = adminSupabase || supabase;
   const cleanLeadSearch = sanitizeLeadSearch(leadFilters.search);
+  const leadRangeStart = pages.leads.pageSize === 0 ? 0 : (pages.leads.page - 1) * pages.leads.pageSize;
+  const teamRangeStart = pages.teamMembers.pageSize === 0 ? 0 : (pages.teamMembers.page - 1) * pages.teamMembers.pageSize;
+  const testimonialRangeStart = pages.testimonials.pageSize === 0 ? 0 : (pages.testimonials.page - 1) * pages.testimonials.pageSize;
+  const leadRangeEnd = getRangeEnd(leadRangeStart, pages.leads.pageSize);
+  const teamRangeEnd = getRangeEnd(teamRangeStart, pages.teamMembers.pageSize);
+  const testimonialRangeEnd = getRangeEnd(testimonialRangeStart, pages.testimonials.pageSize);
   const now = new Date();
   const todayInSiteTime = getDateTimeLocalValue(now, siteSettings.timeZone).slice(0, 10);
   const startOfTodayIso = dateTimeLocalToIso(`${todayInSiteTime}T00:00`, siteSettings.timeZone);
@@ -1103,6 +1294,7 @@ async function getAdminData(leadFilters: LeadFilters) {
   const [
     bannersResult,
     teamMembersResult,
+    teamMemberOptionsResult,
     testimonialsResult
   ] = await Promise.all([
     adminDataClient
@@ -1114,21 +1306,26 @@ async function getAdminData(leadFilters: LeadFilters) {
       .limit(10),
     adminDataClient
       .from("team_members")
+      .select("id, slug, full_name, title, phone, email, bio, photo_url, specialties, display_order, is_active", { count: "exact" })
+      .order("display_order", { ascending: true })
+      .range(teamRangeStart, teamRangeEnd ?? 9999),
+    adminDataClient
+      .from("team_members")
       .select("id, slug, full_name, title, phone, email, bio, photo_url, specialties, display_order, is_active")
       .order("display_order", { ascending: true })
-      .limit(10),
+      .limit(200),
     adminDataClient
       .from("testimonials")
-      .select("id, team_member_id, scope, client_name, context, quote, rating, is_featured, is_published")
+      .select("id, team_member_id, scope, client_name, context, quote, rating, is_featured, is_published", { count: "exact" })
       .order("created_at", { ascending: false })
-      .limit(10)
+      .range(testimonialRangeStart, testimonialRangeEnd ?? 9999)
   ]);
 
   const leadsResult = adminSupabase
     ? await (async () => {
         let leadsQuery = adminSupabase
           .from("lead_submissions")
-          .select("id, lead_type, full_name, email, phone, property_address, message, source_page, assigned_team_member_id, contact_status, preferred_contact_method, contact_notes, last_contacted_at, lead_priority, next_follow_up_at, lead_source_detail, created_at, team_members(full_name)");
+          .select("id, lead_type, full_name, email, phone, property_address, message, source_page, assigned_team_member_id, contact_status, preferred_contact_method, contact_notes, last_contacted_at, lead_priority, next_follow_up_at, lead_source_detail, created_at, team_members(full_name)", { count: "exact" });
 
         if (leadFilters.type) {
           leadsQuery = leadsQuery.eq("lead_type", leadFilters.type);
@@ -1168,10 +1365,11 @@ async function getAdminData(leadFilters: LeadFilters) {
 
         return leadsQuery
           .order("created_at", { ascending: false })
-          .limit(10);
+          .range(leadRangeStart, leadRangeEnd ?? 9999);
       })()
     : {
         data: [],
+        count: 0,
         error: { message: "Add SUPABASE_SERVICE_ROLE_KEY in Vercel to unlock private lead inbox data." }
       };
 
@@ -1192,6 +1390,7 @@ async function getAdminData(leadFilters: LeadFilters) {
   }, {});
   const banners = (bannersResult.data || []) as AdminBanner[];
   const teamMembers = (teamMembersResult.data || []) as AdminTeamMember[];
+  const teamMemberOptions = (teamMemberOptionsResult.data || teamMembers) as AdminTeamMember[];
   const testimonials = (testimonialsResult.data || []) as AdminTestimonial[];
 
   return {
@@ -1201,11 +1400,17 @@ async function getAdminData(leadFilters: LeadFilters) {
     leadActivitiesByLeadId,
     banners,
     teamMembers,
+    teamMemberOptions,
     testimonials,
+    pagination: {
+      leads: getPagination(pages.leads.page, pages.leads.pageSize, leadsResult.count || 0, "leadPage", "leadPageSize", "lead-inbox"),
+      teamMembers: getPagination(pages.teamMembers.page, pages.teamMembers.pageSize, teamMembersResult.count || 0, "teamPage", "teamPageSize", "team-members"),
+      testimonials: getPagination(pages.testimonials.page, pages.testimonials.pageSize, testimonialsResult.count || 0, "testimonialPage", "testimonialPageSize", "testimonials")
+    },
     errors: {
       leads: leadsResult.error?.message || leadActivitiesResult.error?.message,
       banners: bannersResult.error?.message,
-      teamMembers: teamMembersResult.error?.message,
+      teamMembers: teamMembersResult.error?.message || teamMemberOptionsResult.error?.message,
       testimonials: testimonialsResult.error?.message
     }
   };
@@ -1232,6 +1437,12 @@ export default async function AdminDashboardPage({
     leadFilterAssigned?: string;
     leadFilterPriority?: string;
     leadFilterFollowUp?: string;
+    leadPage?: string;
+    leadPageSize?: string;
+    teamPage?: string;
+    teamPageSize?: string;
+    testimonialPage?: string;
+    testimonialPageSize?: string;
   };
 }) {
   const leadFilters: LeadFilters = {
@@ -1242,8 +1453,22 @@ export default async function AdminDashboardPage({
     priority: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterPriority"), leadPriorityOptions.map((option) => option.value)),
     followUp: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterFollowUp"), followUpFilterOptions.map((option) => option.value))
   };
+  const adminPages: AdminPages = {
+    leads: {
+      page: normalizePageParam(getSearchParamValue(searchParams, "leadPage")),
+      pageSize: normalizePageSizeParam(getSearchParamValue(searchParams, "leadPageSize"))
+    },
+    teamMembers: {
+      page: normalizePageParam(getSearchParamValue(searchParams, "teamPage")),
+      pageSize: normalizePageSizeParam(getSearchParamValue(searchParams, "teamPageSize"))
+    },
+    testimonials: {
+      page: normalizePageParam(getSearchParamValue(searchParams, "testimonialPage")),
+      pageSize: normalizePageSizeParam(getSearchParamValue(searchParams, "testimonialPageSize"))
+    }
+  };
   const hasLeadFilters = Boolean(leadFilters.search || leadFilters.type || leadFilters.status || leadFilters.assigned || leadFilters.priority || leadFilters.followUp);
-  const { siteSettings, activeBanner, leads, leadActivitiesByLeadId, banners, teamMembers, testimonials, errors } = await getAdminData(leadFilters);
+  const { siteSettings, activeBanner, leads, leadActivitiesByLeadId, banners, teamMembers, teamMemberOptions, testimonials, pagination, errors } = await getAdminData(leadFilters, adminPages);
   const visibleErrors = Object.values(errors).filter(Boolean);
   const siteStatus = searchParams?.siteStatus;
   const bannerStatus = searchParams?.bannerStatus;
@@ -1309,11 +1534,11 @@ export default async function AdminDashboardPage({
       <section className="admin-stats" aria-label="Dashboard summary">
         <article>
           <span>Recent leads</span>
-          <strong>{leads.length}</strong>
+          <strong>{pagination.leads.totalCount}</strong>
         </article>
         <article>
           <span>Team members</span>
-          <strong>{teamMembers.length}</strong>
+          <strong>{pagination.teamMembers.totalCount}</strong>
         </article>
         <article>
           <span>Banners</span>
@@ -1321,7 +1546,7 @@ export default async function AdminDashboardPage({
         </article>
         <article>
           <span>Testimonials</span>
-          <strong>{testimonials.length}</strong>
+          <strong>{pagination.testimonials.totalCount}</strong>
         </article>
       </section>
 
@@ -1458,7 +1683,7 @@ export default async function AdminDashboardPage({
                       Default assigned team member
                       <select name="defaultAssignedTeamMemberSlug" defaultValue={siteSettings.leadRouting.defaultAssignedTeamMemberSlug}>
                         <option value="">No default assignment</option>
-                        {teamMembers.map((member) => (
+                        {teamMemberOptions.map((member) => (
                           <option key={member.id} value={member.slug}>{member.full_name}</option>
                         ))}
                       </select>
@@ -1470,7 +1695,7 @@ export default async function AdminDashboardPage({
                         multiple
                         defaultValue={siteSettings.leadRouting.defaultNotificationTeamMemberSlugs}
                       >
-                        {teamMembers.map((member) => (
+                        {teamMemberOptions.map((member) => (
                           <option key={member.id} value={member.slug}>{member.full_name}</option>
                         ))}
                       </select>
@@ -1482,7 +1707,7 @@ export default async function AdminDashboardPage({
                       Valuation assigned team member
                       <select name="valuationAssignedTeamMemberSlug" defaultValue={siteSettings.leadRouting.valuationAssignedTeamMemberSlug}>
                         <option value="">Use default assignment</option>
-                        {teamMembers.map((member) => (
+                        {teamMemberOptions.map((member) => (
                           <option key={member.id} value={member.slug}>{member.full_name}</option>
                         ))}
                       </select>
@@ -1494,7 +1719,7 @@ export default async function AdminDashboardPage({
                         multiple
                         defaultValue={siteSettings.leadRouting.valuationNotificationTeamMemberSlugs}
                       >
-                        {teamMembers.map((member) => (
+                        {teamMemberOptions.map((member) => (
                           <option key={member.id} value={member.slug}>{member.full_name}</option>
                         ))}
                       </select>
@@ -1660,7 +1885,7 @@ export default async function AdminDashboardPage({
               <p className="admin-kicker">Lead Workspace</p>
               <h2>Track buyer, seller, and valuation leads</h2>
             </div>
-            <span>{hasLeadFilters ? `${leads.length} matching` : leads.length ? "Live data" : "No leads visible"}</span>
+            <span>{hasLeadFilters ? `${pagination.leads.totalCount} matching` : pagination.leads.totalCount ? "Live data" : "No leads visible"}</span>
           </div>
 
           {leadStatus === "error" ? (
@@ -1698,7 +1923,7 @@ export default async function AdminDashboardPage({
               <select name="leadFilterAssigned" defaultValue={leadFilters.assigned}>
                 <option value="">Anyone</option>
                 <option value="unassigned">Unassigned</option>
-                {teamMembers.map((member) => (
+                {teamMemberOptions.map((member) => (
                   <option key={member.id} value={member.id}>{member.full_name}</option>
                 ))}
               </select>
@@ -1727,6 +1952,8 @@ export default async function AdminDashboardPage({
               ) : null}
             </div>
           </form>
+
+          <AdminPaginationControls pagination={pagination.leads} searchParams={searchParams} />
 
           <details className="admin-create-panel" id="new-lead">
             <summary>Add lead from phone, text, email, or website follow-up</summary>
@@ -1760,7 +1987,7 @@ export default async function AdminDashboardPage({
                   Assigned team member
                   <select name="assignedTeamMemberId" defaultValue="">
                     <option value="">Unassigned</option>
-                    {teamMembers.map((member) => (
+                    {teamMemberOptions.map((member) => (
                       <option key={member.id} value={member.id}>{member.full_name}</option>
                     ))}
                   </select>
@@ -1877,7 +2104,7 @@ export default async function AdminDashboardPage({
                     Assigned team member
                     <select name="assignedTeamMemberId" defaultValue={lead.assigned_team_member_id || ""}>
                       <option value="">Unassigned</option>
-                      {teamMembers.map((member) => (
+                      {teamMemberOptions.map((member) => (
                         <option key={member.id} value={member.id}>{member.full_name}</option>
                       ))}
                     </select>
@@ -1987,7 +2214,7 @@ export default async function AdminDashboardPage({
                             Updated by
                             <select name="updatedByTeamMemberIds" defaultValue="">
                               <option value="">Select team member</option>
-                              {teamMembers.map((member) => (
+                              {teamMemberOptions.map((member) => (
                                 <option key={member.id} value={member.id}>{member.full_name}</option>
                               ))}
                             </select>
@@ -2053,7 +2280,7 @@ export default async function AdminDashboardPage({
                       <label>
                         Added by
                         <select name="createdByTeamMemberIds" multiple>
-                          {teamMembers.map((member) => (
+                          {teamMemberOptions.map((member) => (
                             <option key={member.id} value={member.id}>{member.full_name}</option>
                           ))}
                         </select>
@@ -2092,6 +2319,8 @@ export default async function AdminDashboardPage({
               </p>
             ) : null}
           </div>
+
+          <AdminPaginationControls pagination={pagination.leads} searchParams={searchParams} />
         </article>
 
         <article className="admin-card">
@@ -2250,6 +2479,7 @@ export default async function AdminDashboardPage({
               <p className="admin-kicker">Team</p>
               <h2>Edit agent profiles</h2>
             </div>
+            <span>{pagination.teamMembers.totalCount} profiles</span>
           </div>
           {teamStatus === "error" ? (
             <div className="admin-inline-alert" role="alert">
@@ -2312,6 +2542,7 @@ export default async function AdminDashboardPage({
               </div>
             </form>
           </details>
+          <AdminPaginationControls pagination={pagination.teamMembers} searchParams={searchParams} />
           <div className="admin-form-list">
             {teamMembers.map((member) => (
               <details className="admin-edit-panel" id={`team-member-${member.id}`} key={member.id} open={teamStatus === "saved" && savedTeamMemberId === member.id}>
@@ -2386,6 +2617,7 @@ export default async function AdminDashboardPage({
               </details>
             ))}
           </div>
+          <AdminPaginationControls pagination={pagination.teamMembers} searchParams={searchParams} />
         </article>
 
         <article className="admin-card admin-card-wide" id="testimonials">
@@ -2394,6 +2626,7 @@ export default async function AdminDashboardPage({
               <p className="admin-kicker">Feedback</p>
               <h2>Edit testimonials</h2>
             </div>
+            <span>{pagination.testimonials.totalCount} testimonials</span>
           </div>
           {testimonialStatus === "error" ? (
             <div className="admin-inline-alert" role="alert">
@@ -2424,7 +2657,7 @@ export default async function AdminDashboardPage({
                   Assigned team member
                   <select name="teamMemberId" defaultValue="">
                     <option value="">No individual assignment</option>
-                    {teamMembers.map((member) => (
+                    {teamMemberOptions.map((member) => (
                       <option value={member.id} key={member.id}>{member.full_name}</option>
                     ))}
                   </select>
@@ -2454,6 +2687,7 @@ export default async function AdminDashboardPage({
               </div>
             </form>
           </details>
+          <AdminPaginationControls pagination={pagination.testimonials} searchParams={searchParams} />
           <div className="admin-form-list">
             {testimonials.map((testimonial) => (
               <details className="admin-edit-panel" id={`testimonial-${testimonial.id}`} key={testimonial.id} open={testimonialStatus === "saved" && savedTestimonialId === testimonial.id}>
@@ -2463,7 +2697,7 @@ export default async function AdminDashboardPage({
                     <small>{truncateText(testimonial.quote)}</small>
                   </span>
                   <span>{testimonial.is_published ? "Published" : "Draft"}</span>
-                  <span>{getTeamMemberNameById(teamMembers, testimonial.team_member_id)}</span>
+                  <span>{getTeamMemberNameById(teamMemberOptions, testimonial.team_member_id)}</span>
                   <span>{testimonial.rating ? `${testimonial.rating}/5` : "No rating"}</span>
                 </summary>
               <form className="admin-form-card" action={updateTestimonial}>
@@ -2488,7 +2722,7 @@ export default async function AdminDashboardPage({
                     Assigned team member
                     <select name="teamMemberId" defaultValue={testimonial.team_member_id || ""}>
                       <option value="">No individual assignment</option>
-                      {teamMembers.map((member) => (
+                      {teamMemberOptions.map((member) => (
                         <option value={member.id} key={member.id}>{member.full_name}</option>
                       ))}
                     </select>
@@ -2523,6 +2757,7 @@ export default async function AdminDashboardPage({
               </details>
             ))}
           </div>
+          <AdminPaginationControls pagination={pagination.testimonials} searchParams={searchParams} />
         </article>
       </section>
     </main>

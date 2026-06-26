@@ -816,6 +816,62 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   align-items: center;
   justify-content: flex-end;
 }
+.admin-pagination {
+  margin: 0 0 16px;
+  padding: 11px 14px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8f5ee;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+.admin-form-list + .admin-pagination {
+  margin: 16px 0 0;
+}
+.admin-pagination div {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.admin-page-size-controls {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.admin-page-size-controls span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.admin-pagination a,
+.admin-pagination-disabled {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.admin-pagination a:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.admin-pagination-disabled {
+  color: #a8aaa3;
+  background: #f1eee7;
+}
+.admin-pagination strong {
+  color: var(--ink);
+  font-size: 11px;
+}
 .admin-reset-link {
   color: var(--muted);
   font-size: 11px;
@@ -1283,6 +1339,10 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   .admin-filter-bar { grid-template-columns: 1fr; }
   .admin-filter-bar label:first-child { grid-column: auto; }
   .admin-filter-actions { justify-content: flex-start; }
+  .admin-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
   .admin-form-grid { grid-template-columns: 1fr; }
   .admin-routing-grid { grid-template-columns: 1fr; }
   .admin-logo-preview-grid { grid-template-columns: 1fr; }
