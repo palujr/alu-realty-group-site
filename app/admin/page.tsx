@@ -803,11 +803,6 @@ async function updateSiteSettings(formData: FormData) {
       primary_domain: asOptionalString(formData.get("primaryDomain")),
       broker_logo_url: brokerLogoUrl,
       team_logo_url: teamLogoUrl,
-      footer_logo_display: normalizeFooterLogoDisplay(formData.get("footerLogoDisplay")),
-      fair_housing_logo_url: fairHousingLogoUrl,
-      fair_housing_text: asOptionalString(formData.get("fairHousingText")) || currentSiteSettings.fairHousingText,
-      fair_housing_show_text: formData.get("fairHousingShowText") === "on",
-      realtor_logo_url: realtorLogoUrl,
       homepage_sections: {
         ...currentSiteSettings.homepageSections,
         footerLogoDisplay: normalizeFooterLogoDisplay(formData.get("footerLogoDisplay")),
