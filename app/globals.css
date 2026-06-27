@@ -1209,6 +1209,33 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   margin: 0;
   min-width: 0;
 }
+.admin-quick-actions .admin-quick-assign-form {
+  grid-column: span 2;
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(80px, .45fr);
+  gap: 8px;
+}
+.admin-quick-assign-form label {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.admin-quick-assign-form select {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 9px;
+  border: 1px solid rgba(27, 45, 38, .16);
+  color: var(--ink);
+  background: #fff;
+  font-size: 10px;
+  font-weight: 900;
+}
 .admin-quick-actions button {
   width: 100%;
   min-height: 34px;
@@ -1933,6 +1960,9 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .admin-quick-actions-label {
+    grid-column: 1 / -1;
+  }
+  .admin-quick-actions .admin-quick-assign-form {
     grid-column: 1 / -1;
   }
   .admin-lead-snapshot-grid {

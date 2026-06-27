@@ -2742,14 +2742,31 @@ export default async function AdminDashboardPage({
                     <input name="quickAction" type="hidden" value="clear-follow-up" />
                     <button type="submit">Clear follow-up</button>
                   </form>
-                  {teamMemberOptions.map((member) => (
-                    <form action={updateLeadQuickAction} key={member.id}>
+                  {teamMemberOptions.length <= 2 ? (
+                    teamMemberOptions.map((member) => (
+                      <form action={updateLeadQuickAction} key={member.id}>
+                        <input name="leadId" type="hidden" value={lead.id} />
+                        <input name="quickAction" type="hidden" value="assign" />
+                        <input name="assignedTeamMemberId" type="hidden" value={member.id} />
+                        <button type="submit">Assign to {member.full_name.split(" ")[0]}</button>
+                      </form>
+                    ))
+                  ) : (
+                    <form className="admin-quick-assign-form" action={updateLeadQuickAction}>
                       <input name="leadId" type="hidden" value={lead.id} />
                       <input name="quickAction" type="hidden" value="assign" />
-                      <input name="assignedTeamMemberId" type="hidden" value={member.id} />
-                      <button type="submit">Assign to {member.full_name.split(" ")[0]}</button>
+                      <label>
+                        <span>Assign to</span>
+                        <select name="assignedTeamMemberId" defaultValue={lead.assigned_team_member_id || ""} required>
+                          <option value="">Select agent</option>
+                          {teamMemberOptions.map((member) => (
+                            <option key={member.id} value={member.id}>{member.full_name}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <button type="submit">Apply</button>
                     </form>
-                  ))}
+                  )}
                 </div>
 
                 <div className="admin-lead-snapshot-grid" aria-label="Lead status snapshot">
