@@ -77,6 +77,22 @@ export default async function HomePage() {
   const testimonials = await getTestimonials();
   const heroHeadlineLines = siteSettings.heroHeadline.split("\n");
   const homepageSections = siteSettings.homepageSections;
+  const footerLogos = [
+    ...(siteSettings.footerLogoDisplay === "broker" || siteSettings.footerLogoDisplay === "both"
+      ? [{
+          href: "#top",
+          imageUrl: siteSettings.brokerLogoUrl,
+          label: siteSettings.brokerageName
+        }]
+      : []),
+    ...(siteSettings.footerLogoDisplay === "team" || siteSettings.footerLogoDisplay === "both"
+      ? [{
+          href: "#top",
+          imageUrl: siteSettings.teamLogoUrl,
+          label: siteSettings.siteName
+        }]
+      : [])
+  ];
 
   return (
     <>
@@ -401,11 +417,20 @@ export default async function HomePage() {
       </main>
 
       <footer>
-        <a className="brand fathom-brand footer-brand" href="#top" aria-label={`${siteSettings.brokerageName} home`}>
-          <img src={siteSettings.brokerLogoUrl} alt={siteSettings.brokerageName} />
-        </a>
+        <div className="footer-brands" aria-label="Footer logos">
+          {footerLogos.map((logo) => (
+            <a className="brand fathom-brand footer-brand" href={logo.href} aria-label={`${logo.label} home`} key={logo.label}>
+              <img src={logo.imageUrl} alt={logo.label} />
+            </a>
+          ))}
+        </div>
         <p>A modern real estate experience for Arizona buyers, sellers, and investors.</p>
         <div className="footer-links"><a href="#properties">Properties</a><a href="#rates">Mortgage</a><a href="#team">Team</a><a href="#sell">Contact</a></div>
+        <div className="footer-compliance">
+          <img src={siteSettings.fairHousingLogoUrl} alt="" aria-hidden="true" />
+          {siteSettings.fairHousingShowText ? <span>{siteSettings.fairHousingText}</span> : null}
+          <img className="footer-realtor-logo" src={siteSettings.realtorLogoUrl} alt="Realtor logo" />
+        </div>
         <small>© 2026 Alu Realty Group · Fathom Realty Elite · Equal Housing Opportunity · Demo listings shown</small>
       </footer>
 

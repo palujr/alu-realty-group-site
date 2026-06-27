@@ -6,6 +6,11 @@ create table if not exists public.broker_sites (
   primary_domain text,
   broker_logo_url text,
   team_logo_url text,
+  footer_logo_display text not null default 'broker',
+  fair_housing_logo_url text,
+  fair_housing_text text,
+  fair_housing_show_text boolean not null default true,
+  realtor_logo_url text,
   hero_image_url text,
   contact_email text,
   contact_phone text,
@@ -49,6 +54,21 @@ alter table public.broker_sites
 alter table public.broker_sites
   add column if not exists brand_section_background text;
 
+alter table public.broker_sites
+  add column if not exists footer_logo_display text not null default 'broker';
+
+alter table public.broker_sites
+  add column if not exists fair_housing_logo_url text;
+
+alter table public.broker_sites
+  add column if not exists fair_housing_text text;
+
+alter table public.broker_sites
+  add column if not exists fair_housing_show_text boolean not null default true;
+
+alter table public.broker_sites
+  add column if not exists realtor_logo_url text;
+
 alter table public.broker_sites enable row level security;
 
 grant usage on schema public to anon, authenticated;
@@ -66,6 +86,11 @@ insert into public.broker_sites (
   primary_domain,
   broker_logo_url,
   team_logo_url,
+  footer_logo_display,
+  fair_housing_logo_url,
+  fair_housing_text,
+  fair_housing_show_text,
+  realtor_logo_url,
   hero_image_url,
   contact_email,
   contact_phone,
@@ -94,6 +119,11 @@ values (
   'alurealtygroup.com',
   '/assets/fathom-realty-elite-logo.png',
   '/assets/alu-realty-group-logo.png',
+  'broker',
+  '/assets/equal-housing-opportunity.gif',
+  'Equal Housing Opportunity',
+  true,
+  '/assets/realtor-logo-black.jpg',
   '/assets/desert-home-hero.png',
   'phil@alurealtygroup.com',
   null,
@@ -149,6 +179,11 @@ that feels like yours.',
 on conflict (slug) do update set
   homepage_sections = public.broker_sites.homepage_sections || excluded.homepage_sections,
   lead_routing = public.broker_sites.lead_routing || excluded.lead_routing,
+  footer_logo_display = coalesce(public.broker_sites.footer_logo_display, excluded.footer_logo_display),
+  fair_housing_logo_url = coalesce(public.broker_sites.fair_housing_logo_url, excluded.fair_housing_logo_url),
+  fair_housing_text = coalesce(public.broker_sites.fair_housing_text, excluded.fair_housing_text),
+  fair_housing_show_text = coalesce(public.broker_sites.fair_housing_show_text, excluded.fair_housing_show_text),
+  realtor_logo_url = coalesce(public.broker_sites.realtor_logo_url, excluded.realtor_logo_url),
   brand_header_footer = coalesce(public.broker_sites.brand_header_footer, excluded.brand_header_footer),
   brand_section_background = coalesce(public.broker_sites.brand_section_background, excluded.brand_section_background),
   updated_at = now();

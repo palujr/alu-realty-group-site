@@ -616,6 +616,11 @@ function asOptionalDateTime(value: FormDataEntryValue | null, timeZone = default
   return stringValue ? dateTimeLocalToIso(stringValue, timeZone) : null;
 }
 
+function normalizeFooterLogoDisplay(value: FormDataEntryValue | null) {
+  const display = value?.toString() || "broker";
+  return display === "team" || display === "both" ? display : "broker";
+}
+
 async function uploadAdminImage(
   adminSupabase: NonNullable<ReturnType<typeof createAdminClient>>,
   file: FormDataEntryValue | null,
@@ -699,6 +704,8 @@ async function updateSiteSettings(formData: FormData) {
 
     let brokerLogoUrl = asOptionalString(formData.get("brokerLogoUrl"));
     let teamLogoUrl = asOptionalString(formData.get("teamLogoUrl"));
+    let fairHousingLogoUrl = asOptionalString(formData.get("fairHousingLogoUrl"));
+    let realtorLogoUrl = asOptionalString(formData.get("realtorLogoUrl"));
 
     try {
       brokerLogoUrl =
@@ -707,6 +714,12 @@ async function updateSiteSettings(formData: FormData) {
       teamLogoUrl =
         (await uploadSiteLogo(adminSupabase, formData.get("teamLogoFile"), `${siteSlug}-team-logo`)) ||
         teamLogoUrl;
+      fairHousingLogoUrl =
+        (await uploadSiteLogo(adminSupabase, formData.get("fairHousingLogoFile"), `${siteSlug}-fair-housing-logo`)) ||
+        fairHousingLogoUrl;
+      realtorLogoUrl =
+        (await uploadSiteLogo(adminSupabase, formData.get("realtorLogoFile"), `${siteSlug}-realtor-logo`)) ||
+        realtorLogoUrl;
     } catch {
       redirect("/admin?siteStatus=error#site-settings");
     }
@@ -717,6 +730,11 @@ async function updateSiteSettings(formData: FormData) {
       primary_domain: asOptionalString(formData.get("primaryDomain")),
       broker_logo_url: brokerLogoUrl,
       team_logo_url: teamLogoUrl,
+      footer_logo_display: normalizeFooterLogoDisplay(formData.get("footerLogoDisplay")),
+      fair_housing_logo_url: fairHousingLogoUrl,
+      fair_housing_text: asOptionalString(formData.get("fairHousingText")) || currentSiteSettings.fairHousingText,
+      fair_housing_show_text: formData.get("fairHousingShowText") === "on",
+      realtor_logo_url: realtorLogoUrl,
       brand_primary: asHexColor(formData.get("brandPrimary"), currentSiteSettings.brandPrimary),
       brand_accent: asHexColor(formData.get("brandAccent"), currentSiteSettings.brandAccent),
       brand_header_footer: asHexColor(formData.get("brandHeaderFooter"), currentSiteSettings.brandHeaderFooter),
@@ -1664,6 +1682,18 @@ export default async function AdminDashboardPage({
                     ) : (
                       <small>No team logo is currently set.</small>
                     )}
+                    <span>Current Equal Housing Footer Logo</span>
+                    {siteSettings.fairHousingLogoUrl ? (
+                      <img className="admin-fair-housing-preview" src={siteSettings.fairHousingLogoUrl} alt={siteSettings.fairHousingText} />
+                    ) : (
+                      <small>No Equal Housing logo is currently set.</small>
+                    )}
+                    <span>Current Realtor Footer Logo</span>
+                    {siteSettings.realtorLogoUrl ? (
+                      <img className="admin-realtor-preview" src={siteSettings.realtorLogoUrl} alt="Realtor logo" />
+                    ) : (
+                      <small>No Realtor logo is currently set.</small>
+                    )}
                   </div>
                   <div className="admin-property-image-editor">
                     <span>Edit Brand Logos</span>
@@ -1682,6 +1712,38 @@ export default async function AdminDashboardPage({
                     <label>
                       Upload team logo
                       <input name="teamLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+                    </label>
+                    <label>
+                      Footer logo display
+                      <select name="footerLogoDisplay" defaultValue={siteSettings.footerLogoDisplay}>
+                        <option value="broker">Broker logo only</option>
+                        <option value="team">Team logo only</option>
+                        <option value="both">Broker and team logos</option>
+                      </select>
+                    </label>
+                    <label>
+                      Equal Housing logo URL
+                      <input name="fairHousingLogoUrl" type="text" defaultValue={siteSettings.fairHousingLogoUrl} />
+                    </label>
+                    <label>
+                      Upload Equal Housing logo
+                      <input name="fairHousingLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+                    </label>
+                    <label className="admin-checkbox">
+                      <input name="fairHousingShowText" type="checkbox" defaultChecked={siteSettings.fairHousingShowText} />
+                      Show Equal Housing text next to the logo
+                    </label>
+                    <label>
+                      Equal Housing footer text
+                      <input name="fairHousingText" type="text" defaultValue={siteSettings.fairHousingText} />
+                    </label>
+                    <label>
+                      Realtor logo URL
+                      <input name="realtorLogoUrl" type="text" defaultValue={siteSettings.realtorLogoUrl} />
+                    </label>
+                    <label>
+                      Upload Realtor logo
+                      <input name="realtorLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
                     </label>
                     <small>Transparent PNG or clean white-background logo files will usually look best in the public header.</small>
                   </div>

@@ -409,10 +409,30 @@ h1 { max-width: 680px; margin-bottom: 18px; font-size: clamp(50px, 6.8vw, 88px);
 .sell-section > div:last-child > p { max-width: 440px; margin-bottom: 24px; color: #59645f; font-size: 12px; line-height: 1.8; }
 
 footer { padding: 55px 5vw 35px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 35px; color: #c7d0cb; background: var(--header-footer); }
+.footer-brands { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .footer-brand { padding: 7px 10px; background: #fff; }
 .footer-brand img { width: 210px; }
 footer > p { margin: 0; color: #84908a; font-size: 10px; }
 .footer-links { display: flex; gap: 25px; font-size: 10px; }
+.footer-compliance {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #c7d0cb;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.footer-compliance img {
+  width: 24px;
+  height: auto;
+  image-rendering: auto;
+}
+.footer-compliance .footer-realtor-logo {
+  width: 34px;
+}
 footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #28332f; color: #64706b; font-size: 8px; }
 
 .toast {
@@ -1288,6 +1308,20 @@ footer > small { grid-column: 1 / -1; padding-top: 25px; border-top: 1px solid #
   object-fit: contain;
   justify-self: start;
   background: transparent;
+}
+.admin-property-image-preview .admin-fair-housing-preview {
+  width: 42px;
+  height: auto;
+  object-fit: contain;
+  justify-self: start;
+  background: #111;
+}
+.admin-property-image-preview .admin-realtor-preview {
+  width: 62px;
+  height: auto;
+  object-fit: contain;
+  justify-self: start;
+  background: #fff;
 }
 .admin-property-image-preview span,
 .admin-property-image-editor span {

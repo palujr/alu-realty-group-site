@@ -7,6 +7,11 @@ export type SiteSettings = {
   primaryDomain: string;
   brokerLogoUrl: string;
   teamLogoUrl: string;
+  footerLogoDisplay: "broker" | "team" | "both";
+  fairHousingLogoUrl: string;
+  fairHousingText: string;
+  fairHousingShowText: boolean;
+  realtorLogoUrl: string;
   contactEmail: string;
   contactPhone: string;
   timeZone: string;
@@ -108,6 +113,11 @@ export const defaultSiteSettings: SiteSettings = {
   primaryDomain: "alurealtygroup.com",
   brokerLogoUrl: "/assets/fathom-realty-elite-logo.png",
   teamLogoUrl: "/assets/alu-realty-group-logo.png",
+  footerLogoDisplay: "broker",
+  fairHousingLogoUrl: "/assets/equal-housing-opportunity.gif",
+  fairHousingText: "Equal Housing Opportunity",
+  fairHousingShowText: true,
+  realtorLogoUrl: "/assets/realtor-logo-black.jpg",
   contactEmail: "phil@alurealtygroup.com",
   contactPhone: "",
   timeZone: "America/Phoenix",
@@ -140,6 +150,11 @@ type BrokerSiteRow = {
   primary_domain: string | null;
   broker_logo_url: string | null;
   team_logo_url: string | null;
+  footer_logo_display?: string | null;
+  fair_housing_logo_url?: string | null;
+  fair_housing_text?: string | null;
+  fair_housing_show_text?: boolean | null;
+  realtor_logo_url?: string | null;
   contact_email: string | null;
   contact_phone: string | null;
   time_zone: string | null;
@@ -196,6 +211,11 @@ function mapLeadRouting(
 }
 
 function mapBrokerSite(row: BrokerSiteRow): SiteSettings {
+  const footerLogoDisplay =
+    row.footer_logo_display === "team" || row.footer_logo_display === "both"
+      ? row.footer_logo_display
+      : defaultSiteSettings.footerLogoDisplay;
+
   return {
     slug: row.slug || defaultSiteSettings.slug,
     siteName: row.site_name || defaultSiteSettings.siteName,
@@ -203,6 +223,11 @@ function mapBrokerSite(row: BrokerSiteRow): SiteSettings {
     primaryDomain: row.primary_domain || defaultSiteSettings.primaryDomain,
     brokerLogoUrl: row.broker_logo_url || defaultSiteSettings.brokerLogoUrl,
     teamLogoUrl: row.team_logo_url || defaultSiteSettings.teamLogoUrl,
+    footerLogoDisplay,
+    fairHousingLogoUrl: row.fair_housing_logo_url || defaultSiteSettings.fairHousingLogoUrl,
+    fairHousingText: row.fair_housing_text || defaultSiteSettings.fairHousingText,
+    fairHousingShowText: row.fair_housing_show_text ?? defaultSiteSettings.fairHousingShowText,
+    realtorLogoUrl: row.realtor_logo_url || defaultSiteSettings.realtorLogoUrl,
     contactEmail: row.contact_email || defaultSiteSettings.contactEmail,
     contactPhone: row.contact_phone || defaultSiteSettings.contactPhone,
     timeZone: row.time_zone || defaultSiteSettings.timeZone,
@@ -241,6 +266,11 @@ export async function getSiteSettings(slug = "alu-realty-group"): Promise<SiteSe
       primary_domain,
       broker_logo_url,
       team_logo_url,
+      footer_logo_display,
+      fair_housing_logo_url,
+      fair_housing_text,
+      fair_housing_show_text,
+      realtor_logo_url,
       contact_email,
       contact_phone,
       time_zone,
