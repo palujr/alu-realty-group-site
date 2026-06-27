@@ -35,6 +35,7 @@ export function AdminLeadFormReset({
 
   useEffect(() => {
     const leadPanels = Array.from(document.querySelectorAll<HTMLDetailsElement>("details[data-reset-on-close='true']"));
+    const leadLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>("a[data-open-lead-panel='true']"));
 
     const resetForms = (panel: HTMLDetailsElement) => {
       panel.querySelectorAll<HTMLFormElement>("form").forEach((form) => form.reset());
@@ -58,8 +59,42 @@ export function AdminLeadFormReset({
 
     leadPanels.forEach((panel) => panel.addEventListener("toggle", handleLeadPanelToggle));
 
+    const openLeadPanel = (event: MouseEvent) => {
+      const link = event.currentTarget as HTMLAnchorElement;
+      const targetHash = link.getAttribute("href");
+
+      if (!targetHash?.startsWith("#lead-")) {
+        return;
+      }
+
+      const targetPanel = document.querySelector<HTMLDetailsElement>(targetHash);
+
+      if (!targetPanel) {
+        return;
+      }
+
+      event.preventDefault();
+
+      leadPanels.forEach((panel) => {
+        if (panel !== targetPanel && panel.open) {
+          panel.open = false;
+          resetForms(panel);
+        }
+      });
+
+      targetPanel.open = true;
+      window.history.replaceState(null, "", targetHash);
+
+      window.requestAnimationFrame(() => {
+        targetPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    };
+
+    leadLinks.forEach((link) => link.addEventListener("click", openLeadPanel));
+
     return () => {
       leadPanels.forEach((panel) => panel.removeEventListener("toggle", handleLeadPanelToggle));
+      leadLinks.forEach((link) => link.removeEventListener("click", openLeadPanel));
     };
   }, []);
 

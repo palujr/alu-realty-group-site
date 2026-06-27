@@ -617,7 +617,7 @@ function AdminLeadQueueList({
       </div>
       <div className="admin-work-queue-list">
         {leads.map((lead) => (
-          <a className="admin-work-queue-row" href={`#lead-${lead.id}`} key={`${title}-${lead.id}`}>
+          <a className="admin-work-queue-row" href={`#lead-${lead.id}`} key={`${title}-${lead.id}`} data-open-lead-panel="true">
             <span>
               <strong>{lead.property_address || "No property address"}</strong>
               <small>{lead.full_name || "No name"} - {getAssignedName(lead)}</small>
