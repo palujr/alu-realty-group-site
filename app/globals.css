@@ -1361,12 +1361,27 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
-.admin-timeline-toolbar div {
+.admin-timeline-toolbar-card {
   padding: 13px 14px;
   display: grid;
   gap: 5px;
   background: #fff;
   border: 1px solid rgba(27, 45, 38, .12);
+}
+.admin-timeline-toolbar-card.admin-task-card {
+  border-left: 5px solid #b7b1a6;
+}
+.admin-timeline-toolbar-card.admin-followup-overdue {
+  border-left-color: #9d3f28;
+  background: #fff4ed;
+}
+.admin-timeline-toolbar-card.admin-followup-today {
+  border-left-color: #d79b39;
+  background: #fff8e8;
+}
+.admin-timeline-toolbar-card.admin-followup-upcoming {
+  border-left-color: #63809e;
+  background: #eef4f8;
 }
 .admin-timeline-toolbar strong {
   min-width: 0;
@@ -1380,6 +1395,76 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   font-weight: 900;
   letter-spacing: .08em;
   text-transform: uppercase;
+}
+.admin-open-task-list {
+  display: grid;
+  gap: 8px;
+}
+.admin-open-task-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.admin-open-task-heading span,
+.admin-open-task-heading strong {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.admin-open-task-heading strong {
+  padding: 5px 8px;
+  color: var(--ink);
+  background: #edf0e8;
+}
+.admin-open-task-row {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid rgba(27, 45, 38, .12);
+  border-left: 5px solid #b7b1a6;
+  text-decoration: none;
+}
+.admin-open-task-row:hover {
+  border-color: var(--accent);
+  border-left-color: var(--accent);
+}
+.admin-open-task-row.admin-followup-overdue {
+  border-left-color: #9d3f28;
+}
+.admin-open-task-row.admin-followup-today {
+  border-left-color: #d79b39;
+}
+.admin-open-task-row.admin-followup-upcoming {
+  border-left-color: #63809e;
+}
+.admin-open-task-row > span {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.admin-open-task-row strong,
+.admin-open-task-row small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.admin-open-task-row strong {
+  font-size: 12px;
+}
+.admin-open-task-row small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+.admin-open-task-row > small {
+  flex: 0 0 auto;
+  text-align: right;
 }
 .admin-timeline-list {
   display: grid;

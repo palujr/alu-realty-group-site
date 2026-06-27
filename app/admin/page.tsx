@@ -499,6 +499,27 @@ function getFollowUpTone(value?: string | null, timeZone = defaultAdminTimeZone)
   return "upcoming";
 }
 
+function getOpenActivityTasks(activities: AdminLeadActivity[]) {
+  return activities
+    .filter((activity) => activity.follow_up_at)
+    .sort((first, second) => new Date(first.follow_up_at || "").getTime() - new Date(second.follow_up_at || "").getTime());
+}
+
+function getActivityTaskLabel(activity: AdminLeadActivity, timeZone = defaultAdminTimeZone) {
+  const tone = getFollowUpTone(activity.follow_up_at, timeZone);
+  const dateLabel = formatDateTime(activity.follow_up_at, timeZone);
+
+  if (tone === "overdue") {
+    return `Overdue: ${dateLabel}`;
+  }
+
+  if (tone === "today") {
+    return `Due today: ${dateLabel}`;
+  }
+
+  return `Upcoming: ${dateLabel}`;
+}
+
 function getSearchParamValue(
   searchParams: Record<string, string | string[] | undefined> | undefined,
   key: string
@@ -2659,7 +2680,12 @@ export default async function AdminDashboardPage({
           </details>
 
           <div className="admin-form-list">
-            {leads.map((lead) => (
+            {leads.map((lead) => {
+              const leadActivities = leadActivitiesByLeadId[lead.id] || [];
+              const openActivityTasks = getOpenActivityTasks(leadActivities);
+              const nextActivityTask = openActivityTasks[0];
+
+              return (
               <details
                 className="admin-edit-panel"
                 id={`lead-${lead.id}`}
@@ -2934,21 +2960,38 @@ export default async function AdminDashboardPage({
                     <p className="admin-kicker">Activity Timeline</p>
                     <h3>Follow-up history and tasks</h3>
                   </div>
-                  <span>{leadActivitiesByLeadId[lead.id]?.length || 0} items</span>
+                  <span>{leadActivities.length} items</span>
                 </div>
                 <div className="admin-timeline-toolbar">
-                  <div>
-                    <strong>{(leadActivitiesByLeadId[lead.id] || [])[0]?.outcome || "No recent outcome yet"}</strong>
+                  <div className="admin-timeline-toolbar-card">
+                    <strong>{leadActivities[0]?.outcome || "No recent outcome yet"}</strong>
                     <span>Most recent outcome</span>
                   </div>
-                  <div>
-                    <strong>{formatDateTime((leadActivitiesByLeadId[lead.id] || [])[0]?.follow_up_at, siteSettings.timeZone) || "No activity task"}</strong>
-                    <span>Next activity follow-up</span>
+                  <div className={`admin-timeline-toolbar-card admin-task-card admin-followup-${getFollowUpTone(nextActivityTask?.follow_up_at, siteSettings.timeZone)}`}>
+                    <strong>{nextActivityTask ? getActivityTaskLabel(nextActivityTask, siteSettings.timeZone) : "No open activity task"}</strong>
+                    <span>{nextActivityTask ? `${getLeadActivityTypeLabel(nextActivityTask.activity_type)} - ${nextActivityTask.outcome || "No outcome noted"}` : "Next activity follow-up"}</span>
                   </div>
                 </div>
+                {openActivityTasks.length ? (
+                  <div className="admin-open-task-list" aria-label="Open activity tasks">
+                    <div className="admin-open-task-heading">
+                      <span>Open activity tasks</span>
+                      <strong>{openActivityTasks.length}</strong>
+                    </div>
+                    {openActivityTasks.slice(0, 3).map((activity) => (
+                      <a className={`admin-open-task-row admin-followup-${getFollowUpTone(activity.follow_up_at, siteSettings.timeZone)}`} href={`#activity-${activity.id}`} key={`task-${activity.id}`}>
+                        <span>
+                          <strong>{getActivityTaskLabel(activity, siteSettings.timeZone)}</strong>
+                          <small>{getLeadActivityTypeLabel(activity.activity_type)} - {activity.outcome || activity.summary}</small>
+                        </span>
+                        <small>{activity.created_by_name || "No owner noted"}</small>
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
                 <div className="admin-timeline-list">
-                  {(leadActivitiesByLeadId[lead.id] || []).slice(0, 6).map((activity) => (
-                    <details className={`admin-timeline-item admin-timeline-type-${activity.activity_type}`} key={activity.id} data-activity-edit-panel="true">
+                  {leadActivities.slice(0, 6).map((activity) => (
+                    <details className={`admin-timeline-item admin-timeline-type-${activity.activity_type}`} id={`activity-${activity.id}`} key={activity.id} data-activity-edit-panel="true">
                       <summary className="admin-timeline-summary">
                         <span>
                           <strong>{getLeadActivityTypeLabel(activity.activity_type)}</strong>
@@ -3020,7 +3063,7 @@ export default async function AdminDashboardPage({
                       </form>
                     </details>
                   ))}
-                  {!leadActivitiesByLeadId[lead.id]?.length ? (
+                  {!leadActivities.length ? (
                     <p className="admin-empty">No timeline activity has been added for this lead yet.</p>
                   ) : null}
                 </div>
@@ -3087,7 +3130,8 @@ export default async function AdminDashboardPage({
                 </details>
               </section>
               </details>
-            ))}
+              );
+            })}
             {!leads.length ? (
               <p className="admin-empty">
                 {hasLeadFilters ? "No leads match these filters yet." : "No leads are available to this dashboard yet."}
