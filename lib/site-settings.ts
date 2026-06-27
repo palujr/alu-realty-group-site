@@ -64,6 +64,14 @@ export type SiteSettings = {
   };
 };
 
+type SiteSettingsHomepageSections = SiteSettings["homepageSections"] & {
+  footerLogoDisplay?: string;
+  fairHousingLogoUrl?: string;
+  fairHousingText?: string;
+  fairHousingShowText?: boolean;
+  realtorLogoUrl?: string;
+};
+
 export type SiteBanner = {
   id: string;
   eyebrow: string;
@@ -173,7 +181,7 @@ type BrokerSiteRow = {
   brand_accent: string | null;
   brand_header_footer?: string | null;
   brand_section_background?: string | null;
-  homepage_sections: Partial<SiteSettings["homepageSections"]> | null;
+  homepage_sections: Partial<SiteSettingsHomepageSections> | null;
   lead_routing: Partial<SiteSettings["leadRouting"]> | null;
 };
 
@@ -186,7 +194,7 @@ type SiteBannerRow = {
 };
 
 function mapHomepageSections(
-  sections: Partial<SiteSettings["homepageSections"]> | null
+  sections: Partial<SiteSettingsHomepageSections> | null
 ): SiteSettings["homepageSections"] {
   return {
     ...defaultHomepageSections,
@@ -211,9 +219,12 @@ function mapLeadRouting(
 }
 
 function mapBrokerSite(row: BrokerSiteRow): SiteSettings {
+  const sectionSettings = row.homepage_sections || {};
   const footerLogoDisplay =
-    row.footer_logo_display === "team" || row.footer_logo_display === "both"
-      ? row.footer_logo_display
+    sectionSettings.footerLogoDisplay === "team" || sectionSettings.footerLogoDisplay === "both"
+      ? sectionSettings.footerLogoDisplay
+      : row.footer_logo_display === "team" || row.footer_logo_display === "both"
+        ? row.footer_logo_display
       : defaultSiteSettings.footerLogoDisplay;
 
   return {
@@ -224,10 +235,10 @@ function mapBrokerSite(row: BrokerSiteRow): SiteSettings {
     brokerLogoUrl: row.broker_logo_url || defaultSiteSettings.brokerLogoUrl,
     teamLogoUrl: row.team_logo_url || defaultSiteSettings.teamLogoUrl,
     footerLogoDisplay,
-    fairHousingLogoUrl: row.fair_housing_logo_url || defaultSiteSettings.fairHousingLogoUrl,
-    fairHousingText: row.fair_housing_text || defaultSiteSettings.fairHousingText,
-    fairHousingShowText: row.fair_housing_show_text ?? defaultSiteSettings.fairHousingShowText,
-    realtorLogoUrl: row.realtor_logo_url || defaultSiteSettings.realtorLogoUrl,
+    fairHousingLogoUrl: sectionSettings.fairHousingLogoUrl || row.fair_housing_logo_url || defaultSiteSettings.fairHousingLogoUrl,
+    fairHousingText: sectionSettings.fairHousingText || row.fair_housing_text || defaultSiteSettings.fairHousingText,
+    fairHousingShowText: sectionSettings.fairHousingShowText ?? row.fair_housing_show_text ?? defaultSiteSettings.fairHousingShowText,
+    realtorLogoUrl: sectionSettings.realtorLogoUrl || row.realtor_logo_url || defaultSiteSettings.realtorLogoUrl,
     contactEmail: row.contact_email || defaultSiteSettings.contactEmail,
     contactPhone: row.contact_phone || defaultSiteSettings.contactPhone,
     timeZone: row.time_zone || defaultSiteSettings.timeZone,
