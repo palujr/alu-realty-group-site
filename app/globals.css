@@ -1190,8 +1190,8 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
 .admin-quick-actions {
   padding: 14px 16px;
   display: grid;
-  grid-template-columns: 130px repeat(auto-fit, minmax(145px, 1fr));
-  gap: 10px;
+  grid-template-columns: 112px repeat(auto-fit, minmax(118px, 1fr));
+  gap: 8px;
   align-items: stretch;
   background: #fff;
   border: 1px solid rgba(27, 45, 38, .12);
@@ -1212,13 +1212,13 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
 .admin-quick-actions button {
   width: 100%;
   min-height: 34px;
-  padding: 0 10px;
+  padding: 0 8px;
   border: 1px solid rgba(27, 45, 38, .16);
   color: var(--ink);
   background: #f4f1ea;
-  font-size: 8.5px;
+  font-size: 8px;
   font-weight: 900;
-  letter-spacing: .045em;
+  letter-spacing: .025em;
   line-height: 1.15;
   text-transform: uppercase;
   cursor: pointer;
