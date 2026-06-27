@@ -1804,6 +1804,29 @@ export default async function AdminDashboardPage({
         <Link className="admin-button" href="/" target="_blank" rel="noopener noreferrer">View website</Link>
       </header>
 
+      <nav className="admin-section-nav" aria-label="Admin dashboard sections">
+        <a href="#admin-overview">
+          <span>Overview</span>
+          <small>Counts and follow-ups</small>
+        </a>
+        <a href="#site-settings">
+          <span>Site settings</span>
+          <small>Branding and homepage</small>
+        </a>
+        <a href="#lead-inbox">
+          <span>Leads</span>
+          <small>CRM workspace</small>
+        </a>
+        <a href="#team-members">
+          <span>Team</span>
+          <small>Agent profiles</small>
+        </a>
+        <a href="#testimonials">
+          <span>Testimonials</span>
+          <small>Client feedback</small>
+        </a>
+      </nav>
+
       {visibleErrors.length ? (
         <section className="admin-alert" data-admin-status="error">
           <strong>Some admin data could not load yet.</strong>
@@ -1835,7 +1858,7 @@ export default async function AdminDashboardPage({
         </section>
       ) : null}
 
-      <section className="admin-stats" aria-label="Dashboard summary">
+      <section className="admin-stats" id="admin-overview" aria-label="Dashboard summary">
         <article>
           <span>Recent leads</span>
           <strong>{pagination.leads.totalCount}</strong>
