@@ -211,6 +211,7 @@ const maxAdminImageSize = 5 * 1024 * 1024;
 const transientAdminSearchParams = new Set([
   "siteStatus",
   "siteSection",
+  "siteError",
   "bannerStatus",
   "bannerId",
   "leadStatus",
@@ -449,6 +450,10 @@ function getSearchParamValue(
 ) {
   const value = searchParams?.[key];
   return Array.isArray(value) ? value[0] || "" : value || "";
+}
+
+function redirectSiteSettingsError(message: string): never {
+  redirect(`/admin?siteStatus=error&siteError=${encodeURIComponent(message)}#site-settings`);
 }
 
 function normalizePageParam(value: string) {
@@ -701,7 +706,7 @@ async function uploadAdminImage(
   }
 
   if (!file.type.startsWith("image/") || file.size > maxAdminImageSize) {
-    throw new Error("Invalid image upload");
+    throw new Error("Please upload a JPG, PNG, WebP, or GIF image under 5 MB.");
   }
 
   const extension = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
@@ -753,7 +758,7 @@ async function updateSiteSettings(formData: FormData) {
   const adminSupabase = createAdminClient();
 
   if (!adminSupabase) {
-    redirect("/admin?siteStatus=error#site-settings");
+    redirectSiteSettingsError("Supabase admin access is not configured.");
   }
 
   const siteSlug = formData.get("siteSlug")?.toString() || "alu-realty-group";
@@ -767,7 +772,7 @@ async function updateSiteSettings(formData: FormData) {
     const siteName = formData.get("siteName")?.toString().trim();
 
     if (!siteName) {
-      redirect("/admin?siteStatus=error#site-settings");
+      redirectSiteSettingsError("Site name is required before branding can be saved.");
     }
 
     let brokerLogoUrl = asOptionalString(formData.get("brokerLogoUrl"));
@@ -788,8 +793,8 @@ async function updateSiteSettings(formData: FormData) {
       realtorLogoUrl =
         (await uploadSiteLogo(adminSupabase, formData.get("realtorLogoFile"), `${siteSlug}-realtor-logo`)) ||
         realtorLogoUrl;
-    } catch {
-      redirect("/admin?siteStatus=error#site-settings");
+    } catch (error) {
+      redirectSiteSettingsError(error instanceof Error ? error.message : "One of the logo uploads could not be completed.");
     }
 
     Object.assign(updatePayload, {
@@ -799,6 +804,10 @@ async function updateSiteSettings(formData: FormData) {
       broker_logo_url: brokerLogoUrl,
       team_logo_url: teamLogoUrl,
       footer_logo_display: normalizeFooterLogoDisplay(formData.get("footerLogoDisplay")),
+      fair_housing_logo_url: fairHousingLogoUrl,
+      fair_housing_text: asOptionalString(formData.get("fairHousingText")) || currentSiteSettings.fairHousingText,
+      fair_housing_show_text: formData.get("fairHousingShowText") === "on",
+      realtor_logo_url: realtorLogoUrl,
       homepage_sections: {
         ...currentSiteSettings.homepageSections,
         footerLogoDisplay: normalizeFooterLogoDisplay(formData.get("footerLogoDisplay")),
@@ -823,8 +832,8 @@ async function updateSiteSettings(formData: FormData) {
       heroImageUrl =
         (await uploadSiteHeroImage(adminSupabase, formData.get("heroImageFile"), `${siteSlug}-home-property`)) ||
         heroImageUrl;
-    } catch {
-      redirect("/admin?siteStatus=error#site-settings");
+    } catch (error) {
+      redirectSiteSettingsError(error instanceof Error ? error.message : "The homepage property image upload could not be completed.");
     }
 
     Object.assign(updatePayload, {
@@ -902,7 +911,7 @@ async function updateSiteSettings(formData: FormData) {
       }
     });
   } else {
-    redirect("/admin?siteStatus=error#site-settings");
+    redirectSiteSettingsError("The requested site settings section was not recognized.");
   }
 
   const { error } = await adminSupabase
@@ -911,7 +920,7 @@ async function updateSiteSettings(formData: FormData) {
     .eq("slug", siteSlug);
 
   if (error) {
-    redirect("/admin?siteStatus=error#site-settings");
+    redirectSiteSettingsError(error.message);
   }
 
   revalidatePath("/");
@@ -1643,6 +1652,7 @@ export default async function AdminDashboardPage({
   searchParams?: {
     [key: string]: string | undefined;
     siteStatus?: string;
+    siteError?: string;
     bannerStatus?: string;
     bannerId?: string;
     leadStatus?: string;
@@ -1692,6 +1702,7 @@ export default async function AdminDashboardPage({
   const { siteSettings, activeBanner, leads, leadWorkQueue, leadActivitiesByLeadId, banners, teamMembers, teamMemberOptions, testimonials, pagination, errors } = await getAdminData(leadFilters, adminPages);
   const visibleErrors = Object.values(errors).filter(Boolean);
   const siteStatus = getSearchParamValue(searchParams, "siteStatus");
+  const siteError = getSearchParamValue(searchParams, "siteError");
   const savedSiteSection = getSearchParamValue(searchParams, "siteSection");
   const bannerStatus = getSearchParamValue(searchParams, "bannerStatus");
   const savedBannerId = getSearchParamValue(searchParams, "bannerId");
@@ -1749,7 +1760,7 @@ export default async function AdminDashboardPage({
       {siteStatus === "error" ? (
         <section className="admin-alert">
           <strong>Site settings could not be saved yet.</strong>
-          <p>This usually means the Supabase admin update permission still needs to be applied.</p>
+          <p>{siteError || "This usually means the Supabase admin update permission still needs to be applied."}</p>
         </section>
       ) : null}
 
@@ -1808,7 +1819,7 @@ export default async function AdminDashboardPage({
               <span>The website settings have been updated.</span>
             </div>
           ) : null}
-          <details className="admin-edit-panel" open={siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error"} data-keep-open="true">
+          <details className="admin-edit-panel" open={siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error"}>
             <summary className="admin-summary-row">
               <span>
                 <strong>{siteSettings.siteName}</strong>
