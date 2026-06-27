@@ -2684,6 +2684,10 @@ export default async function AdminDashboardPage({
               const leadActivities = leadActivitiesByLeadId[lead.id] || [];
               const openActivityTasks = getOpenActivityTasks(leadActivities);
               const nextActivityTask = openActivityTasks[0];
+              const displayedLeadActivities = [
+                ...leadActivities.slice(0, 6),
+                ...openActivityTasks
+              ].filter((activity, index, activities) => activities.findIndex((item) => item.id === activity.id) === index);
 
               return (
               <details
@@ -2979,7 +2983,7 @@ export default async function AdminDashboardPage({
                       <strong>{openActivityTasks.length}</strong>
                     </div>
                     {openActivityTasks.slice(0, 3).map((activity) => (
-                      <a className={`admin-open-task-row admin-followup-${getFollowUpTone(activity.follow_up_at, siteSettings.timeZone)}`} href={`#activity-${activity.id}`} key={`task-${activity.id}`}>
+                      <a className={`admin-open-task-row admin-followup-${getFollowUpTone(activity.follow_up_at, siteSettings.timeZone)}`} href={`#activity-${activity.id}`} key={`task-${activity.id}`} data-open-activity-panel="true">
                         <span>
                           <strong>{getActivityTaskLabel(activity, siteSettings.timeZone)}</strong>
                           <small>{getLeadActivityTypeLabel(activity.activity_type)} - {activity.outcome || activity.summary}</small>
@@ -2990,7 +2994,7 @@ export default async function AdminDashboardPage({
                   </div>
                 ) : null}
                 <div className="admin-timeline-list">
-                  {leadActivities.slice(0, 6).map((activity) => (
+                  {displayedLeadActivities.map((activity) => (
                     <details className={`admin-timeline-item admin-timeline-type-${activity.activity_type}`} id={`activity-${activity.id}`} key={activity.id} data-activity-edit-panel="true">
                       <summary className="admin-timeline-summary">
                         <span>

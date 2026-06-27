@@ -1472,6 +1472,7 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
 }
 .admin-timeline-item {
   position: relative;
+  scroll-margin-top: 220px;
   padding: 14px 16px 14px 20px;
   display: grid;
   gap: 8px;
