@@ -432,6 +432,10 @@ function getLeadPriorityLabel(value?: string | null) {
   return leadPriorityOptions.find((option) => option.value === value)?.label || "Normal";
 }
 
+function getLeadStatusLabel(value?: string | null) {
+  return leadStatusOptions.find((option) => option.value === value)?.label || "New";
+}
+
 function getLeadActivityTypeLabel(value?: string | null) {
   return leadActivityTypeOptions.find((option) => option.value === value)?.label || "Note";
 }
@@ -442,6 +446,57 @@ function getLeadFollowUpLabel(lead: AdminLead, timeZone = defaultAdminTimeZone) 
   }
 
   return `Next: ${formatDate(lead.next_follow_up_at, timeZone)}`;
+}
+
+function getPriorityTone(value?: string | null) {
+  if (value === "urgent") {
+    return "urgent";
+  }
+
+  if (value === "high") {
+    return "high";
+  }
+
+  if (value === "low") {
+    return "low";
+  }
+
+  return "normal";
+}
+
+function getStatusTone(value?: string | null) {
+  if (value === "completed" || value === "verified") {
+    return "complete";
+  }
+
+  if (value === "contacted" || value === "in_progress") {
+    return "active";
+  }
+
+  if (value === "archived") {
+    return "muted";
+  }
+
+  return "new";
+}
+
+function getFollowUpTone(value?: string | null, timeZone = defaultAdminTimeZone) {
+  if (!value) {
+    return "none";
+  }
+
+  const followUpDate = getDateTimeLocalValue(new Date(value), timeZone).slice(0, 10);
+  const today = getDateTimeLocalValue(new Date(), timeZone).slice(0, 10);
+
+  if (followUpDate < today) {
+    return "overdue";
+  }
+
+  if (followUpDate === today) {
+    return "today";
+  }
+
+  return "upcoming";
 }
 
 function getSearchParamValue(
@@ -2619,19 +2674,23 @@ export default async function AdminDashboardPage({
                   </span>
                   <span>{getLeadTypeLabel(lead.lead_type)}</span>
                   <span>{getAssignedName(lead)}</span>
-                  <span>{getLeadPriorityLabel(lead.lead_priority)} - {lead.contact_status || "new"}</span>
-                  <span>{getLeadFollowUpLabel(lead, siteSettings.timeZone)}</span>
+                  <span>
+                    <strong className={`admin-mini-status admin-status-${getStatusTone(lead.contact_status)}`}>{getLeadStatusLabel(lead.contact_status)}</strong>
+                    <small className={`admin-mini-status admin-priority-${getPriorityTone(lead.lead_priority)}`}>{getLeadPriorityLabel(lead.lead_priority)}</small>
+                  </span>
+                  <span className={`admin-summary-followup admin-followup-${getFollowUpTone(lead.next_follow_up_at, siteSettings.timeZone)}`}>{getLeadFollowUpLabel(lead, siteSettings.timeZone)}</span>
                 </summary>
               <form className="admin-form-card admin-lead-detail-card" action={updateLead}>
                 <input name="leadId" type="hidden" value={lead.id} />
                 <div className="admin-lead-detail-hero">
                   <div className="admin-lead-title">
-                    <p className="admin-kicker">{lead.contact_status || "new"} {getLeadTypeLabel(lead.lead_type)}</p>
+                    <p className="admin-kicker">{getLeadStatusLabel(lead.contact_status)} {getLeadTypeLabel(lead.lead_type)}</p>
                     <h3>{lead.property_address || "No property address"}</h3>
                     <div className="admin-lead-badges" aria-label="Lead summary">
-                      <span>{getLeadPriorityLabel(lead.lead_priority)}</span>
+                      <span className={`admin-priority-${getPriorityTone(lead.lead_priority)}`}>{getLeadPriorityLabel(lead.lead_priority)}</span>
+                      <span className={`admin-status-${getStatusTone(lead.contact_status)}`}>{getLeadStatusLabel(lead.contact_status)}</span>
                       <span>{getAssignedName(lead)}</span>
-                      <span>{getLeadFollowUpLabel(lead, siteSettings.timeZone)}</span>
+                      <span className={`admin-followup-${getFollowUpTone(lead.next_follow_up_at, siteSettings.timeZone)}`}>{getLeadFollowUpLabel(lead, siteSettings.timeZone)}</span>
                     </div>
                   </div>
                   <span className="admin-lead-created">Created {formatDate(lead.created_at, siteSettings.timeZone)}</span>
@@ -2657,6 +2716,7 @@ export default async function AdminDashboardPage({
                 </div>
 
                 <div className="admin-quick-actions" aria-label="Quick lead actions">
+                  <span className="admin-quick-actions-label">Quick actions</span>
                   <form action={updateLeadQuickAction}>
                     <input name="leadId" type="hidden" value={lead.id} />
                     <input name="quickAction" type="hidden" value="mark-contacted" />
@@ -2693,11 +2753,11 @@ export default async function AdminDashboardPage({
                 </div>
 
                 <div className="admin-lead-snapshot-grid" aria-label="Lead status snapshot">
-                  <div>
+                  <div className={`admin-snapshot-status admin-status-${getStatusTone(lead.contact_status)}`}>
                     <span>Status</span>
-                    <strong>{leadStatusOptions.find((option) => option.value === lead.contact_status)?.label || "New"}</strong>
+                    <strong>{getLeadStatusLabel(lead.contact_status)}</strong>
                   </div>
-                  <div>
+                  <div className={`admin-snapshot-status admin-priority-${getPriorityTone(lead.lead_priority)}`}>
                     <span>Priority</span>
                     <strong>{getLeadPriorityLabel(lead.lead_priority)}</strong>
                   </div>
@@ -2705,7 +2765,7 @@ export default async function AdminDashboardPage({
                     <span>Assigned</span>
                     <strong>{getAssignedName(lead)}</strong>
                   </div>
-                  <div>
+                  <div className={`admin-snapshot-status admin-followup-${getFollowUpTone(lead.next_follow_up_at, siteSettings.timeZone)}`}>
                     <span>Next follow-up</span>
                     <strong>{formatDateTime(lead.next_follow_up_at, siteSettings.timeZone) || "Not scheduled"}</strong>
                   </div>
@@ -2864,7 +2924,7 @@ export default async function AdminDashboardPage({
                 </div>
                 <div className="admin-timeline-list">
                   {(leadActivitiesByLeadId[lead.id] || []).slice(0, 6).map((activity) => (
-                    <details className="admin-timeline-item" key={activity.id} data-activity-edit-panel="true">
+                    <details className={`admin-timeline-item admin-timeline-type-${activity.activity_type}`} key={activity.id} data-activity-edit-panel="true">
                       <summary className="admin-timeline-summary">
                         <span>
                           <strong>{getLeadActivityTypeLabel(activity.activity_type)}</strong>
@@ -2879,7 +2939,7 @@ export default async function AdminDashboardPage({
                       </summary>
                       <p>{activity.summary}</p>
                       {activity.follow_up_at ? (
-                        <small>Activity follow-up: {formatDateTime(activity.follow_up_at, siteSettings.timeZone)}</small>
+                        <small className={`admin-timeline-followup admin-followup-${getFollowUpTone(activity.follow_up_at, siteSettings.timeZone)}`}>Activity follow-up: {formatDateTime(activity.follow_up_at, siteSettings.timeZone)}</small>
                       ) : null}
                       <form className="admin-form-card admin-activity-edit-form" action={updateLeadActivity}>
                         <input name="leadId" type="hidden" value={lead.id} />

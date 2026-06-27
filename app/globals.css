@@ -1084,6 +1084,68 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   letter-spacing: .05em;
   text-transform: uppercase;
 }
+.admin-lead-badges .admin-priority-high,
+.admin-lead-badges .admin-priority-urgent,
+.admin-mini-status.admin-priority-high,
+.admin-mini-status.admin-priority-urgent {
+  color: #fff;
+  background: #9d3f28;
+}
+.admin-lead-badges .admin-priority-low,
+.admin-mini-status.admin-priority-low {
+  color: #34423d;
+  background: #dfe8e2;
+}
+.admin-lead-badges .admin-status-complete,
+.admin-mini-status.admin-status-complete {
+  color: #173325;
+  background: #c9dec8;
+}
+.admin-lead-badges .admin-status-active,
+.admin-mini-status.admin-status-active {
+  color: #173325;
+  background: #d8e6f4;
+}
+.admin-lead-badges .admin-status-muted,
+.admin-mini-status.admin-status-muted {
+  color: #59645f;
+  background: #e6e2d9;
+}
+.admin-lead-badges .admin-followup-overdue,
+.admin-mini-status.admin-followup-overdue,
+.admin-summary-followup.admin-followup-overdue {
+  color: #fff;
+  background: #9d3f28;
+}
+.admin-lead-badges .admin-followup-today,
+.admin-mini-status.admin-followup-today,
+.admin-summary-followup.admin-followup-today {
+  color: #17221f;
+  background: #f2d18b;
+}
+.admin-lead-badges .admin-followup-upcoming,
+.admin-mini-status.admin-followup-upcoming,
+.admin-summary-followup.admin-followup-upcoming {
+  color: #173325;
+  background: #d8e6f4;
+}
+.admin-lead-badges .admin-followup-none,
+.admin-summary-followup.admin-followup-none {
+  color: #59645f;
+  background: #e8e5dd;
+}
+.admin-mini-status,
+.admin-summary-followup {
+  width: fit-content;
+  max-width: 100%;
+  padding: 5px 7px;
+  border-radius: 999px;
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  letter-spacing: .06em;
+  line-height: 1;
+  text-transform: uppercase;
+}
 .admin-lead-command-strip {
   padding: 14px;
   display: grid;
@@ -1130,8 +1192,17 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
   background: #fff;
   border: 1px solid rgba(27, 45, 38, .12);
+}
+.admin-quick-actions-label {
+  margin-right: 2px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 .admin-quick-actions form {
   margin: 0;
@@ -1163,6 +1234,33 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
 .admin-lead-snapshot-grid div {
   padding: 13px;
   background: #f8f5ee;
+}
+.admin-lead-snapshot-grid .admin-snapshot-status {
+  border-top: 4px solid rgba(27, 45, 38, .16);
+}
+.admin-lead-snapshot-grid .admin-status-complete {
+  border-top-color: #5b8f5f;
+  background: #eef7ee;
+}
+.admin-lead-snapshot-grid .admin-status-active,
+.admin-lead-snapshot-grid .admin-followup-upcoming {
+  border-top-color: #63809e;
+  background: #eef4f8;
+}
+.admin-lead-snapshot-grid .admin-priority-high,
+.admin-lead-snapshot-grid .admin-priority-urgent,
+.admin-lead-snapshot-grid .admin-followup-overdue {
+  border-top-color: #9d3f28;
+  background: #fff4ed;
+}
+.admin-lead-snapshot-grid .admin-followup-today {
+  border-top-color: #d79b39;
+  background: #fff8e8;
+}
+.admin-lead-snapshot-grid .admin-followup-none,
+.admin-lead-snapshot-grid .admin-status-muted {
+  border-top-color: #b7b1a6;
+  background: #f1eee7;
 }
 .admin-lead-snapshot-grid strong {
   font-size: 12px;
@@ -1271,6 +1369,24 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   content: "";
   background: var(--accent);
 }
+.admin-timeline-type-call::before {
+  background: #2d6c82;
+}
+.admin-timeline-type-email::before {
+  background: #5b8f5f;
+}
+.admin-timeline-type-text::before {
+  background: #8a6f33;
+}
+.admin-timeline-type-meeting::before {
+  background: #54318a;
+}
+.admin-timeline-type-task::before {
+  background: #9d3f28;
+}
+.admin-timeline-type-status_update::before {
+  background: #31423c;
+}
 .admin-timeline-item[open] {
   background: #fbfaf6;
 }
@@ -1302,6 +1418,23 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   color: var(--muted);
   font-size: 10px;
   font-weight: 700;
+}
+.admin-timeline-followup {
+  width: fit-content;
+  padding: 6px 8px;
+  border-radius: 999px;
+}
+.admin-timeline-followup.admin-followup-overdue {
+  color: #fff;
+  background: #9d3f28;
+}
+.admin-timeline-followup.admin-followup-today {
+  color: #17221f;
+  background: #f2d18b;
+}
+.admin-timeline-followup.admin-followup-upcoming {
+  color: #173325;
+  background: #d8e6f4;
 }
 .admin-timeline-item p {
   margin: 0;
