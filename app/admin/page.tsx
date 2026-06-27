@@ -33,6 +33,22 @@ type AdminLead = {
   team_members: { full_name: string | null } | { full_name: string | null }[] | null;
 };
 
+type AdminLeadWorkQueueItem = Pick<
+  AdminLead,
+  | "id"
+  | "lead_type"
+  | "full_name"
+  | "email"
+  | "phone"
+  | "property_address"
+  | "assigned_team_member_id"
+  | "contact_status"
+  | "lead_priority"
+  | "next_follow_up_at"
+  | "created_at"
+  | "team_members"
+>;
+
 type AdminLeadActivity = {
   id: string;
   lead_id: string;
@@ -308,7 +324,7 @@ function getRelativeFollowUpIso(daysFromToday: number, timeZone = defaultAdminTi
   return dateTimeLocalToIso(`${targetDate}T${targetHour}:${targetMinute}`, timeZone);
 }
 
-function getAssignedName(lead: AdminLead) {
+function getAssignedName(lead: Pick<AdminLead, "team_members">) {
   if (Array.isArray(lead.team_members)) {
     return lead.team_members[0]?.full_name || "Unassigned";
   }
@@ -579,6 +595,44 @@ function AdminPaginationControls({
         )}
       </div>
     </nav>
+  );
+}
+
+function AdminLeadQueueList({
+  title,
+  emptyText,
+  leads,
+  timeZone
+}: {
+  title: string;
+  emptyText: string;
+  leads: AdminLeadWorkQueueItem[];
+  timeZone: string;
+}) {
+  return (
+    <article className="admin-work-queue-card">
+      <div className="admin-work-queue-heading">
+        <span>{title}</span>
+        <strong>{leads.length}</strong>
+      </div>
+      <div className="admin-work-queue-list">
+        {leads.map((lead) => (
+          <a className="admin-work-queue-row" href={`#lead-${lead.id}`} key={`${title}-${lead.id}`}>
+            <span>
+              <strong>{lead.property_address || "No property address"}</strong>
+              <small>{lead.full_name || "No name"} - {getAssignedName(lead)}</small>
+            </span>
+            <span>
+              <strong>{formatDateTime(lead.next_follow_up_at, timeZone)}</strong>
+              <small>{getLeadPriorityLabel(lead.lead_priority)} - {lead.contact_status || "new"}</small>
+            </span>
+          </a>
+        ))}
+        {!leads.length ? (
+          <p>{emptyText}</p>
+        ) : null}
+      </div>
+    </article>
   );
 }
 
@@ -1511,7 +1565,29 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages) {
         error: { message: "Add SUPABASE_SERVICE_ROLE_KEY in Vercel to unlock private lead inbox data." }
       };
 
+  const leadWorkQueueResult = adminSupabase
+    ? await adminSupabase
+        .from("lead_submissions")
+        .select("id, lead_type, full_name, email, phone, property_address, assigned_team_member_id, contact_status, lead_priority, next_follow_up_at, created_at, team_members(full_name)")
+        .order("created_at", { ascending: false })
+        .limit(250)
+    : { data: [], error: null };
+
   const leads = (leadsResult.data || []) as AdminLead[];
+  const leadWorkQueueItems = (leadWorkQueueResult.data || []) as AdminLeadWorkQueueItem[];
+  const byFollowUpTime = (first: AdminLeadWorkQueueItem, second: AdminLeadWorkQueueItem) =>
+    new Date(first.next_follow_up_at || first.created_at).getTime() - new Date(second.next_follow_up_at || second.created_at).getTime();
+  const overdueLeads = leadWorkQueueItems
+    .filter((lead) => lead.next_follow_up_at && new Date(lead.next_follow_up_at) < now)
+    .sort(byFollowUpTime)
+    .slice(0, 5);
+  const todaysFollowUps = leadWorkQueueItems
+    .filter((lead) => lead.next_follow_up_at && lead.next_follow_up_at >= startOfTodayIso && lead.next_follow_up_at < startOfTomorrowIso)
+    .sort(byFollowUpTime)
+    .slice(0, 5);
+  const highPriorityLeads = leadWorkQueueItems
+    .filter((lead) => lead.lead_priority === "high")
+    .slice(0, 5);
   const leadIds = leads.map((lead) => lead.id);
   const leadActivitiesResult = adminSupabase && leadIds.length
     ? await adminSupabase
@@ -1535,6 +1611,11 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages) {
     siteSettings,
     activeBanner,
     leads,
+    leadWorkQueue: {
+      overdue: overdueLeads,
+      today: todaysFollowUps,
+      highPriority: highPriorityLeads
+    },
     leadActivitiesByLeadId,
     banners,
     teamMembers,
@@ -1546,7 +1627,7 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages) {
       testimonials: getPagination(pages.testimonials.page, pages.testimonials.pageSize, testimonialsResult.count || 0, "testimonialPage", "testimonialPageSize", "testimonials")
     },
     errors: {
-      leads: leadsResult.error?.message || leadActivitiesResult.error?.message,
+      leads: leadsResult.error?.message || leadActivitiesResult.error?.message || leadWorkQueueResult.error?.message,
       banners: bannersResult.error?.message,
       teamMembers: teamMembersResult.error?.message || teamMemberOptionsResult.error?.message,
       testimonials: testimonialsResult.error?.message
@@ -1606,7 +1687,7 @@ export default async function AdminDashboardPage({
     }
   };
   const hasLeadFilters = Boolean(leadFilters.search || leadFilters.type || leadFilters.status || leadFilters.assigned || leadFilters.priority || leadFilters.followUp);
-  const { siteSettings, activeBanner, leads, leadActivitiesByLeadId, banners, teamMembers, teamMemberOptions, testimonials, pagination, errors } = await getAdminData(leadFilters, adminPages);
+  const { siteSettings, activeBanner, leads, leadWorkQueue, leadActivitiesByLeadId, banners, teamMembers, teamMemberOptions, testimonials, pagination, errors } = await getAdminData(leadFilters, adminPages);
   const visibleErrors = Object.values(errors).filter(Boolean);
   const siteStatus = getSearchParamValue(searchParams, "siteStatus");
   const savedSiteSection = getSearchParamValue(searchParams, "siteSection");
@@ -1687,6 +1768,27 @@ export default async function AdminDashboardPage({
           <span>Testimonials</span>
           <strong>{pagination.testimonials.totalCount}</strong>
         </article>
+      </section>
+
+      <section className="admin-work-queue" aria-label="Lead follow-up work queue">
+        <AdminLeadQueueList
+          title="Overdue follow-ups"
+          emptyText="Nothing overdue. Nice and clean."
+          leads={leadWorkQueue.overdue}
+          timeZone={siteSettings.timeZone}
+        />
+        <AdminLeadQueueList
+          title="Today"
+          emptyText="No follow-ups scheduled for today."
+          leads={leadWorkQueue.today}
+          timeZone={siteSettings.timeZone}
+        />
+        <AdminLeadQueueList
+          title="High priority"
+          emptyText="No high-priority leads right now."
+          leads={leadWorkQueue.highPriority}
+          timeZone={siteSettings.timeZone}
+        />
       </section>
 
       <section className="admin-grid">

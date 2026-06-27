@@ -80,7 +80,7 @@ main section[id] {
 .brand { display: inline-flex; align-items: center; gap: 10px; }
 .site-header .fathom-brand img {
   width: auto;
-  max-width: 226px;
+  max-width: clamp(226px, 18vw, 340px);
   height: var(--header-broker-logo-height, 48px);
   object-fit: contain;
   display: block;
@@ -596,6 +596,7 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
 .admin-alert,
 .admin-success,
 .admin-stats,
+.admin-work-queue,
 .admin-grid {
   width: min(1180px, 100%);
   margin-left: auto;
@@ -647,6 +648,95 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   font-size: 36px;
   font-weight: 500;
   letter-spacing: -.05em;
+}
+.admin-work-queue {
+  margin-bottom: 22px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.admin-work-queue-card {
+  min-width: 0;
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+  background: #fff;
+  box-shadow: 0 10px 25px rgba(25, 38, 33, .07);
+}
+.admin-work-queue-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.admin-work-queue-heading span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.admin-work-queue-heading strong {
+  min-width: 30px;
+  min-height: 30px;
+  display: inline-grid;
+  place-items: center;
+  color: var(--ink);
+  background: #eef0ea;
+  font-size: 13px;
+  font-weight: 900;
+}
+.admin-work-queue-list {
+  display: grid;
+  gap: 8px;
+}
+.admin-work-queue-list > p {
+  margin: 0;
+  padding: 14px;
+  color: var(--muted);
+  background: #f8f5ee;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.admin-work-queue-row {
+  padding: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(115px, .8fr);
+  gap: 12px;
+  align-items: center;
+  color: var(--ink);
+  background: #fbfaf6;
+  border: 1px solid rgba(27, 45, 38, .12);
+  text-decoration: none;
+}
+.admin-work-queue-row:hover {
+  border-color: rgba(217, 120, 79, .6);
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+.admin-work-queue-row span {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.admin-work-queue-row span:last-child {
+  text-align: right;
+}
+.admin-work-queue-row strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.25;
+}
+.admin-work-queue-row small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.35;
 }
 .admin-grid {
   display: grid;
@@ -1667,6 +1757,7 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   footer > p { grid-column: 1 / -1; }
   .admin-hero { align-items: flex-start; flex-direction: column; }
   .admin-stats { grid-template-columns: repeat(2, 1fr); }
+  .admin-work-queue { grid-template-columns: 1fr; }
   .admin-grid { grid-template-columns: 1fr; }
   .admin-filter-bar { grid-template-columns: 1fr; }
   .admin-filter-bar label:first-child { grid-column: auto; }
@@ -1718,7 +1809,10 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   .announcement { padding-inline: 12px; }
   .announcement > span, .announcement a { display: none; }
   .site-header { min-height: 68px; }
-  .fathom-brand img { width: 190px; }
+  .site-header .fathom-brand img {
+    max-width: 190px;
+    height: min(var(--header-broker-logo-height, 48px), 54px);
+  }
   .footer-brand img { width: auto; max-width: 205px; }
   .mobile-nav.open { top: 68px; }
   .alu-brand-banner {
@@ -1789,6 +1883,12 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   .admin-shell { padding-inline: 18px; }
   .admin-hero { padding: 26px; }
   .admin-stats { grid-template-columns: 1fr; }
+  .admin-work-queue-row {
+    grid-template-columns: 1fr;
+  }
+  .admin-work-queue-row span:last-child {
+    text-align: left;
+  }
   .admin-card { padding: 22px; }
   .admin-card-header { flex-direction: column; }
 }
