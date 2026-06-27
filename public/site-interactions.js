@@ -254,6 +254,14 @@ document.querySelector("#prevListings").addEventListener("click", () => {
   renderListings();
 });
 
+document.querySelectorAll('a[href="#top"]').forEach((link) => {
+  link.addEventListener("click", (event) => {
+    event.preventDefault();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  });
+});
+
 const backdrop = document.querySelector("#modalBackdrop");
 let modalAutoCloseTimeout;
 function openModal(name) {

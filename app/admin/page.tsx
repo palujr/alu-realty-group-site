@@ -751,6 +751,8 @@ async function updateSiteSettings(formData: FormData) {
         fairHousingText: asOptionalString(formData.get("fairHousingText")) || currentSiteSettings.fairHousingText,
         fairHousingShowText: formData.get("fairHousingShowText") === "on",
         realtorLogoUrl,
+        headerBrokerLogoHeight: asClampedNumber(formData.get("headerBrokerLogoHeight"), currentSiteSettings.headerBrokerLogoHeight, 32, 90),
+        headerTeamLogoHeight: asClampedNumber(formData.get("headerTeamLogoHeight"), currentSiteSettings.headerTeamLogoHeight, 56, 140),
         footerBrandLogoHeight: asClampedNumber(formData.get("footerBrandLogoHeight"), currentSiteSettings.footerBrandLogoHeight, 36, 140),
         footerComplianceLogoHeight: asClampedNumber(formData.get("footerComplianceLogoHeight"), currentSiteSettings.footerComplianceLogoHeight, 14, 48)
       },
@@ -1782,6 +1784,14 @@ export default async function AdminDashboardPage({
                     <label>
                       Upload team logo
                       <input name="teamLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+                    </label>
+                    <label>
+                      Top broker logo height
+                      <input name="headerBrokerLogoHeight" type="number" min="32" max="90" defaultValue={siteSettings.headerBrokerLogoHeight} />
+                    </label>
+                    <label>
+                      Top team logo height
+                      <input name="headerTeamLogoHeight" type="number" min="56" max="140" defaultValue={siteSettings.headerTeamLogoHeight} />
                     </label>
                     <label>
                       Footer logo display

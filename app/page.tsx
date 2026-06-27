@@ -77,6 +77,7 @@ export default async function HomePage() {
   const testimonials = await getTestimonials();
   const heroHeadlineLines = siteSettings.heroHeadline.split("\n");
   const homepageSections = siteSettings.homepageSections;
+  const stickyAnchorOffset = siteSettings.headerBrokerLogoHeight + siteSettings.headerTeamLogoHeight + 96;
   const footerLogos = [
     ...(siteSettings.footerLogoDisplay === "broker" || siteSettings.footerLogoDisplay === "both"
       ? [{
@@ -103,6 +104,9 @@ export default async function HomePage() {
              --accent: ${siteSettings.brandAccent};
              --header-footer: ${siteSettings.brandHeaderFooter};
              --section-background: ${siteSettings.brandSectionBackground};
+             --header-broker-logo-height: ${siteSettings.headerBrokerLogoHeight}px;
+             --header-team-logo-height: ${siteSettings.headerTeamLogoHeight}px;
+             --sticky-anchor-offset: ${stickyAnchorOffset}px;
              --footer-brand-logo-height: ${siteSettings.footerBrandLogoHeight}px;
              --footer-compliance-logo-height: ${siteSettings.footerComplianceLogoHeight}px;
             }

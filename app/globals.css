@@ -16,7 +16,10 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: var(--sticky-anchor-offset, 236px);
+}
 body {
   margin: 0;
   color: var(--ink);
@@ -29,6 +32,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
 a { color: inherit; text-decoration: none; }
 button { cursor: pointer; }
 svg { display: block; }
+
+main section[id] {
+  scroll-margin-top: var(--sticky-anchor-offset, 236px);
+}
 
 .announcement {
   min-height: 35px;
@@ -61,7 +68,7 @@ svg { display: block; }
   backdrop-filter: blur(12px);
 }
 .site-header {
-  min-height: 76px;
+  min-height: max(76px, calc(var(--header-broker-logo-height, 48px) + 28px));
   padding: 0 5vw;
   display: flex;
   align-items: center;
@@ -71,6 +78,13 @@ svg { display: block; }
   border-bottom: 1px solid rgba(23, 34, 31, .08);
 }
 .brand { display: inline-flex; align-items: center; gap: 10px; }
+.site-header .fathom-brand img {
+  width: auto;
+  max-width: 226px;
+  height: var(--header-broker-logo-height, 48px);
+  object-fit: contain;
+  display: block;
+}
 .fathom-brand img { width: 226px; height: auto; display: block; }
 .brand-mark { width: 37px; height: 37px; display: grid; place-items: center; background: var(--ink); color: var(--paper); }
 .brand-mark svg { width: 25px; fill: none; stroke: currentColor; stroke-width: 1.5; }
@@ -107,7 +121,7 @@ svg { display: block; }
 .menu-button span { width: 100%; height: 1px; margin: 5px 0; display: block; background: var(--ink); }
 .mobile-nav { display: none; }
 .alu-brand-banner {
-  min-height: 88px;
+  min-height: max(88px, calc(var(--header-team-logo-height, 92px) + 18px));
   padding: 6px 5vw;
   display: flex;
   align-items: center;
@@ -122,9 +136,11 @@ svg { display: block; }
   gap: clamp(24px, 3.4vw, 54px);
 }
 .alu-group-logo {
-  width: clamp(178px, 16vw, 226px);
+  width: auto;
+  max-width: clamp(178px, 16vw, 226px);
   flex: 0 0 auto;
-  height: auto;
+  height: var(--header-team-logo-height, 92px);
+  object-fit: contain;
   display: block;
 }
 .brand-divider {
@@ -1625,7 +1641,9 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
     gap: 10px;
   }
   .alu-group-logo {
-    width: min(130px, 32vw);
+    width: auto;
+    max-width: min(130px, 32vw);
+    height: min(var(--header-team-logo-height, 92px), 74px);
   }
   .brand-divider {
     width: 1px;

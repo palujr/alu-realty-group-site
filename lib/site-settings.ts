@@ -12,6 +12,8 @@ export type SiteSettings = {
   fairHousingText: string;
   fairHousingShowText: boolean;
   realtorLogoUrl: string;
+  headerBrokerLogoHeight: number;
+  headerTeamLogoHeight: number;
   footerBrandLogoHeight: number;
   footerComplianceLogoHeight: number;
   contactEmail: string;
@@ -72,6 +74,8 @@ type SiteSettingsHomepageSections = SiteSettings["homepageSections"] & {
   fairHousingText?: string;
   fairHousingShowText?: boolean;
   realtorLogoUrl?: string;
+  headerBrokerLogoHeight?: number;
+  headerTeamLogoHeight?: number;
   footerBrandLogoHeight?: number;
   footerComplianceLogoHeight?: number;
 };
@@ -130,6 +134,8 @@ export const defaultSiteSettings: SiteSettings = {
   fairHousingText: "Equal Housing Opportunity",
   fairHousingShowText: true,
   realtorLogoUrl: "/assets/realtor-logo-black.jpg",
+  headerBrokerLogoHeight: 48,
+  headerTeamLogoHeight: 92,
   footerBrandLogoHeight: 82,
   footerComplianceLogoHeight: 24,
   contactEmail: "phil@alurealtygroup.com",
@@ -245,6 +251,8 @@ function mapBrokerSite(row: BrokerSiteRow): SiteSettings {
     fairHousingText: sectionSettings.fairHousingText || row.fair_housing_text || defaultSiteSettings.fairHousingText,
     fairHousingShowText: sectionSettings.fairHousingShowText ?? row.fair_housing_show_text ?? defaultSiteSettings.fairHousingShowText,
     realtorLogoUrl: sectionSettings.realtorLogoUrl || row.realtor_logo_url || defaultSiteSettings.realtorLogoUrl,
+    headerBrokerLogoHeight: sectionSettings.headerBrokerLogoHeight || defaultSiteSettings.headerBrokerLogoHeight,
+    headerTeamLogoHeight: sectionSettings.headerTeamLogoHeight || defaultSiteSettings.headerTeamLogoHeight,
     footerBrandLogoHeight: sectionSettings.footerBrandLogoHeight || defaultSiteSettings.footerBrandLogoHeight,
     footerComplianceLogoHeight: sectionSettings.footerComplianceLogoHeight || defaultSiteSettings.footerComplianceLogoHeight,
     contactEmail: row.contact_email || defaultSiteSettings.contactEmail,
