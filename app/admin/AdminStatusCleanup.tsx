@@ -5,6 +5,7 @@ import { useEffect } from "react";
 const statusParams = [
   "siteStatus",
   "siteSection",
+  "siteError",
   "bannerStatus",
   "bannerId",
   "leadStatus",
@@ -29,7 +30,7 @@ export function AdminStatusCleanup({ active }: { active: boolean }) {
       const cleanUrl = `${url.pathname}${url.search}${url.hash}`;
       window.history.replaceState(null, "", cleanUrl);
 
-      document.querySelectorAll("[data-admin-status='saved']").forEach((element) => {
+      document.querySelectorAll("[data-admin-status]").forEach((element) => {
         element.setAttribute("hidden", "true");
       });
     }, 7000);

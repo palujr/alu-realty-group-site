@@ -901,7 +901,7 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
 .admin-inline-alert span {
   color: var(--muted);
 }
-[data-admin-status="saved"][hidden] {
+[data-admin-status][hidden] {
   display: none !important;
 }
 .admin-form-list {
@@ -1638,14 +1638,34 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   height: auto;
   object-fit: contain;
   justify-self: start;
-  background: #111;
+  background: transparent;
 }
 .admin-property-image-preview .admin-realtor-preview {
   width: 62px;
   height: auto;
   object-fit: contain;
   justify-self: start;
-  background: #fff;
+  background: transparent;
+}
+.admin-compliance-logo-preview-tile {
+  width: fit-content;
+  min-width: 82px;
+  min-height: 54px;
+  padding: 10px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  background:
+    linear-gradient(45deg, rgba(255, 255, 255, .22) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, .22) 75%),
+    linear-gradient(45deg, rgba(255, 255, 255, .22) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, .22) 75%),
+    #7c8780;
+  background-position: 0 0, 8px 8px;
+  background-size: 16px 16px;
+  border: 1px solid rgba(23, 34, 31, .22);
+}
+.admin-compliance-logo-preview-tile img {
+  display: block;
 }
 .admin-property-image-preview span,
 .admin-property-image-editor span {

@@ -1708,12 +1708,12 @@ export default async function AdminDashboardPage({
   const savedTeamMemberId = getSearchParamValue(searchParams, "teamMemberId");
   const testimonialStatus = getSearchParamValue(searchParams, "testimonialStatus");
   const savedTestimonialId = getSearchParamValue(searchParams, "testimonialId");
-  const hasSavedStatus = siteStatus === "saved" || bannerStatus === "saved" || leadStatus === "saved" || leadActivityStatus === "saved" || leadActivityStatus === "updated" || leadActivityStatus === "deleted" || teamStatus === "saved" || testimonialStatus === "saved";
+  const hasTransientStatus = siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error" || leadStatus === "saved" || leadStatus === "error" || leadActivityStatus === "saved" || leadActivityStatus === "updated" || leadActivityStatus === "deleted" || leadActivityStatus === "error" || teamStatus === "saved" || teamStatus === "error" || testimonialStatus === "saved" || testimonialStatus === "error";
 
   return (
     <main className="admin-shell">
       <AdminDataFreshness />
-      <AdminStatusCleanup active={hasSavedStatus} />
+      <AdminStatusCleanup active={hasTransientStatus} />
       <AdminLeadFormReset
         activitySaved={leadActivityStatus === "saved"}
         activityUpdated={leadActivityStatus === "updated"}
@@ -1729,7 +1729,7 @@ export default async function AdminDashboardPage({
       </header>
 
       {visibleErrors.length ? (
-        <section className="admin-alert">
+        <section className="admin-alert" data-admin-status="error">
           <strong>Some admin data could not load yet.</strong>
           <p>This usually means we still need one more Supabase read policy for the admin view.</p>
           <ul>
@@ -1746,7 +1746,7 @@ export default async function AdminDashboardPage({
       ) : null}
 
       {bannerStatus === "error" ? (
-        <section className="admin-alert">
+        <section className="admin-alert" data-admin-status="error">
           <strong>Banner campaign could not be saved yet.</strong>
           <p>This usually means the Supabase admin update permission still needs to be applied.</p>
         </section>
@@ -1814,7 +1814,7 @@ export default async function AdminDashboardPage({
               <span>The website settings have been updated.</span>
             </div>
           ) : null}
-          <details className="admin-edit-panel" open={siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error"}>
+          <details className="admin-edit-panel">
             <summary className="admin-summary-row">
               <span>
                 <strong>{siteSettings.siteName}</strong>
@@ -1866,13 +1866,17 @@ export default async function AdminDashboardPage({
                     )}
                     <span>Current Equal Housing Footer Logo</span>
                     {siteSettings.fairHousingLogoUrl ? (
-                      <img className="admin-fair-housing-preview" src={siteSettings.fairHousingLogoUrl} alt={siteSettings.fairHousingText} />
+                      <div className="admin-compliance-logo-preview-tile">
+                        <img className="admin-fair-housing-preview" src={siteSettings.fairHousingLogoUrl} alt={siteSettings.fairHousingText} />
+                      </div>
                     ) : (
                       <small>No Equal Housing logo is currently set.</small>
                     )}
                     <span>Current Realtor Footer Logo</span>
                     {siteSettings.realtorLogoUrl ? (
-                      <img className="admin-realtor-preview" src={siteSettings.realtorLogoUrl} alt="Realtor logo" />
+                      <div className="admin-compliance-logo-preview-tile">
+                        <img className="admin-realtor-preview" src={siteSettings.realtorLogoUrl} alt="Realtor logo" />
+                      </div>
                     ) : (
                       <small>No Realtor logo is currently set.</small>
                     )}
