@@ -105,6 +105,23 @@ create table if not exists public.lead_submissions (
   property_address text,
   message text,
   source_page text,
+  lead_source_category text not null default 'website' check (
+    lead_source_category in (
+      'website',
+      'referral',
+      'phone_call',
+      'sign_call',
+      'open_house',
+      'social_media',
+      'email',
+      'direct_mail',
+      'past_client',
+      'agent_network',
+      'manual',
+      'import',
+      'other'
+    )
+  ),
   assigned_team_member_id uuid references public.team_members(id) on delete set null,
   contact_status text not null default 'new',
   preferred_contact_method text,

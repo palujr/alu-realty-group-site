@@ -21,6 +21,7 @@ type AdminLead = {
   property_address: string | null;
   message: string | null;
   source_page: string | null;
+  lead_source_category: string;
   assigned_team_member_id: string | null;
   contact_status: string;
   preferred_contact_method: string | null;
@@ -108,6 +109,7 @@ type LeadFilters = {
   status: string;
   assigned: string;
   priority: string;
+  source: string;
   followUp: string;
 };
 
@@ -172,6 +174,22 @@ const leadPriorityOptions = [
   { value: "normal", label: "Normal" },
   { value: "high", label: "High" },
   { value: "urgent", label: "Urgent" }
+];
+
+const leadSourceCategoryOptions = [
+  { value: "website", label: "Website" },
+  { value: "referral", label: "Referral" },
+  { value: "phone_call", label: "Phone call" },
+  { value: "sign_call", label: "Sign call" },
+  { value: "open_house", label: "Open house" },
+  { value: "social_media", label: "Social media" },
+  { value: "email", label: "Email" },
+  { value: "direct_mail", label: "Direct mail" },
+  { value: "past_client", label: "Past client" },
+  { value: "agent_network", label: "Agent network" },
+  { value: "manual", label: "Manual entry" },
+  { value: "import", label: "Imported list" },
+  { value: "other", label: "Other" }
 ];
 
 const followUpFilterOptions = [
@@ -424,6 +442,12 @@ function normalizeLeadType(value: FormDataEntryValue | null) {
   return allowedTypes.includes(leadType) ? leadType : "seller";
 }
 
+function normalizeLeadSourceCategory(value: FormDataEntryValue | null, fallback = "website") {
+  const category = value?.toString() || fallback;
+  const allowedCategories = leadSourceCategoryOptions.map((option) => option.value);
+  return allowedCategories.includes(category) ? category : fallback;
+}
+
 function getLeadTypeLabel(value?: string | null) {
   return leadTypeOptions.find((option) => option.value === value)?.label || "Lead";
 }
@@ -434,6 +458,20 @@ function getLeadPriorityLabel(value?: string | null) {
 
 function getLeadStatusLabel(value?: string | null) {
   return leadStatusOptions.find((option) => option.value === value)?.label || "New";
+}
+
+function getLeadSourceCategoryLabel(value?: string | null) {
+  return leadSourceCategoryOptions.find((option) => option.value === value)?.label || "Website";
+}
+
+function getLeadSourceLabel(lead: Pick<AdminLead, "lead_source_category" | "lead_source_detail" | "source_page">) {
+  const categoryLabel = getLeadSourceCategoryLabel(lead.lead_source_category);
+
+  if (lead.lead_source_detail) {
+    return `${categoryLabel}: ${lead.lead_source_detail}`;
+  }
+
+  return categoryLabel || lead.source_page || "Website";
 }
 
 function getLeadActivityTypeLabel(value?: string | null) {
@@ -1027,6 +1065,7 @@ async function createLead(formData: FormData) {
       property_address: propertyAddress,
       message: asOptionalString(formData.get("message")),
       source_page: "admin_manual",
+      lead_source_category: normalizeLeadSourceCategory(formData.get("leadSourceCategory"), "manual"),
       assigned_team_member_id: asOptionalString(formData.get("assignedTeamMemberId")),
       contact_status: normalizeLeadStatus(formData.get("contactStatus")),
       preferred_contact_method: normalizeContactMethod(formData.get("preferredContactMethod")),
@@ -1075,6 +1114,7 @@ async function updateLead(formData: FormData) {
       phone,
       property_address: propertyAddress,
       message: asOptionalString(formData.get("message")),
+      lead_source_category: normalizeLeadSourceCategory(formData.get("leadSourceCategory")),
       assigned_team_member_id: asOptionalString(formData.get("assignedTeamMemberId")),
       contact_status: normalizeLeadStatus(formData.get("contactStatus")),
       preferred_contact_method: normalizeContactMethod(formData.get("preferredContactMethod")),
@@ -1599,7 +1639,7 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages) {
     ? await (async () => {
         let leadsQuery = adminSupabase
           .from("lead_submissions")
-          .select("id, lead_type, full_name, email, phone, property_address, message, source_page, assigned_team_member_id, contact_status, preferred_contact_method, contact_notes, last_contacted_at, lead_priority, next_follow_up_at, lead_source_detail, created_at, team_members(full_name)", { count: "exact" });
+          .select("id, lead_type, full_name, email, phone, property_address, message, source_page, lead_source_category, assigned_team_member_id, contact_status, preferred_contact_method, contact_notes, last_contacted_at, lead_priority, next_follow_up_at, lead_source_detail, created_at, team_members(full_name)", { count: "exact" });
 
         if (leadFilters.type) {
           leadsQuery = leadsQuery.eq("lead_type", leadFilters.type);
@@ -1617,6 +1657,10 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages) {
 
         if (leadFilters.priority) {
           leadsQuery = leadsQuery.eq("lead_priority", leadFilters.priority);
+        }
+
+        if (leadFilters.source) {
+          leadsQuery = leadsQuery.eq("lead_source_category", leadFilters.source);
         }
 
         if (leadFilters.followUp === "none") {
@@ -1738,6 +1782,7 @@ export default async function AdminDashboardPage({
     leadFilterStatus?: string;
     leadFilterAssigned?: string;
     leadFilterPriority?: string;
+    leadFilterSource?: string;
     leadFilterFollowUp?: string;
     leadPage?: string;
     leadPageSize?: string;
@@ -1753,6 +1798,7 @@ export default async function AdminDashboardPage({
     status: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterStatus"), leadStatusOptions.map((option) => option.value)),
     assigned: normalizeLeadAssignedFilter(getSearchParamValue(searchParams, "leadFilterAssigned")),
     priority: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterPriority"), leadPriorityOptions.map((option) => option.value)),
+    source: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterSource"), leadSourceCategoryOptions.map((option) => option.value)),
     followUp: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterFollowUp"), followUpFilterOptions.map((option) => option.value))
   };
   const adminPages: AdminPages = {
@@ -1769,7 +1815,7 @@ export default async function AdminDashboardPage({
       pageSize: normalizePageSizeParam(getSearchParamValue(searchParams, "testimonialPageSize"))
     }
   };
-  const hasLeadFilters = Boolean(leadFilters.search || leadFilters.type || leadFilters.status || leadFilters.assigned || leadFilters.priority || leadFilters.followUp);
+  const hasLeadFilters = Boolean(leadFilters.search || leadFilters.type || leadFilters.status || leadFilters.assigned || leadFilters.priority || leadFilters.source || leadFilters.followUp);
   const { siteSettings, activeBanner, leads, leadWorkQueue, leadActivitiesByLeadId, banners, teamMembers, teamMemberOptions, testimonials, pagination, errors } = await getAdminData(leadFilters, adminPages);
   const visibleErrors = Object.values(errors).filter(Boolean);
   const siteStatus = getSearchParamValue(searchParams, "siteStatus");
@@ -2593,6 +2639,15 @@ export default async function AdminDashboardPage({
               </select>
             </label>
             <label>
+              Source
+              <select name="leadFilterSource" defaultValue={leadFilters.source}>
+                <option value="">All sources</option>
+                {leadSourceCategoryOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            <label>
               Follow-up
               <select name="leadFilterFollowUp" defaultValue={leadFilters.followUp}>
                 {followUpFilterOptions.map((option) => (
@@ -2678,6 +2733,14 @@ export default async function AdminDashboardPage({
                 <label>
                   Next follow-up
                   <input name="nextFollowUpAt" type="datetime-local" />
+                </label>
+                <label>
+                  Source category
+                  <select name="leadSourceCategory" defaultValue="manual">
+                    {leadSourceCategoryOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
                 </label>
                 <label>
                   Source detail
@@ -2818,7 +2881,7 @@ export default async function AdminDashboardPage({
                   </div>
                   <div>
                     <span>Source</span>
-                    <strong>{lead.lead_source_detail || lead.source_page || "Website"}</strong>
+                    <strong>{getLeadSourceLabel(lead)}</strong>
                   </div>
                 </div>
 
@@ -2918,6 +2981,14 @@ export default async function AdminDashboardPage({
                       <input name="propertyAddress" type="text" defaultValue={lead.property_address || ""} required />
                     </label>
                     <label>
+                      Source category
+                      <select name="leadSourceCategory" defaultValue={lead.lead_source_category || "website"}>
+                        {leadSourceCategoryOptions.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
                       Source detail
                       <input name="leadSourceDetail" type="text" defaultValue={lead.lead_source_detail || ""} placeholder="Phone call, referral, sign call, open house" />
                     </label>
@@ -2939,7 +3010,7 @@ export default async function AdminDashboardPage({
                   </label>
                 </section>
                 <div className="admin-form-footer">
-                  <small>Assigned to {getAssignedName(lead)} - Priority: {getLeadPriorityLabel(lead.lead_priority)} - Next follow-up: {formatDateTime(lead.next_follow_up_at, siteSettings.timeZone)} - Source: {lead.lead_source_detail || lead.source_page || "website"}</small>
+                  <small>Assigned to {getAssignedName(lead)} - Priority: {getLeadPriorityLabel(lead.lead_priority)} - Next follow-up: {formatDateTime(lead.next_follow_up_at, siteSettings.timeZone)} - Source: {getLeadSourceLabel(lead)}</small>
                   {leadStatus === "saved" && savedLeadId === lead.id ? (
                     <span className="admin-save-confirmation" data-admin-status="saved">Saved successfully</span>
                   ) : null}

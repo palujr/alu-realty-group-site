@@ -169,6 +169,7 @@ export async function POST(request: Request) {
     property_address: propertyAddress,
     message: message || null,
     source_page: sourcePage,
+    lead_source_category: "website",
     assigned_team_member_id: assignedTeamMemberId
   });
 
