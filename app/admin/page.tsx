@@ -2717,55 +2717,28 @@ export default async function AdminDashboardPage({
 
                 <div className="admin-quick-actions" aria-label="Quick lead actions">
                   <span className="admin-quick-actions-label">Quick actions</span>
-                  <form action={updateLeadQuickAction}>
-                    <input name="leadId" type="hidden" value={lead.id} />
-                    <input name="quickAction" type="hidden" value="mark-contacted" />
-                    <button type="submit">Mark contacted</button>
-                  </form>
-                  <form action={updateLeadQuickAction}>
-                    <input name="leadId" type="hidden" value={lead.id} />
-                    <input name="quickAction" type="hidden" value="follow-up-today" />
-                    <button type="submit">Follow up today</button>
-                  </form>
-                  <form action={updateLeadQuickAction}>
-                    <input name="leadId" type="hidden" value={lead.id} />
-                    <input name="quickAction" type="hidden" value="follow-up-tomorrow" />
-                    <button type="submit">Follow up tomorrow</button>
-                  </form>
-                  <form action={updateLeadQuickAction}>
-                    <input name="leadId" type="hidden" value={lead.id} />
-                    <input name="quickAction" type="hidden" value="high-priority" />
-                    <button type="submit">Mark high priority</button>
-                  </form>
-                  <form action={updateLeadQuickAction}>
-                    <input name="leadId" type="hidden" value={lead.id} />
-                    <input name="quickAction" type="hidden" value="clear-follow-up" />
-                    <button type="submit">Clear follow-up</button>
-                  </form>
+                  <button form={`lead-quick-contacted-${lead.id}`} type="submit">Mark contacted</button>
+                  <button form={`lead-quick-followup-today-${lead.id}`} type="submit">Follow up today</button>
+                  <button form={`lead-quick-followup-tomorrow-${lead.id}`} type="submit">Follow up tomorrow</button>
+                  <button form={`lead-quick-priority-${lead.id}`} type="submit">Mark high priority</button>
+                  <button form={`lead-quick-clear-followup-${lead.id}`} type="submit">Clear follow-up</button>
                   {teamMemberOptions.length <= 2 ? (
                     teamMemberOptions.map((member) => (
-                      <form action={updateLeadQuickAction} key={member.id}>
-                        <input name="leadId" type="hidden" value={lead.id} />
-                        <input name="quickAction" type="hidden" value="assign" />
-                        <input name="assignedTeamMemberId" type="hidden" value={member.id} />
-                        <button type="submit">Assign to {member.full_name.split(" ")[0]}</button>
-                      </form>
+                      <button form={`lead-quick-assign-${lead.id}-${member.id}`} key={member.id} type="submit">Assign to {member.full_name.split(" ")[0]}</button>
                     ))
                   ) : (
-                    <form className="admin-quick-assign-form" action={updateLeadQuickAction}>
-                      <input name="leadId" type="hidden" value={lead.id} />
-                      <input name="quickAction" type="hidden" value="assign" />
+                    <div className="admin-quick-assign-control">
                       <label>
                         <span>Assign to</span>
-                        <select name="assignedTeamMemberId" defaultValue={lead.assigned_team_member_id || ""} required>
+                        <select form={`lead-quick-assign-${lead.id}`} name="assignedTeamMemberId" defaultValue={lead.assigned_team_member_id || ""} required>
                           <option value="">Select agent</option>
                           {teamMemberOptions.map((member) => (
                             <option key={member.id} value={member.id}>{member.full_name}</option>
                           ))}
                         </select>
                       </label>
-                      <button type="submit">Apply</button>
-                    </form>
+                      <button form={`lead-quick-assign-${lead.id}`} type="submit">Apply</button>
+                    </div>
                   )}
                 </div>
 
@@ -2921,6 +2894,40 @@ export default async function AdminDashboardPage({
                   <button className="admin-save-button" type="submit">Save lead</button>
                 </div>
               </form>
+              <form id={`lead-quick-contacted-${lead.id}`} className="admin-hidden-action-form" action={updateLeadQuickAction}>
+                <input name="leadId" type="hidden" value={lead.id} />
+                <input name="quickAction" type="hidden" value="mark-contacted" />
+              </form>
+              <form id={`lead-quick-followup-today-${lead.id}`} className="admin-hidden-action-form" action={updateLeadQuickAction}>
+                <input name="leadId" type="hidden" value={lead.id} />
+                <input name="quickAction" type="hidden" value="follow-up-today" />
+              </form>
+              <form id={`lead-quick-followup-tomorrow-${lead.id}`} className="admin-hidden-action-form" action={updateLeadQuickAction}>
+                <input name="leadId" type="hidden" value={lead.id} />
+                <input name="quickAction" type="hidden" value="follow-up-tomorrow" />
+              </form>
+              <form id={`lead-quick-priority-${lead.id}`} className="admin-hidden-action-form" action={updateLeadQuickAction}>
+                <input name="leadId" type="hidden" value={lead.id} />
+                <input name="quickAction" type="hidden" value="high-priority" />
+              </form>
+              <form id={`lead-quick-clear-followup-${lead.id}`} className="admin-hidden-action-form" action={updateLeadQuickAction}>
+                <input name="leadId" type="hidden" value={lead.id} />
+                <input name="quickAction" type="hidden" value="clear-follow-up" />
+              </form>
+              {teamMemberOptions.length <= 2 ? (
+                teamMemberOptions.map((member) => (
+                  <form id={`lead-quick-assign-${lead.id}-${member.id}`} className="admin-hidden-action-form" action={updateLeadQuickAction} key={member.id}>
+                    <input name="leadId" type="hidden" value={lead.id} />
+                    <input name="quickAction" type="hidden" value="assign" />
+                    <input name="assignedTeamMemberId" type="hidden" value={member.id} />
+                  </form>
+                ))
+              ) : (
+                <form id={`lead-quick-assign-${lead.id}`} className="admin-hidden-action-form" action={updateLeadQuickAction}>
+                  <input name="leadId" type="hidden" value={lead.id} />
+                  <input name="quickAction" type="hidden" value="assign" />
+                </form>
+              )}
               <section className="admin-timeline-panel">
                 <div className="admin-card-header admin-form-title">
                   <div>
