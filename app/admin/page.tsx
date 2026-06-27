@@ -2438,94 +2438,137 @@ export default async function AdminDashboardPage({
                   <span>{getLeadPriorityLabel(lead.lead_priority)} - {lead.contact_status || "new"}</span>
                   <span>{getLeadFollowUpLabel(lead, siteSettings.timeZone)}</span>
                 </summary>
-              <form className="admin-form-card" action={updateLead}>
+              <form className="admin-form-card admin-lead-detail-card" action={updateLead}>
                 <input name="leadId" type="hidden" value={lead.id} />
-                <div className="admin-card-header admin-form-title">
-                  <div>
+                <div className="admin-lead-detail-hero">
+                  <div className="admin-lead-title">
                     <p className="admin-kicker">{lead.contact_status || "new"} {getLeadTypeLabel(lead.lead_type)}</p>
                     <h3>{lead.property_address || "No property address"}</h3>
+                    <div className="admin-lead-badges" aria-label="Lead summary">
+                      <span>{getLeadPriorityLabel(lead.lead_priority)}</span>
+                      <span>{getAssignedName(lead)}</span>
+                      <span>{getLeadFollowUpLabel(lead, siteSettings.timeZone)}</span>
+                    </div>
                   </div>
-                  <span>{formatDate(lead.created_at, siteSettings.timeZone)}</span>
+                  <span className="admin-lead-created">Created {formatDate(lead.created_at, siteSettings.timeZone)}</span>
                 </div>
-                <div className="admin-form-grid">
-                  <label>
-                    Lead type
-                    <select name="leadType" defaultValue={lead.lead_type || "seller"}>
-                      {leadTypeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Client name
-                    <input name="fullName" type="text" defaultValue={lead.full_name || ""} />
-                  </label>
-                  <label>
-                    Property address
-                    <input name="propertyAddress" type="text" defaultValue={lead.property_address || ""} required />
-                  </label>
-                  <label>
-                    Email
-                    <input name="email" type="email" defaultValue={lead.email || ""} />
-                  </label>
-                  <label>
-                    Phone
-                    <input name="phone" type="tel" defaultValue={lead.phone || ""} />
-                  </label>
-                  <label>
-                    Assigned team member
-                    <select name="assignedTeamMemberId" defaultValue={lead.assigned_team_member_id || ""}>
-                      <option value="">Unassigned</option>
-                      {teamMemberOptions.map((member) => (
-                        <option key={member.id} value={member.id}>{member.full_name}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Status
-                    <select name="contactStatus" defaultValue={lead.contact_status || "new"}>
-                      {leadStatusOptions.map((option) => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Contact method
-                    <select name="preferredContactMethod" defaultValue={lead.preferred_contact_method || ""}>
-                      {contactMethodOptions.map((option) => (
-                        <option key={option.value || "none"} value={option.value}>{option.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Priority
-                    <select name="leadPriority" defaultValue={lead.lead_priority || "normal"}>
-                      {leadPriorityOptions.map((option) => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Last contacted
-                    <input name="lastContactedAt" type="datetime-local" defaultValue={formatDateTimeLocal(lead.last_contacted_at, siteSettings.timeZone)} />
-                  </label>
-                  <label>
-                    Next follow-up
-                    <input name="nextFollowUpAt" type="datetime-local" defaultValue={formatDateTimeLocal(lead.next_follow_up_at, siteSettings.timeZone)} />
-                  </label>
-                  <label>
-                    Source detail
-                    <input name="leadSourceDetail" type="text" defaultValue={lead.lead_source_detail || ""} placeholder="Phone call, referral, sign call, open house" />
-                  </label>
+
+                <div className="admin-lead-workspace-grid">
+                  <section className="admin-lead-section">
+                    <div className="admin-lead-section-heading">
+                      <p className="admin-kicker">Contact</p>
+                      <h4>{lead.full_name || "Client details"}</h4>
+                    </div>
+                    <div className="admin-contact-actions">
+                      {lead.email ? <a href={`mailto:${lead.email}`}>Email client</a> : <span>No email</span>}
+                      {lead.phone ? <a href={`tel:${lead.phone.replace(/[^0-9]/g, "")}`}>Call client</a> : <span>No phone</span>}
+                    </div>
+                    <div className="admin-form-grid admin-form-grid-compact">
+                      <label>
+                        Client name
+                        <input name="fullName" type="text" defaultValue={lead.full_name || ""} />
+                      </label>
+                      <label>
+                        Preferred method
+                        <select name="preferredContactMethod" defaultValue={lead.preferred_contact_method || ""}>
+                          {contactMethodOptions.map((option) => (
+                            <option key={option.value || "none"} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        Email
+                        <input name="email" type="email" defaultValue={lead.email || ""} />
+                      </label>
+                      <label>
+                        Phone
+                        <input name="phone" type="tel" defaultValue={lead.phone || ""} />
+                      </label>
+                    </div>
+                  </section>
+
+                  <section className="admin-lead-section">
+                    <div className="admin-lead-section-heading">
+                      <p className="admin-kicker">Follow-up</p>
+                      <h4>{formatDateTime(lead.next_follow_up_at, siteSettings.timeZone) || "No follow-up set"}</h4>
+                    </div>
+                    <div className="admin-form-grid admin-form-grid-compact">
+                      <label>
+                        Status
+                        <select name="contactStatus" defaultValue={lead.contact_status || "new"}>
+                          {leadStatusOptions.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        Priority
+                        <select name="leadPriority" defaultValue={lead.lead_priority || "normal"}>
+                          {leadPriorityOptions.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        Last contacted
+                        <input name="lastContactedAt" type="datetime-local" defaultValue={formatDateTimeLocal(lead.last_contacted_at, siteSettings.timeZone)} />
+                      </label>
+                      <label>
+                        Next follow-up
+                        <input name="nextFollowUpAt" type="datetime-local" defaultValue={formatDateTimeLocal(lead.next_follow_up_at, siteSettings.timeZone)} />
+                      </label>
+                    </div>
+                  </section>
                 </div>
-                <label>
-                  Request details
-                  <textarea name="message" rows={3} defaultValue={lead.message || ""}></textarea>
-                </label>
-                <label>
-                  Contact notes
-                  <textarea name="contactNotes" rows={3} defaultValue={lead.contact_notes || ""}></textarea>
-                </label>
+
+                <section className="admin-lead-section">
+                  <div className="admin-lead-section-heading">
+                    <p className="admin-kicker">Lead details</p>
+                    <h4>{getLeadTypeLabel(lead.lead_type)} request</h4>
+                  </div>
+                  <div className="admin-form-grid">
+                    <label>
+                      Lead type
+                      <select name="leadType" defaultValue={lead.lead_type || "seller"}>
+                        {leadTypeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Assigned team member
+                      <select name="assignedTeamMemberId" defaultValue={lead.assigned_team_member_id || ""}>
+                        <option value="">Unassigned</option>
+                        {teamMemberOptions.map((member) => (
+                          <option key={member.id} value={member.id}>{member.full_name}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Property address
+                      <input name="propertyAddress" type="text" defaultValue={lead.property_address || ""} required />
+                    </label>
+                    <label>
+                      Source detail
+                      <input name="leadSourceDetail" type="text" defaultValue={lead.lead_source_detail || ""} placeholder="Phone call, referral, sign call, open house" />
+                    </label>
+                  </div>
+                </section>
+
+                <section className="admin-lead-section admin-lead-notes-section">
+                  <div className="admin-lead-section-heading">
+                    <p className="admin-kicker">Notes</p>
+                    <h4>Request and follow-up context</h4>
+                  </div>
+                  <label>
+                    Request details
+                    <textarea name="message" rows={3} defaultValue={lead.message || ""}></textarea>
+                  </label>
+                  <label>
+                    Contact notes
+                    <textarea name="contactNotes" rows={3} defaultValue={lead.contact_notes || ""}></textarea>
+                  </label>
+                </section>
                 <div className="admin-form-footer">
                   <small>Assigned to {getAssignedName(lead)} - Priority: {getLeadPriorityLabel(lead.lead_priority)} - Next follow-up: {formatDateTime(lead.next_follow_up_at, siteSettings.timeZone)} - Source: {lead.lead_source_detail || lead.source_page || "website"}</small>
                   {leadStatus === "saved" && savedLeadId === lead.id ? (
