@@ -2523,6 +2523,25 @@ export default async function AdminDashboardPage({
                   <span className="admin-lead-created">Created {formatDate(lead.created_at, siteSettings.timeZone)}</span>
                 </div>
 
+                <div className="admin-lead-command-strip" aria-label="Lead contact summary">
+                  <div>
+                    <span>Client</span>
+                    <strong>{lead.full_name || "No name yet"}</strong>
+                  </div>
+                  <div>
+                    <span>Email</span>
+                    {lead.email ? <a href={`mailto:${lead.email}`}>{lead.email}</a> : <strong>Not provided</strong>}
+                  </div>
+                  <div>
+                    <span>Phone</span>
+                    {lead.phone ? <a href={`tel:${lead.phone.replace(/[^0-9]/g, "")}`}>{lead.phone}</a> : <strong>Not provided</strong>}
+                  </div>
+                  <div>
+                    <span>Preferred</span>
+                    <strong>{contactMethodOptions.find((option) => option.value === lead.preferred_contact_method)?.label || "Not specified"}</strong>
+                  </div>
+                </div>
+
                 <div className="admin-quick-actions" aria-label="Quick lead actions">
                   <form action={updateLeadQuickAction}>
                     <input name="leadId" type="hidden" value={lead.id} />
@@ -2559,11 +2578,38 @@ export default async function AdminDashboardPage({
                   ))}
                 </div>
 
+                <div className="admin-lead-snapshot-grid" aria-label="Lead status snapshot">
+                  <div>
+                    <span>Status</span>
+                    <strong>{leadStatusOptions.find((option) => option.value === lead.contact_status)?.label || "New"}</strong>
+                  </div>
+                  <div>
+                    <span>Priority</span>
+                    <strong>{getLeadPriorityLabel(lead.lead_priority)}</strong>
+                  </div>
+                  <div>
+                    <span>Assigned</span>
+                    <strong>{getAssignedName(lead)}</strong>
+                  </div>
+                  <div>
+                    <span>Next follow-up</span>
+                    <strong>{formatDateTime(lead.next_follow_up_at, siteSettings.timeZone) || "Not scheduled"}</strong>
+                  </div>
+                  <div>
+                    <span>Last contacted</span>
+                    <strong>{formatDateTime(lead.last_contacted_at, siteSettings.timeZone) || "Not recorded"}</strong>
+                  </div>
+                  <div>
+                    <span>Source</span>
+                    <strong>{lead.lead_source_detail || lead.source_page || "Website"}</strong>
+                  </div>
+                </div>
+
                 <div className="admin-lead-workspace-grid">
                   <section className="admin-lead-section">
                     <div className="admin-lead-section-heading">
                       <p className="admin-kicker">Contact</p>
-                      <h4>{lead.full_name || "Client details"}</h4>
+                      <h4>Client contact card</h4>
                     </div>
                     <div className="admin-contact-actions">
                       {lead.email ? <a href={`mailto:${lead.email}`}>Email client</a> : <span>No email</span>}
@@ -2596,7 +2642,7 @@ export default async function AdminDashboardPage({
                   <section className="admin-lead-section">
                     <div className="admin-lead-section-heading">
                       <p className="admin-kicker">Follow-up</p>
-                      <h4>{formatDateTime(lead.next_follow_up_at, siteSettings.timeZone) || "No follow-up set"}</h4>
+                      <h4>Pipeline and timing</h4>
                     </div>
                     <div className="admin-form-grid admin-form-grid-compact">
                       <label>
@@ -2688,9 +2734,19 @@ export default async function AdminDashboardPage({
                 <div className="admin-card-header admin-form-title">
                   <div>
                     <p className="admin-kicker">Activity Timeline</p>
-                    <h3>Recent follow-up history</h3>
+                    <h3>Follow-up history and tasks</h3>
                   </div>
                   <span>{leadActivitiesByLeadId[lead.id]?.length || 0} items</span>
+                </div>
+                <div className="admin-timeline-toolbar">
+                  <div>
+                    <strong>{(leadActivitiesByLeadId[lead.id] || [])[0]?.outcome || "No recent outcome yet"}</strong>
+                    <span>Most recent outcome</span>
+                  </div>
+                  <div>
+                    <strong>{formatDateTime((leadActivitiesByLeadId[lead.id] || [])[0]?.follow_up_at, siteSettings.timeZone) || "No activity task"}</strong>
+                    <span>Next activity follow-up</span>
+                  </div>
                 </div>
                 <div className="admin-timeline-list">
                   {(leadActivitiesByLeadId[lead.id] || []).slice(0, 6).map((activity) => (
