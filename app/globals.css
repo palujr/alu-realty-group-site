@@ -1188,16 +1188,17 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   color: var(--accent);
 }
 .admin-quick-actions {
-  padding: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 130px repeat(auto-fit, minmax(145px, 1fr));
+  gap: 10px;
+  align-items: stretch;
   background: #fff;
   border: 1px solid rgba(27, 45, 38, .12);
 }
 .admin-quick-actions-label {
-  margin-right: 2px;
+  display: flex;
+  align-items: center;
   color: var(--muted);
   font-size: 9px;
   font-weight: 900;
@@ -1206,16 +1207,19 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
 }
 .admin-quick-actions form {
   margin: 0;
+  min-width: 0;
 }
 .admin-quick-actions button {
+  width: 100%;
   min-height: 34px;
-  padding: 0 11px;
+  padding: 0 10px;
   border: 1px solid rgba(27, 45, 38, .16);
   color: var(--ink);
   background: #f4f1ea;
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 900;
-  letter-spacing: .06em;
+  letter-spacing: .045em;
+  line-height: 1.15;
   text-transform: uppercase;
   cursor: pointer;
 }
@@ -1924,6 +1928,12 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   }
   .admin-lead-command-strip {
     grid-template-columns: 1fr 1fr;
+  }
+  .admin-quick-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-quick-actions-label {
+    grid-column: 1 / -1;
   }
   .admin-lead-snapshot-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
