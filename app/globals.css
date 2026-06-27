@@ -977,6 +977,34 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   letter-spacing: .05em;
   text-transform: uppercase;
 }
+.admin-quick-actions {
+  padding: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid rgba(27, 45, 38, .12);
+}
+.admin-quick-actions form {
+  margin: 0;
+}
+.admin-quick-actions button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgba(27, 45, 38, .16);
+  color: var(--ink);
+  background: #f4f1ea;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.admin-quick-actions button:hover {
+  color: #fff;
+  border-color: var(--accent);
+  background: var(--accent);
+}
 .admin-lead-workspace-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

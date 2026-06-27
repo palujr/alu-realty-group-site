@@ -299,6 +299,15 @@ function addDaysToDateInput(dateInput: string, days: number) {
   return date.toISOString().slice(0, 10);
 }
 
+function getRelativeFollowUpIso(daysFromToday: number, timeZone = defaultAdminTimeZone, hour = 9, minute = 0) {
+  const today = getDateTimeLocalValue(new Date(), timeZone).slice(0, 10);
+  const targetDate = addDaysToDateInput(today, daysFromToday);
+  const targetHour = hour.toString().padStart(2, "0");
+  const targetMinute = minute.toString().padStart(2, "0");
+
+  return dateTimeLocalToIso(`${targetDate}T${targetHour}:${targetMinute}`, timeZone);
+}
+
 function getAssignedName(lead: AdminLead) {
   if (Array.isArray(lead.team_members)) {
     return lead.team_members[0]?.full_name || "Unassigned";
@@ -941,6 +950,57 @@ async function updateLead(formData: FormData) {
 
   if (error) {
     redirect("/admin?leadStatus=error#lead-inbox");
+  }
+
+  revalidatePath("/admin");
+  redirect(`/admin?leadStatus=saved&leadId=${leadId}#lead-${leadId}`);
+}
+
+async function updateLeadQuickAction(formData: FormData) {
+  "use server";
+
+  const adminSupabase = createAdminClient();
+  const siteSettings = await getSiteSettings();
+
+  if (!adminSupabase) {
+    redirect("/admin?leadStatus=error#lead-inbox");
+  }
+
+  const leadId = formData.get("leadId")?.toString();
+  const action = formData.get("quickAction")?.toString() || "";
+  const updatePayload: Record<string, unknown> = {};
+
+  if (!leadId) {
+    redirect("/admin?leadStatus=error#lead-inbox");
+  }
+
+  if (action === "mark-contacted") {
+    updatePayload.contact_status = "contacted";
+    updatePayload.last_contacted_at = new Date().toISOString();
+  } else if (action === "follow-up-today") {
+    updatePayload.next_follow_up_at = getRelativeFollowUpIso(0, siteSettings.timeZone);
+  } else if (action === "follow-up-tomorrow") {
+    updatePayload.next_follow_up_at = getRelativeFollowUpIso(1, siteSettings.timeZone);
+  } else if (action === "clear-follow-up") {
+    updatePayload.next_follow_up_at = null;
+  } else if (action === "high-priority") {
+    updatePayload.lead_priority = "high";
+  } else if (action === "assign") {
+    updatePayload.assigned_team_member_id = asOptionalString(formData.get("assignedTeamMemberId"));
+    updatePayload.contact_status = "assigned";
+  }
+
+  if (!Object.keys(updatePayload).length) {
+    redirect(`/admin?leadStatus=error#lead-${leadId}`);
+  }
+
+  const { error } = await adminSupabase
+    .from("lead_submissions")
+    .update(updatePayload)
+    .eq("id", leadId);
+
+  if (error) {
+    redirect(`/admin?leadStatus=error#lead-${leadId}`);
   }
 
   revalidatePath("/admin");
@@ -2451,6 +2511,42 @@ export default async function AdminDashboardPage({
                     </div>
                   </div>
                   <span className="admin-lead-created">Created {formatDate(lead.created_at, siteSettings.timeZone)}</span>
+                </div>
+
+                <div className="admin-quick-actions" aria-label="Quick lead actions">
+                  <form action={updateLeadQuickAction}>
+                    <input name="leadId" type="hidden" value={lead.id} />
+                    <input name="quickAction" type="hidden" value="mark-contacted" />
+                    <button type="submit">Mark contacted</button>
+                  </form>
+                  <form action={updateLeadQuickAction}>
+                    <input name="leadId" type="hidden" value={lead.id} />
+                    <input name="quickAction" type="hidden" value="follow-up-today" />
+                    <button type="submit">Follow up today</button>
+                  </form>
+                  <form action={updateLeadQuickAction}>
+                    <input name="leadId" type="hidden" value={lead.id} />
+                    <input name="quickAction" type="hidden" value="follow-up-tomorrow" />
+                    <button type="submit">Follow up tomorrow</button>
+                  </form>
+                  <form action={updateLeadQuickAction}>
+                    <input name="leadId" type="hidden" value={lead.id} />
+                    <input name="quickAction" type="hidden" value="high-priority" />
+                    <button type="submit">Mark high priority</button>
+                  </form>
+                  <form action={updateLeadQuickAction}>
+                    <input name="leadId" type="hidden" value={lead.id} />
+                    <input name="quickAction" type="hidden" value="clear-follow-up" />
+                    <button type="submit">Clear follow-up</button>
+                  </form>
+                  {teamMemberOptions.map((member) => (
+                    <form action={updateLeadQuickAction} key={member.id}>
+                      <input name="leadId" type="hidden" value={lead.id} />
+                      <input name="quickAction" type="hidden" value="assign" />
+                      <input name="assignedTeamMemberId" type="hidden" value={member.id} />
+                      <button type="submit">Assign to {member.full_name.split(" ")[0]}</button>
+                    </form>
+                  ))}
                 </div>
 
                 <div className="admin-lead-workspace-grid">
