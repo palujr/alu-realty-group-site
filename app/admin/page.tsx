@@ -354,6 +354,11 @@ function asHexColor(value: FormDataEntryValue | null, fallback: string) {
   return /^#[0-9a-fA-F]{6}$/.test(withHash) ? withHash.toLowerCase() : fallback;
 }
 
+function asClampedNumber(value: FormDataEntryValue | null, fallback: number, min: number, max: number) {
+  const numberValue = Number.parseInt(value?.toString() || "", 10);
+  return Number.isNaN(numberValue) ? fallback : Math.min(Math.max(numberValue, min), max);
+}
+
 function asSpecialtyArray(value: FormDataEntryValue | null) {
   return (value?.toString() || "")
     .split(/[\n,]/)
@@ -736,7 +741,9 @@ async function updateSiteSettings(formData: FormData) {
         fairHousingLogoUrl,
         fairHousingText: asOptionalString(formData.get("fairHousingText")) || currentSiteSettings.fairHousingText,
         fairHousingShowText: formData.get("fairHousingShowText") === "on",
-        realtorLogoUrl
+        realtorLogoUrl,
+        footerBrandLogoHeight: asClampedNumber(formData.get("footerBrandLogoHeight"), currentSiteSettings.footerBrandLogoHeight, 36, 140),
+        footerComplianceLogoHeight: asClampedNumber(formData.get("footerComplianceLogoHeight"), currentSiteSettings.footerComplianceLogoHeight, 14, 48)
       },
       brand_primary: asHexColor(formData.get("brandPrimary"), currentSiteSettings.brandPrimary),
       brand_accent: asHexColor(formData.get("brandAccent"), currentSiteSettings.brandAccent),
@@ -1725,6 +1732,10 @@ export default async function AdminDashboardPage({
                       </select>
                     </label>
                     <label>
+                      Footer broker/team logo height
+                      <input name="footerBrandLogoHeight" type="number" min="36" max="140" defaultValue={siteSettings.footerBrandLogoHeight} />
+                    </label>
+                    <label>
                       Equal Housing logo URL
                       <input name="fairHousingLogoUrl" type="text" defaultValue={siteSettings.fairHousingLogoUrl} />
                     </label>
@@ -1747,6 +1758,10 @@ export default async function AdminDashboardPage({
                     <label>
                       Upload Realtor logo
                       <input name="realtorLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+                    </label>
+                    <label>
+                      Equal Housing/Realtor logo height
+                      <input name="footerComplianceLogoHeight" type="number" min="14" max="48" defaultValue={siteSettings.footerComplianceLogoHeight} />
                     </label>
                     <small>Transparent PNG or clean white-background logo files will usually look best in the public header.</small>
                   </div>

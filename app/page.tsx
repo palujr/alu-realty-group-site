@@ -103,6 +103,8 @@ export default async function HomePage() {
              --accent: ${siteSettings.brandAccent};
              --header-footer: ${siteSettings.brandHeaderFooter};
              --section-background: ${siteSettings.brandSectionBackground};
+             --footer-brand-logo-height: ${siteSettings.footerBrandLogoHeight}px;
+             --footer-compliance-logo-height: ${siteSettings.footerComplianceLogoHeight}px;
             }
           `
         }} />
@@ -426,12 +428,14 @@ export default async function HomePage() {
         </div>
         <p>A modern real estate experience for Arizona buyers, sellers, and investors.</p>
         <div className="footer-links"><a href="#properties">Properties</a><a href="#rates">Mortgage</a><a href="#team">Team</a><a href="#sell">Contact</a></div>
-        <div className="footer-compliance">
-          <img src={siteSettings.fairHousingLogoUrl} alt="" aria-hidden="true" />
-          {siteSettings.fairHousingShowText ? <span>{siteSettings.fairHousingText}</span> : null}
-          <img className="footer-realtor-logo" src={siteSettings.realtorLogoUrl} alt="Realtor logo" />
-        </div>
-        <small>© 2026 Alu Realty Group · Fathom Realty Elite · Equal Housing Opportunity · Demo listings shown</small>
+        <small className="footer-bottom-line">
+          <span>© 2026 Alu Realty Group · Fathom Realty Elite · Equal Housing Opportunity · Demo listings shown</span>
+          <span className="footer-compliance">
+            <img src={siteSettings.fairHousingLogoUrl} alt="" aria-hidden="true" />
+            {siteSettings.fairHousingShowText ? <span>{siteSettings.fairHousingText}</span> : null}
+            <img src={siteSettings.realtorLogoUrl} alt="Realtor logo" />
+          </span>
+        </small>
       </footer>
 
       <div className="toast" id="toast" role="status" aria-live="polite"></div>
