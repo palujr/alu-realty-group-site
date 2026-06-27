@@ -686,7 +686,7 @@ function asOptionalDateTime(value: FormDataEntryValue | null, timeZone = default
 
 function normalizeFooterLogoDisplay(value: FormDataEntryValue | null) {
   const display = value?.toString() || "broker";
-  return display === "team" || display === "both" ? display : "broker";
+  return display === "team" || display === "both" || display === "broker" ? display : "broker";
 }
 
 async function uploadAdminImage(
@@ -798,6 +798,7 @@ async function updateSiteSettings(formData: FormData) {
       primary_domain: asOptionalString(formData.get("primaryDomain")),
       broker_logo_url: brokerLogoUrl,
       team_logo_url: teamLogoUrl,
+      footer_logo_display: normalizeFooterLogoDisplay(formData.get("footerLogoDisplay")),
       homepage_sections: {
         ...currentSiteSettings.homepageSections,
         footerLogoDisplay: normalizeFooterLogoDisplay(formData.get("footerLogoDisplay")),
@@ -865,6 +866,7 @@ async function updateSiteSettings(formData: FormData) {
   } else if (siteSection === "homepage-copy") {
     Object.assign(updatePayload, {
       homepage_sections: {
+        ...currentSiteSettings.homepageSections,
         propertiesEyebrow: formData.get("propertiesEyebrow")?.toString().trim(),
         propertiesHeadline: formData.get("propertiesHeadline")?.toString().trim(),
         ratesEyebrow: formData.get("ratesEyebrow")?.toString().trim(),
@@ -1806,7 +1808,7 @@ export default async function AdminDashboardPage({
               <span>The website settings have been updated.</span>
             </div>
           ) : null}
-          <details className="admin-edit-panel" open={siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error"}>
+          <details className="admin-edit-panel" open={siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error"} data-keep-open="true">
             <summary className="admin-summary-row">
               <span>
                 <strong>{siteSettings.siteName}</strong>

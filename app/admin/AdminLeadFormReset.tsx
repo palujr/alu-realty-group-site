@@ -36,6 +36,7 @@ export function AdminLeadFormReset({
   useEffect(() => {
     const leadPanels = Array.from(document.querySelectorAll<HTMLDetailsElement>("details[data-reset-on-close='true']"));
     const leadLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>("a[data-open-lead-panel='true']"));
+    const keepOpenPanels = Array.from(document.querySelectorAll<HTMLDetailsElement>("details[data-keep-open='true']"));
 
     const resetForms = (panel: HTMLDetailsElement) => {
       panel.querySelectorAll<HTMLFormElement>("form").forEach((form) => form.reset());
@@ -92,9 +93,25 @@ export function AdminLeadFormReset({
 
     leadLinks.forEach((link) => link.addEventListener("click", openLeadPanel));
 
+    const keepPanelOpen = (event: Event) => {
+      const panel = event.currentTarget as HTMLDetailsElement;
+
+      if (!panel.open) {
+        window.requestAnimationFrame(() => {
+          panel.open = true;
+        });
+      }
+    };
+
+    keepOpenPanels.forEach((panel) => {
+      panel.open = true;
+      panel.addEventListener("toggle", keepPanelOpen);
+    });
+
     return () => {
       leadPanels.forEach((panel) => panel.removeEventListener("toggle", handleLeadPanelToggle));
       leadLinks.forEach((link) => link.removeEventListener("click", openLeadPanel));
+      keepOpenPanels.forEach((panel) => panel.removeEventListener("toggle", keepPanelOpen));
     };
   }, []);
 
