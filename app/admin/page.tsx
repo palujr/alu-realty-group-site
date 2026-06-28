@@ -24,6 +24,7 @@ type AdminLead = {
   lead_source_category: string;
   assigned_team_member_id: string | null;
   contact_status: string;
+  lead_stage: string;
   preferred_contact_method: string | null;
   contact_notes: string | null;
   last_contacted_at: string | null;
@@ -34,7 +35,7 @@ type AdminLead = {
   team_members: { full_name: string | null } | { full_name: string | null }[] | null;
 };
 
-const adminLeadSelect = "id, lead_type, full_name, email, phone, property_address, message, source_page, lead_source_category, assigned_team_member_id, contact_status, preferred_contact_method, contact_notes, last_contacted_at, lead_priority, next_follow_up_at, lead_source_detail, created_at, team_members(full_name)";
+const adminLeadSelect = "id, lead_type, full_name, email, phone, property_address, message, source_page, lead_source_category, assigned_team_member_id, contact_status, lead_stage, preferred_contact_method, contact_notes, last_contacted_at, lead_priority, next_follow_up_at, lead_source_detail, created_at, team_members(full_name)";
 
 type AdminLeadWorkQueueItem = Pick<
   AdminLead,
@@ -46,6 +47,7 @@ type AdminLeadWorkQueueItem = Pick<
   | "property_address"
   | "assigned_team_member_id"
   | "contact_status"
+  | "lead_stage"
   | "lead_priority"
   | "next_follow_up_at"
   | "created_at"
@@ -109,6 +111,7 @@ type LeadFilters = {
   search: string;
   type: string;
   status: string;
+  stage: string;
   assigned: string;
   priority: string;
   source: string;
@@ -147,6 +150,15 @@ const leadStatusOptions = [
   { value: "in_progress", label: "In progress" },
   { value: "completed", label: "Completed" },
   { value: "archived", label: "Archived" }
+];
+
+const leadStageOptions = [
+  { value: "new", label: "New" },
+  { value: "attempting_contact", label: "Attempting Contact" },
+  { value: "consult_scheduled", label: "Consult Scheduled" },
+  { value: "active_client", label: "Active Client" },
+  { value: "nurture", label: "Nurture" },
+  { value: "closed_lost", label: "Closed / Lost" }
 ];
 
 const leadTypeOptions = [
@@ -229,6 +241,7 @@ type LeadOutcomeShortcut = {
   summary: string;
   outcome: string;
   contactStatus?: string;
+  leadStage?: string;
   leadPriority?: string;
   followUpDays?: number;
   clearFollowUp?: boolean;
@@ -243,6 +256,7 @@ const leadOutcomeShortcutOptions: LeadOutcomeShortcut[] = [
     summary: "Called client and left a voicemail.",
     outcome: "Left voicemail",
     contactStatus: "contacted",
+    leadStage: "attempting_contact",
     followUpDays: 1,
     markContacted: true
   },
@@ -253,6 +267,7 @@ const leadOutcomeShortcutOptions: LeadOutcomeShortcut[] = [
     summary: "Spoke with client and reviewed their next steps.",
     outcome: "Spoke with client",
     contactStatus: "verified",
+    leadStage: "attempting_contact",
     markContacted: true
   },
   {
@@ -262,6 +277,7 @@ const leadOutcomeShortcutOptions: LeadOutcomeShortcut[] = [
     summary: "Sent a comparative market analysis to the client.",
     outcome: "CMA sent",
     contactStatus: "in_progress",
+    leadStage: "attempting_contact",
     followUpDays: 2,
     markContacted: true
   },
@@ -272,6 +288,7 @@ const leadOutcomeShortcutOptions: LeadOutcomeShortcut[] = [
     summary: "Set an appointment with the client.",
     outcome: "Appointment set",
     contactStatus: "in_progress",
+    leadStage: "consult_scheduled",
     followUpDays: 1,
     markContacted: true
   },
@@ -282,6 +299,7 @@ const leadOutcomeShortcutOptions: LeadOutcomeShortcut[] = [
     summary: "Client is not interested at this time.",
     outcome: "Not interested",
     contactStatus: "archived",
+    leadStage: "closed_lost",
     clearFollowUp: true,
     markContacted: true
   },
@@ -292,6 +310,7 @@ const leadOutcomeShortcutOptions: LeadOutcomeShortcut[] = [
     summary: "Client needs a custom property search or listing alert setup.",
     outcome: "Needs search setup",
     contactStatus: "in_progress",
+    leadStage: "nurture",
     leadPriority: "high",
     followUpDays: 1
   }
@@ -513,6 +532,12 @@ function normalizeLeadStatus(value: FormDataEntryValue | null) {
   return allowedStatuses.includes(status) ? status : "new";
 }
 
+function normalizeLeadStage(value: FormDataEntryValue | null) {
+  const stage = value?.toString() || "new";
+  const allowedStages = leadStageOptions.map((option) => option.value);
+  return allowedStages.includes(stage) ? stage : "new";
+}
+
 function normalizeLeadType(value: FormDataEntryValue | null) {
   const leadType = value?.toString() || "seller";
   const allowedTypes = leadTypeOptions.map((option) => option.value);
@@ -535,6 +560,10 @@ function getLeadPriorityLabel(value?: string | null) {
 
 function getLeadStatusLabel(value?: string | null) {
   return leadStatusOptions.find((option) => option.value === value)?.label || "New";
+}
+
+function getLeadStageLabel(value?: string | null) {
+  return leadStageOptions.find((option) => option.value === value)?.label || "New";
 }
 
 function getLeadSourceCategoryLabel(value?: string | null) {
@@ -622,6 +651,30 @@ function getStatusTone(value?: string | null) {
   }
 
   if (value === "archived") {
+    return "muted";
+  }
+
+  return "new";
+}
+
+function getStageTone(value?: string | null) {
+  if (value === "active_client") {
+    return "complete";
+  }
+
+  if (value === "attempting_contact") {
+    return "active";
+  }
+
+  if (value === "consult_scheduled") {
+    return "today";
+  }
+
+  if (value === "nurture") {
+    return "upcoming";
+  }
+
+  if (value === "closed_lost") {
     return "muted";
   }
 
@@ -908,7 +961,7 @@ function AdminLeadQueueList({
             </span>
             <span>
               <strong>{formatDateTime(lead.next_follow_up_at, timeZone)}</strong>
-              <small>{getLeadPriorityLabel(lead.lead_priority)} - {lead.contact_status || "new"}</small>
+              <small>{getLeadPriorityLabel(lead.lead_priority)} - {getLeadStageLabel(lead.lead_stage)}</small>
             </span>
           </a>
         ))}
@@ -1243,6 +1296,7 @@ async function createLead(formData: FormData) {
       lead_source_category: normalizeLeadSourceCategory(formData.get("leadSourceCategory"), "manual"),
       assigned_team_member_id: asOptionalString(formData.get("assignedTeamMemberId")),
       contact_status: normalizeLeadStatus(formData.get("contactStatus")),
+      lead_stage: normalizeLeadStage(formData.get("leadStage")),
       preferred_contact_method: normalizeContactMethod(formData.get("preferredContactMethod")),
       contact_notes: asOptionalString(formData.get("contactNotes")),
       last_contacted_at: asOptionalDateTime(formData.get("lastContactedAt"), siteSettings.timeZone),
@@ -1292,6 +1346,7 @@ async function updateLead(formData: FormData) {
       lead_source_category: normalizeLeadSourceCategory(formData.get("leadSourceCategory")),
       assigned_team_member_id: asOptionalString(formData.get("assignedTeamMemberId")),
       contact_status: normalizeLeadStatus(formData.get("contactStatus")),
+      lead_stage: normalizeLeadStage(formData.get("leadStage")),
       preferred_contact_method: normalizeContactMethod(formData.get("preferredContactMethod")),
       contact_notes: asOptionalString(formData.get("contactNotes")),
       last_contacted_at: asOptionalDateTime(formData.get("lastContactedAt"), siteSettings.timeZone),
@@ -1329,6 +1384,7 @@ async function updateLeadQuickAction(formData: FormData) {
 
   if (action === "mark-contacted") {
     updatePayload.contact_status = "contacted";
+    updatePayload.lead_stage = "attempting_contact";
     updatePayload.last_contacted_at = new Date().toISOString();
   } else if (action === "follow-up-today") {
     updatePayload.next_follow_up_at = getRelativeFollowUpIso(0, siteSettings.timeZone);
@@ -1341,6 +1397,7 @@ async function updateLeadQuickAction(formData: FormData) {
   } else if (action === "assign") {
     updatePayload.assigned_team_member_id = asOptionalString(formData.get("assignedTeamMemberId"));
     updatePayload.contact_status = "assigned";
+    updatePayload.lead_stage = "attempting_contact";
   }
 
   if (!Object.keys(updatePayload).length) {
@@ -1393,6 +1450,10 @@ async function createLeadOutcomeShortcut(formData: FormData) {
 
   if (shortcut.contactStatus) {
     leadUpdatePayload.contact_status = shortcut.contactStatus;
+  }
+
+  if (shortcut.leadStage) {
+    leadUpdatePayload.lead_stage = shortcut.leadStage;
   }
 
   if (shortcut.leadPriority) {
@@ -1942,6 +2003,10 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focused
           leadsQuery = leadsQuery.eq("contact_status", leadFilters.status);
         }
 
+        if (leadFilters.stage) {
+          leadsQuery = leadsQuery.eq("lead_stage", leadFilters.stage);
+        }
+
         if (leadFilters.assigned === "unassigned") {
           leadsQuery = leadsQuery.is("assigned_team_member_id", null);
         } else if (leadFilters.assigned) {
@@ -1987,7 +2052,7 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focused
   const leadWorkQueueResult = adminSupabase
     ? await adminSupabase
         .from("lead_submissions")
-        .select("id, lead_type, full_name, email, phone, property_address, assigned_team_member_id, contact_status, lead_priority, next_follow_up_at, created_at, team_members(full_name)")
+        .select("id, lead_type, full_name, email, phone, property_address, assigned_team_member_id, contact_status, lead_stage, lead_priority, next_follow_up_at, created_at, team_members(full_name)")
         .order("created_at", { ascending: false })
         .limit(250)
     : { data: [], error: null };
@@ -2019,6 +2084,10 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focused
   const highPriorityLeads = leadWorkQueueItems
     .filter((lead) => lead.lead_priority === "high")
     .slice(0, 5);
+  const leadStageCounts = leadStageOptions.map((stage) => ({
+    ...stage,
+    count: leadWorkQueueItems.filter((lead) => lead.lead_stage === stage.value).length
+  }));
   const leadIds = leads.map((lead) => lead.id);
   const leadActivitiesResult = adminSupabase && leadIds.length
     ? await adminSupabase
@@ -2045,7 +2114,8 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focused
     leadWorkQueue: {
       overdue: overdueLeads,
       today: todaysFollowUps,
-      highPriority: highPriorityLeads
+      highPriority: highPriorityLeads,
+      stageCounts: leadStageCounts
     },
     leadActivitiesByLeadId,
     banners,
@@ -2085,6 +2155,7 @@ export default async function AdminDashboardPage({
     leadSearch?: string;
     leadFilterType?: string;
     leadFilterStatus?: string;
+    leadFilterStage?: string;
     leadFilterAssigned?: string;
     leadFilterPriority?: string;
     leadFilterSource?: string;
@@ -2102,6 +2173,7 @@ export default async function AdminDashboardPage({
     search: getSearchParamValue(searchParams, "leadSearch"),
     type: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterType"), leadTypeOptions.map((option) => option.value)),
     status: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterStatus"), leadStatusOptions.map((option) => option.value)),
+    stage: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterStage"), leadStageOptions.map((option) => option.value)),
     assigned: normalizeLeadAssignedFilter(getSearchParamValue(searchParams, "leadFilterAssigned")),
     priority: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterPriority"), leadPriorityOptions.map((option) => option.value)),
     source: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterSource"), leadSourceCategoryOptions.map((option) => option.value)),
@@ -2121,7 +2193,7 @@ export default async function AdminDashboardPage({
       pageSize: normalizePageSizeParam(getSearchParamValue(searchParams, "testimonialPageSize"))
     }
   };
-  const hasLeadFilters = Boolean(leadFilters.search || leadFilters.type || leadFilters.status || leadFilters.assigned || leadFilters.priority || leadFilters.source || leadFilters.followUp);
+  const hasLeadFilters = Boolean(leadFilters.search || leadFilters.type || leadFilters.status || leadFilters.stage || leadFilters.assigned || leadFilters.priority || leadFilters.source || leadFilters.followUp);
   const { siteSettings, activeBanner, leads, leadWorkQueue, leadActivitiesByLeadId, banners, teamMembers, teamMemberOptions, testimonials, pagination, errors } = await getAdminData(leadFilters, adminPages, savedLeadId);
   const visibleErrors = Object.values(errors).filter(Boolean);
   const siteStatus = getSearchParamValue(searchParams, "siteStatus");
@@ -2226,6 +2298,15 @@ export default async function AdminDashboardPage({
           <span>Testimonials</span>
           <strong>{pagination.testimonials.totalCount}</strong>
         </article>
+      </section>
+
+      <section className="admin-stage-overview" aria-label="Lead relationship stages">
+        {leadWorkQueue.stageCounts.map((stage) => (
+          <article className={`admin-stage-card admin-stage-${getStageTone(stage.value)}`} key={stage.value}>
+            <span>{stage.label}</span>
+            <strong>{stage.count}</strong>
+          </article>
+        ))}
       </section>
 
       <section className="admin-work-queue" aria-label="Lead follow-up work queue">
@@ -2988,6 +3069,15 @@ export default async function AdminDashboardPage({
               </select>
             </label>
             <label>
+              Relationship stage
+              <select name="leadFilterStage" defaultValue={leadFilters.stage}>
+                <option value="">All stages</option>
+                {leadStageOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            <label>
               Assigned to
               <select name="leadFilterAssigned" defaultValue={leadFilters.assigned}>
                 <option value="">Anyone</option>
@@ -3079,6 +3169,14 @@ export default async function AdminDashboardPage({
                   </select>
                 </label>
                 <label>
+                  Relationship stage
+                  <select name="leadStage" defaultValue="new">
+                    {leadStageOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
                   Contact method
                   <select name="preferredContactMethod" defaultValue="">
                     {contactMethodOptions.map((option) => (
@@ -3163,6 +3261,7 @@ export default async function AdminDashboardPage({
                   <span>{getAssignedName(lead)}</span>
                   <span>
                     <strong className={`admin-mini-status admin-status-${getStatusTone(lead.contact_status)}`}>{getLeadStatusLabel(lead.contact_status)}</strong>
+                    <small className={`admin-mini-status admin-status-${getStageTone(lead.lead_stage)}`}>{getLeadStageLabel(lead.lead_stage)}</small>
                     <small className={`admin-mini-status admin-priority-${getPriorityTone(lead.lead_priority)}`}>{getLeadPriorityLabel(lead.lead_priority)}</small>
                   </span>
                   <span className={`admin-summary-followup admin-followup-${getFollowUpTone(lead.next_follow_up_at, siteSettings.timeZone)}`}>{getLeadFollowUpLabel(lead, siteSettings.timeZone)}</span>
@@ -3171,7 +3270,7 @@ export default async function AdminDashboardPage({
                 className="admin-form-card admin-lead-detail-card"
                 action={updateLead}
                 autoComplete="off"
-                key={`${lead.id}-${lead.contact_status}-${lead.lead_priority}-${lead.assigned_team_member_id || "unassigned"}-${lead.next_follow_up_at || "none"}-${lead.last_contacted_at || "none"}`}
+                key={`${lead.id}-${lead.contact_status}-${lead.lead_stage}-${lead.lead_priority}-${lead.assigned_team_member_id || "unassigned"}-${lead.next_follow_up_at || "none"}-${lead.last_contacted_at || "none"}`}
               >
                 <input name="leadId" type="hidden" value={lead.id} />
                 <div className="admin-lead-detail-hero">
@@ -3181,6 +3280,7 @@ export default async function AdminDashboardPage({
                     <div className="admin-lead-badges" aria-label="Lead summary">
                       <span className={`admin-priority-${getPriorityTone(lead.lead_priority)}`}>{getLeadPriorityLabel(lead.lead_priority)}</span>
                       <span className={`admin-status-${getStatusTone(lead.contact_status)}`}>{getLeadStatusLabel(lead.contact_status)}</span>
+                      <span className={`admin-status-${getStageTone(lead.lead_stage)}`}>{getLeadStageLabel(lead.lead_stage)}</span>
                       <span>{getAssignedName(lead)}</span>
                       <span className={`admin-followup-${getFollowUpTone(lead.next_follow_up_at, siteSettings.timeZone)}`}>{getLeadFollowUpLabel(lead, siteSettings.timeZone)}</span>
                     </div>
@@ -3215,8 +3315,8 @@ export default async function AdminDashboardPage({
                   </div>
                   <div className="admin-crm-focus-card">
                     <span>Lead path</span>
-                    <strong>{getLeadTypeLabel(lead.lead_type)}</strong>
-                    <small>{getLeadSourceLabel(lead)}</small>
+                    <strong>{getLeadStageLabel(lead.lead_stage)}</strong>
+                    <small>{getLeadTypeLabel(lead.lead_type)} - {getLeadSourceLabel(lead)}</small>
                   </div>
                   <div className="admin-crm-focus-card">
                     <span>Activity load</span>
@@ -3263,6 +3363,10 @@ export default async function AdminDashboardPage({
                   <div className={`admin-snapshot-status admin-status-${getStatusTone(lead.contact_status)}`}>
                     <span>Status</span>
                     <strong>{getLeadStatusLabel(lead.contact_status)}</strong>
+                  </div>
+                  <div className={`admin-snapshot-status admin-status-${getStageTone(lead.lead_stage)}`}>
+                    <span>Stage</span>
+                    <strong>{getLeadStageLabel(lead.lead_stage)}</strong>
                   </div>
                   <div className={`admin-snapshot-status admin-priority-${getPriorityTone(lead.lead_priority)}`}>
                     <span>Priority</span>
@@ -3330,6 +3434,14 @@ export default async function AdminDashboardPage({
                         Status
                         <select key={`status-${lead.contact_status || "new"}`} name="contactStatus" defaultValue={lead.contact_status || "new"}>
                           {leadStatusOptions.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        Relationship stage
+                        <select key={`stage-${lead.lead_stage || "new"}`} name="leadStage" defaultValue={lead.lead_stage || "new"}>
+                          {leadStageOptions.map((option) => (
                             <option key={option.value} value={option.value}>{option.label}</option>
                           ))}
                         </select>

@@ -719,6 +719,55 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   font-weight: 500;
   letter-spacing: -.05em;
 }
+.admin-stage-overview {
+  margin-bottom: 22px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+.admin-stage-card {
+  min-width: 0;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fff;
+  border-top: 4px solid rgba(27, 45, 38, .16);
+  box-shadow: 0 10px 25px rgba(25, 38, 33, .07);
+}
+.admin-stage-card span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+.admin-stage-card strong {
+  color: var(--ink);
+  font-family: "DM Sans", sans-serif;
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -.05em;
+}
+.admin-stage-card.admin-stage-complete {
+  border-top-color: #5b8f5f;
+  background: #f3f8f2;
+}
+.admin-stage-card.admin-stage-active,
+.admin-stage-card.admin-stage-upcoming {
+  border-top-color: #63809e;
+  background: #f4f8fb;
+}
+.admin-stage-card.admin-stage-today {
+  border-top-color: #d79b39;
+  background: #fff8e8;
+}
+.admin-stage-card.admin-stage-muted {
+  border-top-color: #b7b1a6;
+  background: #f1eee7;
+}
 .admin-work-queue {
   margin-bottom: 22px;
   display: grid;
@@ -1415,7 +1464,7 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
 }
 .admin-lead-snapshot-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 1px;
   background: rgba(27, 45, 38, .12);
   border: 1px solid rgba(27, 45, 38, .12);
@@ -2458,6 +2507,7 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .admin-stats { grid-template-columns: repeat(2, 1fr); }
+  .admin-stage-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .admin-work-queue { grid-template-columns: 1fr; }
   .admin-grid { grid-template-columns: 1fr; }
   .admin-filter-bar { grid-template-columns: 1fr; }
@@ -2635,6 +2685,7 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
     display: none;
   }
   .admin-stats { grid-template-columns: 1fr; }
+  .admin-stage-overview { grid-template-columns: 1fr; }
   .admin-work-queue-row {
     grid-template-columns: 1fr;
   }

@@ -130,6 +130,9 @@ create table if not exists public.lead_submissions (
   ),
   assigned_team_member_id uuid references public.team_members(id) on delete set null,
   contact_status text not null default 'new',
+  lead_stage text not null default 'new' check (
+    lead_stage in ('new', 'attempting_contact', 'consult_scheduled', 'active_client', 'nurture', 'closed_lost')
+  ),
   preferred_contact_method text,
   contact_notes text,
   last_contacted_at timestamptz,
