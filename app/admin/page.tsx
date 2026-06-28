@@ -593,6 +593,61 @@ function getActivityTaskLabel(activity: AdminLeadActivity, timeZone = defaultAdm
   return `Upcoming: ${dateLabel}`;
 }
 
+function getLeadCrmFocus(
+  lead: AdminLead,
+  openActivityTasks: AdminLeadActivity[],
+  searchLeadSummary: ReturnType<typeof getSearchLeadSummary>,
+  timeZone = defaultAdminTimeZone
+) {
+  const nextTask = openActivityTasks[0];
+
+  if (nextTask) {
+    return {
+      tone: getFollowUpTone(nextTask.follow_up_at, timeZone),
+      title: getActivityTaskLabel(nextTask, timeZone),
+      body: nextTask.outcome || nextTask.summary || "Review the scheduled activity task."
+    };
+  }
+
+  if ((lead.contact_status === "new" || lead.contact_status === "assigned") && !lead.last_contacted_at) {
+    return {
+      tone: "today",
+      title: "Make first contact",
+      body: `Use ${contactMethodOptions.find((option) => option.value === lead.preferred_contact_method)?.label || "the best available contact method"} and log the outcome.`
+    };
+  }
+
+  if (searchLeadSummary?.alerts?.toLowerCase() === "yes") {
+    return {
+      tone: "upcoming",
+      title: "Confirm saved search setup",
+      body: "Review the client's search notes and confirm their listing alert criteria."
+    };
+  }
+
+  if (!lead.next_follow_up_at && !["completed", "archived"].includes(lead.contact_status)) {
+    return {
+      tone: "none",
+      title: "Schedule the next follow-up",
+      body: "Set the next follow-up date so this lead stays visible in the task queue."
+    };
+  }
+
+  if (lead.contact_status === "completed") {
+    return {
+      tone: "complete",
+      title: "Lead marked complete",
+      body: "Review notes only if more follow-up is needed."
+    };
+  }
+
+  return {
+    tone: getFollowUpTone(lead.next_follow_up_at, timeZone),
+    title: "Review recent activity",
+    body: "Check the timeline before adding the next note or task."
+  };
+}
+
 function getSearchParamValue(
   searchParams: Record<string, string | string[] | undefined> | undefined,
   key: string
@@ -2891,6 +2946,8 @@ export default async function AdminDashboardPage({
               const openActivityTasks = getOpenActivityTasks(leadActivities);
               const nextActivityTask = openActivityTasks[0];
               const searchLeadSummary = getSearchLeadSummary(lead);
+              const latestActivity = leadActivities[0];
+              const crmFocus = getLeadCrmFocus(lead, openActivityTasks, searchLeadSummary, siteSettings.timeZone);
               const displayedLeadActivities = [
                 ...leadActivities.slice(0, 6),
                 ...openActivityTasks
@@ -2949,6 +3006,24 @@ export default async function AdminDashboardPage({
                   <div>
                     <span>Preferred</span>
                     <strong>{contactMethodOptions.find((option) => option.value === lead.preferred_contact_method)?.label || "Not specified"}</strong>
+                  </div>
+                </div>
+
+                <div className="admin-crm-focus-grid" aria-label="CRM lead focus">
+                  <div className={`admin-crm-focus-card admin-crm-focus-primary admin-followup-${crmFocus.tone}`}>
+                    <span>Next best action</span>
+                    <strong>{crmFocus.title}</strong>
+                    <small>{crmFocus.body}</small>
+                  </div>
+                  <div className="admin-crm-focus-card">
+                    <span>Lead path</span>
+                    <strong>{getLeadTypeLabel(lead.lead_type)}</strong>
+                    <small>{getLeadSourceLabel(lead)}</small>
+                  </div>
+                  <div className="admin-crm-focus-card">
+                    <span>Activity load</span>
+                    <strong>{openActivityTasks.length ? `${openActivityTasks.length} open task${openActivityTasks.length === 1 ? "" : "s"}` : "No open tasks"}</strong>
+                    <small>{latestActivity ? `Last: ${getLeadActivityTypeLabel(latestActivity.activity_type)} on ${formatDate(latestActivity.activity_at, siteSettings.timeZone)}` : "No timeline entries yet"}</small>
                   </div>
                 </div>
 
