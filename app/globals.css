@@ -773,16 +773,20 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
+  align-items: start;
 }
 .admin-work-queue-card {
   min-width: 0;
   padding: 18px;
   display: grid;
+  grid-template-rows: auto auto;
+  align-content: start;
   gap: 12px;
   background: #fff;
   box-shadow: 0 10px 25px rgba(25, 38, 33, .07);
 }
 .admin-work-queue-heading {
+  min-height: 46px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -810,6 +814,7 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
 .admin-work-queue-list {
   display: grid;
   gap: 8px;
+  align-content: start;
 }
 .admin-work-queue-list > p {
   margin: 0;
@@ -820,6 +825,7 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   line-height: 1.45;
 }
 .admin-work-queue-row {
+  min-height: 112px;
   padding: 12px;
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(115px, .8fr);
