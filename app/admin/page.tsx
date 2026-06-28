@@ -1378,6 +1378,44 @@ async function updateLeadActivity(formData: FormData) {
   redirect(`/admin?leadActivityStatus=updated&leadId=${leadId}#lead-${leadId}`);
 }
 
+async function completeLeadActivityTask(formData: FormData) {
+  "use server";
+
+  const adminSupabase = createAdminClient();
+
+  if (!adminSupabase) {
+    redirect("/admin?leadActivityStatus=error#lead-inbox");
+  }
+
+  const leadId = formData.get("leadId")?.toString();
+  const activityId = formData.get("activityId")?.toString();
+  const completedByTeamMemberId = formData.get("completedByTeamMemberId")?.toString();
+  const completedByName = completedByTeamMemberId
+    ? await getTeamMemberNamesByIds(adminSupabase, [completedByTeamMemberId])
+    : asOptionalString(formData.get("completedByName"));
+
+  if (!leadId || !activityId) {
+    redirect("/admin?leadActivityStatus=error#lead-inbox");
+  }
+
+  const { error } = await adminSupabase
+    .from("lead_activities")
+    .update({
+      follow_up_at: null,
+      updated_by_name: completedByName,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", activityId)
+    .eq("lead_id", leadId);
+
+  if (error) {
+    redirect(`/admin?leadActivityStatus=error#lead-${leadId}`);
+  }
+
+  revalidatePath("/admin");
+  redirect(`/admin?leadActivityStatus=completed&leadId=${leadId}#lead-${leadId}`);
+}
+
 async function deleteLeadActivity(formData: FormData) {
   "use server";
 
@@ -1942,7 +1980,7 @@ export default async function AdminDashboardPage({
   const savedTeamMemberId = getSearchParamValue(searchParams, "teamMemberId");
   const testimonialStatus = getSearchParamValue(searchParams, "testimonialStatus");
   const savedTestimonialId = getSearchParamValue(searchParams, "testimonialId");
-  const hasTransientStatus = siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error" || leadStatus === "saved" || leadStatus === "error" || leadActivityStatus === "saved" || leadActivityStatus === "updated" || leadActivityStatus === "deleted" || leadActivityStatus === "error" || teamStatus === "saved" || teamStatus === "error" || testimonialStatus === "saved" || testimonialStatus === "error";
+  const hasTransientStatus = siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error" || leadStatus === "saved" || leadStatus === "error" || leadActivityStatus === "saved" || leadActivityStatus === "updated" || leadActivityStatus === "completed" || leadActivityStatus === "deleted" || leadActivityStatus === "error" || teamStatus === "saved" || teamStatus === "error" || testimonialStatus === "saved" || testimonialStatus === "error";
 
   return (
     <main className="admin-shell">
@@ -1950,7 +1988,7 @@ export default async function AdminDashboardPage({
       <AdminStatusCleanup active={hasTransientStatus} />
       <AdminLeadFormReset
         activitySaved={leadActivityStatus === "saved"}
-        activityUpdated={leadActivityStatus === "updated"}
+        activityUpdated={leadActivityStatus === "updated" || leadActivityStatus === "completed"}
         savedLeadId={savedLeadId}
       />
       <header className="admin-hero">
@@ -3285,13 +3323,21 @@ export default async function AdminDashboardPage({
                       <strong>{openActivityTasks.length}</strong>
                     </div>
                     {openActivityTasks.slice(0, 3).map((activity) => (
-                      <a className={`admin-open-task-row admin-followup-${getFollowUpTone(activity.follow_up_at, siteSettings.timeZone)}`} href={`#activity-${activity.id}`} key={`task-${activity.id}`} data-open-activity-panel="true">
-                        <span>
-                          <strong>{getActivityTaskLabel(activity, siteSettings.timeZone)}</strong>
-                          <small>{getLeadActivityTypeLabel(activity.activity_type)} - {activity.outcome || activity.summary}</small>
-                        </span>
-                        <small>{activity.created_by_name || "No owner noted"}</small>
-                      </a>
+                      <div className={`admin-open-task-row admin-followup-${getFollowUpTone(activity.follow_up_at, siteSettings.timeZone)}`} key={`task-${activity.id}`}>
+                        <a href={`#activity-${activity.id}`} data-open-activity-panel="true">
+                          <span>
+                            <strong>{getActivityTaskLabel(activity, siteSettings.timeZone)}</strong>
+                            <small>{getLeadActivityTypeLabel(activity.activity_type)} - {activity.outcome || activity.summary}</small>
+                          </span>
+                          <small>{activity.created_by_name || "No owner noted"}</small>
+                        </a>
+                        <form action={completeLeadActivityTask}>
+                          <input name="leadId" type="hidden" value={lead.id} />
+                          <input name="activityId" type="hidden" value={activity.id} />
+                          <input name="completedByTeamMemberId" type="hidden" value={lead.assigned_team_member_id || ""} />
+                          <button type="submit">Mark complete</button>
+                        </form>
+                      </div>
                     ))}
                   </div>
                 ) : null}
@@ -3311,9 +3357,21 @@ export default async function AdminDashboardPage({
                         </span>
                       </summary>
                       <p>{activity.summary}</p>
-                      {activity.follow_up_at ? (
-                        <small className={`admin-timeline-followup admin-followup-${getFollowUpTone(activity.follow_up_at, siteSettings.timeZone)}`}>Activity follow-up: {formatDateTime(activity.follow_up_at, siteSettings.timeZone)}</small>
-                      ) : null}
+                      <div className="admin-timeline-task-status">
+                        {activity.follow_up_at ? (
+                          <>
+                            <small className={`admin-timeline-followup admin-followup-${getFollowUpTone(activity.follow_up_at, siteSettings.timeZone)}`}>Open task: {formatDateTime(activity.follow_up_at, siteSettings.timeZone)}</small>
+                            <form action={completeLeadActivityTask}>
+                              <input name="leadId" type="hidden" value={lead.id} />
+                              <input name="activityId" type="hidden" value={activity.id} />
+                              <input name="completedByTeamMemberId" type="hidden" value={lead.assigned_team_member_id || ""} />
+                              <button type="submit">Mark task complete</button>
+                            </form>
+                          </>
+                        ) : (
+                          <small className="admin-timeline-followup admin-followup-complete">No open task</small>
+                        )}
+                      </div>
                       <form className="admin-form-card admin-activity-edit-form" action={updateLeadActivity}>
                         <input name="leadId" type="hidden" value={lead.id} />
                         <input name="activityId" type="hidden" value={activity.id} />
@@ -3378,6 +3436,9 @@ export default async function AdminDashboardPage({
                 ) : null}
                 {leadActivityStatus === "updated" && savedLeadId === lead.id ? (
                   <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status">Activity updated</span>
+                ) : null}
+                {leadActivityStatus === "completed" && savedLeadId === lead.id ? (
+                  <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status">Task completed</span>
                 ) : null}
                 {leadActivityStatus === "deleted" && savedLeadId === lead.id ? (
                   <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status">Activity deleted</span>

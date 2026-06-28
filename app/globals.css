@@ -1584,7 +1584,8 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   border-left: 5px solid #b7b1a6;
   text-decoration: none;
 }
-.admin-open-task-row:hover {
+.admin-open-task-row:hover,
+.admin-open-task-row:focus-within {
   border-color: var(--accent);
   border-left-color: var(--accent);
 }
@@ -1597,7 +1598,17 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
 .admin-open-task-row.admin-followup-upcoming {
   border-left-color: #63809e;
 }
-.admin-open-task-row > span {
+.admin-open-task-row > a {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  color: inherit;
+  text-decoration: none;
+}
+.admin-open-task-row > a > span {
   min-width: 0;
   display: grid;
   gap: 4px;
@@ -1606,6 +1617,27 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
 .admin-open-task-row small {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+.admin-open-task-row form {
+  margin: 0;
+  flex: 0 0 auto;
+}
+.admin-open-task-row button,
+.admin-timeline-task-status button {
+  padding: 8px 10px;
+  border: 1px solid rgba(27, 45, 38, .16);
+  color: var(--ink);
+  background: #f7f3ea;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.admin-open-task-row button:hover,
+.admin-timeline-task-status button:hover {
+  color: #fff;
+  background: var(--ink);
 }
 .admin-open-task-row strong {
   font-size: 12px;
@@ -1616,6 +1648,10 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   font-weight: 800;
 }
 .admin-open-task-row > small {
+  flex: 0 0 auto;
+  text-align: right;
+}
+.admin-open-task-row > a > small {
   flex: 0 0 auto;
   text-align: right;
 }
@@ -1705,6 +1741,19 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
 .admin-timeline-followup.admin-followup-upcoming {
   color: #173325;
   background: #d8e6f4;
+}
+.admin-timeline-followup.admin-followup-complete {
+  color: #31423c;
+  background: #edf0e8;
+}
+.admin-timeline-task-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.admin-timeline-task-status form {
+  margin: 0;
 }
 .admin-timeline-item p {
   margin: 0;
@@ -2414,6 +2463,14 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   }
   .admin-timeline-toolbar {
     grid-template-columns: 1fr;
+  }
+  .admin-open-task-row,
+  .admin-open-task-row > a {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .admin-open-task-row > a > small {
+    text-align: left;
   }
   .admin-timeline-summary {
     align-items: flex-start;
