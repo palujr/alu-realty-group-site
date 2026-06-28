@@ -359,7 +359,9 @@ that feels like yours.',
     "sellEyebrow": "THINKING OF SELLING?",
     "sellHeadline": "Start with a clearer\npicture of your home.",
     "sellBody": "Get a thoughtful market estimate informed by recent sales, current competition, and the details that make your property different.",
-    "sellButtonText": "Request a home valuation"
+    "sellButtonText": "Request a home valuation",
+    "footerBrokerLogoUrl": "",
+    "footerTeamLogoUrl": ""
   }'::jsonb,
   '{
     "defaultNotificationEmails": ["phil@alurealtygroup.com"],

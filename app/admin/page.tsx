@@ -1109,6 +1109,8 @@ async function updateSiteSettings(formData: FormData) {
 
     let brokerLogoUrl = asOptionalString(formData.get("brokerLogoUrl"));
     let teamLogoUrl = asOptionalString(formData.get("teamLogoUrl"));
+    let footerBrokerLogoUrl = asOptionalString(formData.get("footerBrokerLogoUrl"));
+    let footerTeamLogoUrl = asOptionalString(formData.get("footerTeamLogoUrl"));
     let fairHousingLogoUrl = asOptionalString(formData.get("fairHousingLogoUrl"));
     let realtorLogoUrl = asOptionalString(formData.get("realtorLogoUrl"));
 
@@ -1119,6 +1121,12 @@ async function updateSiteSettings(formData: FormData) {
       teamLogoUrl =
         (await uploadSiteLogo(adminSupabase, formData.get("teamLogoFile"), `${siteSlug}-team-logo`)) ||
         teamLogoUrl;
+      footerBrokerLogoUrl =
+        (await uploadSiteLogo(adminSupabase, formData.get("footerBrokerLogoFile"), `${siteSlug}-footer-broker-logo`)) ||
+        footerBrokerLogoUrl;
+      footerTeamLogoUrl =
+        (await uploadSiteLogo(adminSupabase, formData.get("footerTeamLogoFile"), `${siteSlug}-footer-team-logo`)) ||
+        footerTeamLogoUrl;
       fairHousingLogoUrl =
         (await uploadSiteLogo(adminSupabase, formData.get("fairHousingLogoFile"), `${siteSlug}-fair-housing-logo`)) ||
         fairHousingLogoUrl;
@@ -1138,6 +1146,8 @@ async function updateSiteSettings(formData: FormData) {
       homepage_sections: {
         ...currentSiteSettings.homepageSections,
         footerLogoDisplay: normalizeFooterLogoDisplay(formData.get("footerLogoDisplay")),
+        footerBrokerLogoUrl,
+        footerTeamLogoUrl,
         fairHousingLogoUrl,
         fairHousingText: asOptionalString(formData.get("fairHousingText")) || currentSiteSettings.fairHousingText,
         fairHousingShowText: formData.get("fairHousingShowText") === "on",
@@ -2395,6 +2405,18 @@ export default async function AdminDashboardPage({
                     ) : (
                       <small>No team logo is currently set.</small>
                     )}
+                    <span>Current Footer Broker Logo</span>
+                    {siteSettings.footerBrokerLogoUrl || siteSettings.brokerLogoUrl ? (
+                      <img className="admin-brand-logo-image" src={siteSettings.footerBrokerLogoUrl || siteSettings.brokerLogoUrl} alt={`${siteSettings.brokerageName} footer broker logo`} />
+                    ) : (
+                      <small>The footer will use the broker logo when no separate footer logo is set.</small>
+                    )}
+                    <span>Current Footer Team Logo</span>
+                    {siteSettings.footerTeamLogoUrl || siteSettings.teamLogoUrl ? (
+                      <img className="admin-brand-logo-image" src={siteSettings.footerTeamLogoUrl || siteSettings.teamLogoUrl} alt={`${siteSettings.siteName} footer team logo`} />
+                    ) : (
+                      <small>The footer will use the team logo when no separate footer logo is set.</small>
+                    )}
                     <span>Current Equal Housing Footer Logo</span>
                     {siteSettings.fairHousingLogoUrl ? (
                       <div className="admin-compliance-logo-preview-tile">
@@ -2429,6 +2451,22 @@ export default async function AdminDashboardPage({
                     <label>
                       Upload team logo
                       <input name="teamLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+                    </label>
+                    <label>
+                      Footer broker logo URL
+                      <input name="footerBrokerLogoUrl" type="text" defaultValue={siteSettings.footerBrokerLogoUrl} placeholder="Blank uses broker logo above" />
+                    </label>
+                    <label>
+                      Upload footer broker logo
+                      <input name="footerBrokerLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+                    </label>
+                    <label>
+                      Footer team logo URL
+                      <input name="footerTeamLogoUrl" type="text" defaultValue={siteSettings.footerTeamLogoUrl} placeholder="Blank uses team logo above" />
+                    </label>
+                    <label>
+                      Upload footer team logo
+                      <input name="footerTeamLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
                     </label>
                     <label>
                       Top broker logo height

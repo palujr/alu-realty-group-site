@@ -7,6 +7,8 @@ export type SiteSettings = {
   primaryDomain: string;
   brokerLogoUrl: string;
   teamLogoUrl: string;
+  footerBrokerLogoUrl: string;
+  footerTeamLogoUrl: string;
   footerLogoDisplay: "broker" | "team" | "both";
   fairHousingLogoUrl: string;
   fairHousingText: string;
@@ -76,6 +78,8 @@ export type SiteSettings = {
 
 type SiteSettingsHomepageSections = SiteSettings["homepageSections"] & {
   footerLogoDisplay?: string;
+  footerBrokerLogoUrl?: string;
+  footerTeamLogoUrl?: string;
   fairHousingLogoUrl?: string;
   fairHousingText?: string;
   fairHousingShowText?: boolean;
@@ -135,6 +139,8 @@ export const defaultSiteSettings: SiteSettings = {
   primaryDomain: "alurealtygroup.com",
   brokerLogoUrl: "/assets/fathom-realty-elite-logo.png",
   teamLogoUrl: "/assets/alu-realty-group-logo.png",
+  footerBrokerLogoUrl: "",
+  footerTeamLogoUrl: "",
   footerLogoDisplay: "broker",
   fairHousingLogoUrl: "/assets/equal-housing-opportunity.gif",
   fairHousingText: "Equal Housing Opportunity",
@@ -264,6 +270,8 @@ function mapBrokerSite(row: BrokerSiteRow): SiteSettings {
     primaryDomain: row.primary_domain || defaultSiteSettings.primaryDomain,
     brokerLogoUrl: row.broker_logo_url || defaultSiteSettings.brokerLogoUrl,
     teamLogoUrl: row.team_logo_url || defaultSiteSettings.teamLogoUrl,
+    footerBrokerLogoUrl: sectionSettings.footerBrokerLogoUrl || "",
+    footerTeamLogoUrl: sectionSettings.footerTeamLogoUrl || "",
     footerLogoDisplay,
     fairHousingLogoUrl: sectionSettings.fairHousingLogoUrl || row.fair_housing_logo_url || defaultSiteSettings.fairHousingLogoUrl,
     fairHousingText: sectionSettings.fairHousingText || row.fair_housing_text || defaultSiteSettings.fairHousingText,

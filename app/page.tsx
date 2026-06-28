@@ -82,14 +82,14 @@ export default async function HomePage() {
     ...(siteSettings.footerLogoDisplay === "broker" || siteSettings.footerLogoDisplay === "both"
       ? [{
           href: "#top",
-          imageUrl: siteSettings.brokerLogoUrl,
+          imageUrl: siteSettings.footerBrokerLogoUrl || siteSettings.brokerLogoUrl,
           label: siteSettings.brokerageName
         }]
       : []),
     ...(siteSettings.footerLogoDisplay === "team" || siteSettings.footerLogoDisplay === "both"
       ? [{
           href: "#top",
-          imageUrl: siteSettings.teamLogoUrl,
+          imageUrl: siteSettings.footerTeamLogoUrl || siteSettings.teamLogoUrl,
           label: siteSettings.siteName
         }]
       : [])
