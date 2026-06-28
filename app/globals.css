@@ -137,7 +137,7 @@ main section[id] {
 }
 .alu-group-logo {
   width: auto;
-  max-width: clamp(178px, 16vw, 226px);
+  max-width: clamp(226px, 18vw, 340px);
   flex: 0 0 auto;
   height: var(--header-team-logo-height, 92px);
   object-fit: contain;
