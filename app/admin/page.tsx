@@ -222,6 +222,81 @@ const leadActivityTypeOptions = [
   { value: "status_update", label: "Status update" }
 ];
 
+type LeadOutcomeShortcut = {
+  value: string;
+  label: string;
+  activityType: string;
+  summary: string;
+  outcome: string;
+  contactStatus?: string;
+  leadPriority?: string;
+  followUpDays?: number;
+  clearFollowUp?: boolean;
+  markContacted?: boolean;
+};
+
+const leadOutcomeShortcutOptions: LeadOutcomeShortcut[] = [
+  {
+    value: "left-voicemail",
+    label: "Left voicemail",
+    activityType: "call",
+    summary: "Called client and left a voicemail.",
+    outcome: "Left voicemail",
+    contactStatus: "contacted",
+    followUpDays: 1,
+    markContacted: true
+  },
+  {
+    value: "spoke-with-client",
+    label: "Spoke with client",
+    activityType: "call",
+    summary: "Spoke with client and reviewed their next steps.",
+    outcome: "Spoke with client",
+    contactStatus: "verified",
+    markContacted: true
+  },
+  {
+    value: "sent-cma",
+    label: "Sent CMA",
+    activityType: "email",
+    summary: "Sent a comparative market analysis to the client.",
+    outcome: "CMA sent",
+    contactStatus: "in_progress",
+    followUpDays: 2,
+    markContacted: true
+  },
+  {
+    value: "appointment-set",
+    label: "Appointment set",
+    activityType: "meeting",
+    summary: "Set an appointment with the client.",
+    outcome: "Appointment set",
+    contactStatus: "in_progress",
+    followUpDays: 1,
+    markContacted: true
+  },
+  {
+    value: "not-interested",
+    label: "Not interested",
+    activityType: "status_update",
+    summary: "Client is not interested at this time.",
+    outcome: "Not interested",
+    contactStatus: "archived",
+    clearFollowUp: true,
+    markContacted: true
+  },
+  {
+    value: "needs-search-setup",
+    label: "Needs search setup",
+    activityType: "task",
+    summary: "Client needs a custom property search or listing alert setup.",
+    outcome: "Needs search setup",
+    contactStatus: "in_progress",
+    leadPriority: "high",
+    followUpDays: 1
+  }
+];
+
 const teamPhotoBucket = "team-photos";
 const siteLogoBucket = "site-logos";
 const siteHeroImageBucket = "site-hero-images";
@@ -1285,6 +1360,86 @@ async function updateLeadQuickAction(formData: FormData) {
   redirect(`/admin?leadStatus=saved&leadId=${leadId}#lead-${leadId}`);
 }
 
+async function createLeadOutcomeShortcut(formData: FormData) {
+  "use server";
+
+  const adminSupabase = createAdminClient();
+  const siteSettings = await getSiteSettings();
+
+  if (!adminSupabase) {
+    redirect("/admin?leadActivityStatus=error#lead-inbox");
+  }
+
+  const leadId = formData.get("leadId")?.toString();
+  const shortcutValue = formData.get("outcomeShortcut")?.toString() || "";
+  const shortcut = leadOutcomeShortcutOptions.find((option) => option.value === shortcutValue);
+
+  if (!leadId || !shortcut) {
+    redirect("/admin?leadActivityStatus=error#lead-inbox");
+  }
+
+  const createdByTeamMemberId = asOptionalString(formData.get("createdByTeamMemberId"));
+  let createdByName = asOptionalString(formData.get("createdByName"));
+
+  if (createdByTeamMemberId) {
+    createdByName = (await getTeamMemberNamesByIds(adminSupabase, [createdByTeamMemberId])) || createdByName;
+  }
+
+  const now = new Date().toISOString();
+  const followUpAt = typeof shortcut.followUpDays === "number"
+    ? getRelativeFollowUpIso(shortcut.followUpDays, siteSettings.timeZone)
+    : null;
+  const leadUpdatePayload: Record<string, unknown> = {};
+
+  if (shortcut.contactStatus) {
+    leadUpdatePayload.contact_status = shortcut.contactStatus;
+  }
+
+  if (shortcut.leadPriority) {
+    leadUpdatePayload.lead_priority = shortcut.leadPriority;
+  }
+
+  if (shortcut.markContacted) {
+    leadUpdatePayload.last_contacted_at = now;
+  }
+
+  if (shortcut.clearFollowUp) {
+    leadUpdatePayload.next_follow_up_at = null;
+  } else if (followUpAt) {
+    leadUpdatePayload.next_follow_up_at = followUpAt;
+  }
+
+  const { error: activityError } = await adminSupabase
+    .from("lead_activities")
+    .insert({
+      lead_id: leadId,
+      activity_type: normalizeLeadActivityType(shortcut.activityType),
+      activity_at: now,
+      summary: shortcut.summary,
+      outcome: shortcut.outcome,
+      created_by_name: createdByName,
+      follow_up_at: followUpAt
+    });
+
+  if (activityError) {
+    redirect(`/admin?leadActivityStatus=error#lead-${leadId}`);
+  }
+
+  if (Object.keys(leadUpdatePayload).length) {
+    const { error: leadError } = await adminSupabase
+      .from("lead_submissions")
+      .update(leadUpdatePayload)
+      .eq("id", leadId);
+
+    if (leadError) {
+      redirect(`/admin?leadActivityStatus=error#lead-${leadId}`);
+    }
+  }
+
+  revalidatePath("/admin");
+  redirect(`/admin?leadActivityStatus=shortcut&leadId=${leadId}#lead-${leadId}`);
+}
+
 async function createLeadActivity(formData: FormData) {
   "use server";
 
@@ -1980,14 +2135,14 @@ export default async function AdminDashboardPage({
   const savedTeamMemberId = getSearchParamValue(searchParams, "teamMemberId");
   const testimonialStatus = getSearchParamValue(searchParams, "testimonialStatus");
   const savedTestimonialId = getSearchParamValue(searchParams, "testimonialId");
-  const hasTransientStatus = siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error" || leadStatus === "saved" || leadStatus === "error" || leadActivityStatus === "saved" || leadActivityStatus === "updated" || leadActivityStatus === "completed" || leadActivityStatus === "deleted" || leadActivityStatus === "error" || teamStatus === "saved" || teamStatus === "error" || testimonialStatus === "saved" || testimonialStatus === "error";
+  const hasTransientStatus = siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error" || leadStatus === "saved" || leadStatus === "error" || leadActivityStatus === "saved" || leadActivityStatus === "shortcut" || leadActivityStatus === "updated" || leadActivityStatus === "completed" || leadActivityStatus === "deleted" || leadActivityStatus === "error" || teamStatus === "saved" || teamStatus === "error" || testimonialStatus === "saved" || testimonialStatus === "error";
 
   return (
     <main className="admin-shell">
       <AdminDataFreshness />
       <AdminStatusCleanup active={hasTransientStatus} />
       <AdminLeadFormReset
-        activitySaved={leadActivityStatus === "saved"}
+        activitySaved={leadActivityStatus === "saved" || leadActivityStatus === "shortcut"}
         activityUpdated={leadActivityStatus === "updated" || leadActivityStatus === "completed"}
         savedLeadId={savedLeadId}
       />
@@ -3097,6 +3252,13 @@ export default async function AdminDashboardPage({
                   )}
                 </div>
 
+                <div className="admin-outcome-shortcuts" aria-label="Contact outcome shortcuts">
+                  <span className="admin-quick-actions-label">Log outcome</span>
+                  {leadOutcomeShortcutOptions.map((shortcut) => (
+                    <button form={`lead-outcome-${lead.id}-${shortcut.value}`} key={shortcut.value} type="submit">{shortcut.label}</button>
+                  ))}
+                </div>
+
                 <div className="admin-lead-snapshot-grid" aria-label="Lead status snapshot">
                   <div className={`admin-snapshot-status admin-status-${getStatusTone(lead.contact_status)}`}>
                     <span>Status</span>
@@ -3303,6 +3465,13 @@ export default async function AdminDashboardPage({
                   <input name="quickAction" type="hidden" value="assign" />
                 </form>
               )}
+              {leadOutcomeShortcutOptions.map((shortcut) => (
+                <form id={`lead-outcome-${lead.id}-${shortcut.value}`} className="admin-hidden-action-form" action={createLeadOutcomeShortcut} key={shortcut.value}>
+                  <input name="leadId" type="hidden" value={lead.id} />
+                  <input name="outcomeShortcut" type="hidden" value={shortcut.value} />
+                  <input name="createdByTeamMemberId" type="hidden" value={lead.assigned_team_member_id || ""} />
+                </form>
+              ))}
               <section className="admin-timeline-panel">
                 <div className="admin-card-header admin-form-title">
                   <div>
@@ -3438,6 +3607,9 @@ export default async function AdminDashboardPage({
                 </div>
                 {leadActivityStatus === "saved" && savedLeadId === lead.id ? (
                   <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status">Activity added</span>
+                ) : null}
+                {leadActivityStatus === "shortcut" && savedLeadId === lead.id ? (
+                  <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status">Outcome logged</span>
                 ) : null}
                 {leadActivityStatus === "updated" && savedLeadId === lead.id ? (
                   <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status">Activity updated</span>
