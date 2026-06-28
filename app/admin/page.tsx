@@ -785,7 +785,7 @@ function getSearchParamValue(
 }
 
 function redirectSiteSettingsError(message: string): never {
-  redirect(`/admin?siteStatus=error&siteError=${encodeURIComponent(message)}#site-settings`);
+  redirect(`/admin/site-settings?siteStatus=error&siteError=${encodeURIComponent(message)}#site-settings`);
 }
 
 function normalizePageParam(value: string) {
@@ -1272,7 +1272,8 @@ async function updateSiteSettings(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/search");
   revalidatePath("/admin");
-  redirect(`/admin?siteStatus=saved&siteSection=${siteSection}#site-settings`);
+  revalidatePath("/admin/site-settings");
+  redirect(`/admin/site-settings?siteStatus=saved&siteSection=${siteSection}#site-settings`);
 }
 
 async function createLead(formData: FormData) {
@@ -1678,7 +1679,7 @@ async function createBannerCampaign(formData: FormData) {
   const adminSupabase = createAdminClient();
 
   if (!adminSupabase) {
-    redirect("/admin?bannerStatus=error#new-banner-campaign");
+    redirect("/admin/site-settings?bannerStatus=error#new-banner-campaign");
   }
 
   const siteSettings = await getSiteSettings();
@@ -1708,12 +1709,13 @@ async function createBannerCampaign(formData: FormData) {
     .single();
 
   if (error || !data?.id) {
-    redirect("/admin?bannerStatus=error#new-banner-campaign");
+    redirect("/admin/site-settings?bannerStatus=error#new-banner-campaign");
   }
 
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect(`/admin?bannerStatus=saved&bannerId=${data.id}#banner-${data.id}`);
+  revalidatePath("/admin/site-settings");
+  redirect(`/admin/site-settings?bannerStatus=saved&bannerId=${data.id}#banner-${data.id}`);
 }
 
 async function updateBannerCampaign(formData: FormData) {
@@ -1722,7 +1724,7 @@ async function updateBannerCampaign(formData: FormData) {
   const adminSupabase = createAdminClient();
 
   if (!adminSupabase) {
-    redirect("/admin?bannerStatus=error#banner-campaigns");
+    redirect("/admin/site-settings?bannerStatus=error#banner-campaigns");
   }
 
   const bannerId = formData.get("bannerId")?.toString();
@@ -1730,7 +1732,7 @@ async function updateBannerCampaign(formData: FormData) {
   const headline = formData.get("headline")?.toString().trim();
 
   if (!bannerId || !campaignName || !headline) {
-    redirect("/admin?bannerStatus=error#banner-campaigns");
+    redirect("/admin/site-settings?bannerStatus=error#banner-campaigns");
   }
 
   const priorityValue = Number.parseInt(formData.get("priority")?.toString() || "100", 10);
@@ -1752,12 +1754,13 @@ async function updateBannerCampaign(formData: FormData) {
     .eq("id", bannerId);
 
   if (error) {
-    redirect("/admin?bannerStatus=error#banner-campaigns");
+    redirect("/admin/site-settings?bannerStatus=error#banner-campaigns");
   }
 
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect(`/admin?bannerStatus=saved&bannerId=${bannerId}#banner-${bannerId}`);
+  revalidatePath("/admin/site-settings");
+  redirect(`/admin/site-settings?bannerStatus=saved&bannerId=${bannerId}#banner-${bannerId}`);
 }
 
 async function createTeamMember(formData: FormData) {
@@ -2162,6 +2165,7 @@ export default async function AdminDashboardPage({
     teamMemberId?: string;
     testimonialStatus?: string;
     testimonialId?: string;
+    settingsOnly?: string;
     leadSearch?: string;
     leadFilterType?: string;
     leadFilterStatus?: string;
@@ -2205,7 +2209,11 @@ export default async function AdminDashboardPage({
   };
   const hasLeadFilters = Boolean(leadFilters.search || leadFilters.type || leadFilters.status || leadFilters.stage || leadFilters.assigned || leadFilters.priority || leadFilters.source || leadFilters.followUp);
   const { siteSettings, activeBanner, leads, leadWorkQueue, leadActivitiesByLeadId, banners, teamMembers, teamMemberOptions, testimonials, pagination, errors } = await getAdminData(leadFilters, adminPages, savedLeadId);
-  const visibleErrors = Object.values(errors).filter(Boolean);
+  const settingsOnly = getSearchParamValue(searchParams, "settingsOnly") === "true";
+  const visibleErrors = Object.values(settingsOnly ? {
+    banners: errors.banners,
+    teamMembers: errors.teamMembers
+  } : errors).filter(Boolean);
   const siteStatus = getSearchParamValue(searchParams, "siteStatus");
   const siteError = getSearchParamValue(searchParams, "siteError");
   const savedSiteSection = getSearchParamValue(searchParams, "siteSection");
@@ -2230,13 +2238,22 @@ export default async function AdminDashboardPage({
       />
       <header className="admin-hero">
         <div>
-          <p className="admin-kicker">Admin Dashboard</p>
-          <h1>{siteSettings.siteName}</h1>
-          <p>Manage the pieces that make this real estate site reusable: settings, banners, team, feedback, and leads.</p>
+          <p className="admin-kicker">{settingsOnly ? "Site Settings" : "Admin Dashboard"}</p>
+          <h1>{settingsOnly ? "Brand, contact, and homepage copy" : siteSettings.siteName}</h1>
+          <p>
+            {settingsOnly
+              ? "Maintain the public website branding, logos, homepage content, lead routing, and IDX-ready search settings."
+              : "Manage the pieces that make this real estate site reusable: settings, banners, team, feedback, and leads."}
+          </p>
         </div>
-        <Link className="admin-button" href="/" target="_blank" rel="noopener noreferrer">View website</Link>
+        {settingsOnly ? (
+          <Link className="admin-button" href="/admin">Back to dashboard</Link>
+        ) : (
+          <Link className="admin-button" href="/" target="_blank" rel="noopener noreferrer">View website</Link>
+        )}
       </header>
 
+      {!settingsOnly ? (
       <nav className="admin-section-nav" aria-label="Admin dashboard sections">
         <a href="#admin-overview">
           <span>Overview</span>
@@ -2246,10 +2263,10 @@ export default async function AdminDashboardPage({
           <span>Leads</span>
           <small>CRM workspace</small>
         </a>
-        <a href="#site-settings">
+        <Link href="/admin/site-settings">
           <span>Site settings</span>
           <small>Branding and homepage</small>
-        </a>
+        </Link>
         <a href="#team-members">
           <span>Team</span>
           <small>Agent profiles</small>
@@ -2259,6 +2276,7 @@ export default async function AdminDashboardPage({
           <small>Client feedback</small>
         </a>
       </nav>
+      ) : null}
 
       {visibleErrors.length ? (
         <section className="admin-alert" data-admin-status="error">
@@ -2291,6 +2309,7 @@ export default async function AdminDashboardPage({
         </section>
       ) : null}
 
+      {!settingsOnly ? (
       <section className="admin-stats" id="admin-overview" aria-label="Dashboard summary">
         <article>
           <span>Recent leads</span>
@@ -2309,7 +2328,9 @@ export default async function AdminDashboardPage({
           <strong>{pagination.testimonials.totalCount}</strong>
         </article>
       </section>
+      ) : null}
 
+      {!settingsOnly ? (
       <section className="admin-stage-overview" aria-label="Lead relationship stages">
         {leadWorkQueue.stageCounts.map((stage) => (
           <article className={`admin-stage-card admin-stage-${getStageTone(stage.value)}`} key={stage.value}>
@@ -2318,7 +2339,9 @@ export default async function AdminDashboardPage({
           </article>
         ))}
       </section>
+      ) : null}
 
+      {!settingsOnly ? (
       <section className="admin-work-queue" aria-label="Lead follow-up work queue">
         <AdminLeadQueueList
           title="Overdue follow-ups"
@@ -2339,6 +2362,7 @@ export default async function AdminDashboardPage({
           timeZone={siteSettings.timeZone}
         />
       </section>
+      ) : null}
 
       <section className="admin-grid">
         <article className="admin-card admin-card-wide" id="site-settings">
@@ -2355,7 +2379,8 @@ export default async function AdminDashboardPage({
               <span>The website settings have been updated.</span>
             </div>
           ) : null}
-          <details className="admin-edit-panel">
+          {settingsOnly ? (
+          <details className="admin-edit-panel" open>
             <summary className="admin-summary-row">
               <span>
                 <strong>{siteSettings.siteName}</strong>
@@ -3065,8 +3090,22 @@ export default async function AdminDashboardPage({
               </div>
             </form>
           </details>
+          ) : (
+            <div className="admin-summary-row admin-maintenance-summary-row">
+              <span>
+                <strong>{siteSettings.siteName}</strong>
+                <small>{siteSettings.brokerageName} - {siteSettings.contactEmail}</small>
+              </span>
+              <span>{siteSettings.primaryDomain}</span>
+              <span>{siteSettings.brandPrimary}</span>
+              <span>{siteSettings.brandAccent}</span>
+              <Link className="admin-save-button" href="/admin/site-settings">Open settings</Link>
+            </div>
+          )}
         </article>
 
+        {!settingsOnly ? (
+        <>
         <article className="admin-card admin-card-wide" id="lead-inbox">
           <div className="admin-card-header">
             <div>
@@ -4122,6 +4161,8 @@ export default async function AdminDashboardPage({
           </div>
           <AdminPaginationControls pagination={pagination.testimonials} searchParams={searchParams} />
         </article>
+        </>
+        ) : null}
       </section>
     </main>
   );
