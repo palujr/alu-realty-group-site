@@ -30,6 +30,12 @@ export type SiteSettings = {
   promoEyebrow: string;
   promoHeadline: string;
   promoBody: string;
+  idxEnabled: boolean;
+  idxProviderName: string;
+  idxEmbedUrl: string;
+  idxEmbedCode: string;
+  idxSearchUrl: string;
+  idxFallbackMessage: string;
   brandPrimary: string;
   brandAccent: string;
   brandHeaderFooter: string;
@@ -152,6 +158,12 @@ export const defaultSiteSettings: SiteSettings = {
   promoEyebrow: "Celebrating America's 250th",
   promoHeadline: "Home. Freedom. Future.",
   promoBody: "Honoring the spirit of July 4th and the communities we call home.",
+  idxEnabled: false,
+  idxProviderName: "FlexMLS SmartFrame",
+  idxEmbedUrl: "",
+  idxEmbedCode: "",
+  idxSearchUrl: "",
+  idxFallbackMessage: "IDX search is being connected. In the meantime, contact us and we will send live property matches directly to you.",
   brandPrimary: "#17221f",
   brandAccent: "#d9784f",
   brandHeaderFooter: "#1d2b27",
@@ -189,6 +201,12 @@ type BrokerSiteRow = {
   promo_eyebrow: string | null;
   promo_headline: string | null;
   promo_body: string | null;
+  idx_enabled?: boolean | null;
+  idx_provider_name?: string | null;
+  idx_embed_url?: string | null;
+  idx_embed_code?: string | null;
+  idx_search_url?: string | null;
+  idx_fallback_message?: string | null;
   brand_primary: string | null;
   brand_accent: string | null;
   brand_header_footer?: string | null;
@@ -271,6 +289,12 @@ function mapBrokerSite(row: BrokerSiteRow): SiteSettings {
     promoEyebrow: row.promo_eyebrow || defaultSiteSettings.promoEyebrow,
     promoHeadline: row.promo_headline || defaultSiteSettings.promoHeadline,
     promoBody: row.promo_body || defaultSiteSettings.promoBody,
+    idxEnabled: row.idx_enabled ?? defaultSiteSettings.idxEnabled,
+    idxProviderName: row.idx_provider_name || defaultSiteSettings.idxProviderName,
+    idxEmbedUrl: row.idx_embed_url || defaultSiteSettings.idxEmbedUrl,
+    idxEmbedCode: row.idx_embed_code || defaultSiteSettings.idxEmbedCode,
+    idxSearchUrl: row.idx_search_url || defaultSiteSettings.idxSearchUrl,
+    idxFallbackMessage: row.idx_fallback_message || defaultSiteSettings.idxFallbackMessage,
     brandPrimary: row.brand_primary || defaultSiteSettings.brandPrimary,
     brandAccent: row.brand_accent || defaultSiteSettings.brandAccent,
     brandHeaderFooter: row.brand_header_footer || row.brand_primary || defaultSiteSettings.brandHeaderFooter,
@@ -312,6 +336,12 @@ export async function getSiteSettings(slug = "alu-realty-group"): Promise<SiteSe
       promo_eyebrow,
       promo_headline,
       promo_body,
+      idx_enabled,
+      idx_provider_name,
+      idx_embed_url,
+      idx_embed_code,
+      idx_search_url,
+      idx_fallback_message,
       brand_primary,
       brand_accent,
       brand_header_footer,

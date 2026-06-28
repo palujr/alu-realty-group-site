@@ -124,8 +124,8 @@ export default async function HomePage() {
             <img src={siteSettings.brokerLogoUrl} alt={siteSettings.brokerageName} />
           </a>
           <nav className="desktop-nav" aria-label="Primary navigation">
-            <a href="#properties">Buy</a>
-            <a href="#properties">Rent</a>
+            <a href="/search">Buy</a>
+            <a href="/search?type=rent">Rent</a>
             <a href="#sell">Sell</a>
             <a href="#rates">Mortgage</a>
             <a href="#team">Team</a>
@@ -141,8 +141,8 @@ export default async function HomePage() {
         </header>
 
         <nav className="mobile-nav" id="mobileNav" aria-label="Mobile navigation">
-          <a href="#properties">Buy</a>
-          <a href="#properties">Rent</a>
+          <a href="/search">Buy</a>
+          <a href="/search?type=rent">Rent</a>
           <a href="#sell">Sell</a>
           <a href="#rates">Mortgage</a>
           <a href="#team">Team</a>
@@ -221,6 +221,10 @@ export default async function HomePage() {
                   Search homes
                 </button>
               </form>
+              <div className="idx-search-cta">
+                <a href="/search">Open full Search Homes page</a>
+                <span>IDX-ready for FlexMLS SmartFrame, IDX Broker, or a future Spark API connection.</span>
+              </div>
             </div>
             <div className="market-pulse">
               <div><strong>2,418</strong><span>homes for sale</span></div>
@@ -260,7 +264,8 @@ export default async function HomePage() {
             <button className="button button-dark" id="resetSearch">Reset search</button>
           </div>
           <div className="center-action">
-            <button className="button button-outline" id="viewAllButton">View all properties <span>→</span></button>
+            <button className="button button-outline" id="viewAllButton">View demo properties <span>→</span></button>
+            <a className="button button-dark" href="/search">Search all homes <span>→</span></a>
           </div>
         </section>
 
@@ -431,7 +436,7 @@ export default async function HomePage() {
           ))}
         </div>
         <p>A modern real estate experience for Arizona buyers, sellers, and investors.</p>
-        <div className="footer-links"><a href="#properties">Properties</a><a href="#rates">Mortgage</a><a href="#team">Team</a><a href="#sell">Contact</a></div>
+        <div className="footer-links"><a href="/search">Properties</a><a href="#rates">Mortgage</a><a href="#team">Team</a><a href="#sell">Contact</a></div>
         <small className="footer-bottom-line">
           <span>© 2026 Alu Realty Group · Fathom Realty Elite · Equal Housing Opportunity · Demo listings shown</span>
           <span className="footer-compliance">

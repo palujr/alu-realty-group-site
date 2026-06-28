@@ -948,6 +948,15 @@ async function updateSiteSettings(formData: FormData) {
     Object.assign(updatePayload, {
       hero_image_url: heroImageUrl || currentSiteSettings.heroImageUrl
     });
+  } else if (siteSection === "idx-search") {
+    Object.assign(updatePayload, {
+      idx_enabled: formData.get("idxEnabled") === "on",
+      idx_provider_name: asOptionalString(formData.get("idxProviderName")) || currentSiteSettings.idxProviderName,
+      idx_embed_url: asOptionalString(formData.get("idxEmbedUrl")),
+      idx_embed_code: asOptionalString(formData.get("idxEmbedCode")),
+      idx_search_url: asOptionalString(formData.get("idxSearchUrl")),
+      idx_fallback_message: asOptionalString(formData.get("idxFallbackMessage")) || currentSiteSettings.idxFallbackMessage
+    });
   } else if (siteSection === "hero-promo") {
     Object.assign(updatePayload, {
       hero_eyebrow: asOptionalString(formData.get("heroEyebrow")),
@@ -1033,6 +1042,7 @@ async function updateSiteSettings(formData: FormData) {
   }
 
   revalidatePath("/");
+  revalidatePath("/search");
   revalidatePath("/admin");
   redirect(`/admin?siteStatus=saved&siteSection=${siteSection}#site-settings`);
 }
@@ -2292,6 +2302,69 @@ export default async function AdminDashboardPage({
                   <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
                 ) : null}
                 <button className="admin-save-button" type="submit">Save homepage photo</button>
+              </div>
+            </form>
+
+            <form className="admin-form-card" action={updateSiteSettings}>
+              <input name="siteSlug" type="hidden" value={siteSettings.slug} />
+              <input name="siteSection" type="hidden" value="idx-search" />
+              <section className="admin-settings-section">
+                <div className="admin-settings-section-heading">
+                  <div>
+                    <p className="admin-kicker">IDX Search</p>
+                    <h3>Provider-flexible property search</h3>
+                  </div>
+                  <span>{siteSettings.idxEnabled ? siteSettings.idxProviderName : "Not active yet"}</span>
+                </div>
+                <div className="admin-idx-grid">
+                  <div className="admin-idx-preview">
+                    <span>Search Homes Page</span>
+                    <h4>{siteSettings.idxEnabled ? "IDX search is active" : "IDX search is staged"}</h4>
+                    <p>
+                      {siteSettings.idxEnabled && siteSettings.idxEmbedUrl
+                        ? `${siteSettings.idxProviderName} will load inside the public Search Homes page.`
+                        : siteSettings.idxFallbackMessage}
+                    </p>
+                    <a className="admin-text-link" href="/search" target="_blank" rel="noreferrer">Preview Search Homes page</a>
+                  </div>
+                  <div className="admin-property-image-editor">
+                    <span>Edit IDX Search</span>
+                    <label className="admin-checkbox">
+                      <input name="idxEnabled" type="checkbox" defaultChecked={siteSettings.idxEnabled} />
+                      Enable IDX search page
+                    </label>
+                    <label>
+                      IDX provider name
+                      <input name="idxProviderName" type="text" defaultValue={siteSettings.idxProviderName} placeholder="FlexMLS SmartFrame, IDX Broker, Spark API..." />
+                    </label>
+                    <label>
+                      IDX iframe / SmartFrame URL
+                      <input name="idxEmbedUrl" type="url" defaultValue={siteSettings.idxEmbedUrl} placeholder="https://..." />
+                      <small>This is the safest first connection point for FlexMLS SmartFrame or other iframe-based IDX tools.</small>
+                    </label>
+                    <label>
+                      External search URL
+                      <input name="idxSearchUrl" type="url" defaultValue={siteSettings.idxSearchUrl} placeholder="https://..." />
+                      <small>Used as a fallback button if the provider gives you a hosted search page instead of an iframe.</small>
+                    </label>
+                    <label>
+                      Provider embed code notes
+                      <textarea name="idxEmbedCode" rows={4} defaultValue={siteSettings.idxEmbedCode} placeholder="Optional: paste provider embed code here for reference."></textarea>
+                      <small>We store this for reference, but render the iframe URL above first to keep the site safer and provider-flexible.</small>
+                    </label>
+                    <label>
+                      Fallback message
+                      <textarea name="idxFallbackMessage" rows={3} defaultValue={siteSettings.idxFallbackMessage}></textarea>
+                    </label>
+                  </div>
+                </div>
+              </section>
+              <div className="admin-form-footer">
+                <small>Controls the public Search Homes page while keeping FlexMLS, IDX Broker, and Spark API options open.</small>
+                {siteStatus === "saved" && savedSiteSection === "idx-search" ? (
+                  <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
+                ) : null}
+                <button className="admin-save-button" type="submit">Save IDX search</button>
               </div>
             </form>
 
