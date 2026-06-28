@@ -444,8 +444,18 @@ h1 { max-width: 680px; margin-bottom: 18px; font-size: clamp(50px, 6.8vw, 88px);
 
 footer { padding: 42px 5vw 28px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 26px 35px; color: #c7d0cb; background: var(--header-footer); }
 .footer-brands { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-.footer-brand { padding: 7px 10px; background: #fff; }
-.footer-brand img { width: auto; max-width: 210px; height: var(--footer-brand-logo-height); object-fit: contain; }
+.footer-brand {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.footer-brand img {
+  width: auto;
+  max-width: 210px;
+  height: var(--footer-brand-logo-height);
+  object-fit: contain;
+}
 footer > p { margin: 0; color: #84908a; font-size: 10px; }
 .footer-links { display: flex; gap: 25px; font-size: 10px; }
 .footer-compliance {
