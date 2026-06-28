@@ -2629,7 +2629,7 @@ export default async function AdminDashboardPage({
                     <div className="admin-form-list">
                       {banners.map((banner) => (
                         <details className="admin-edit-panel" id={`banner-${banner.id}`} key={banner.id} open={bannerStatus === "saved" && savedBannerId === banner.id}>
-                          <summary className="admin-summary-row">
+                          <summary className="admin-summary-row admin-record-summary-row">
                             <span>
                               <strong>{banner.campaign_name}</strong>
                               <small>{banner.headline}</small>
@@ -3324,7 +3324,7 @@ export default async function AdminDashboardPage({
                 open={savedLeadId === lead.id}
                 data-reset-on-close="true"
               >
-                <summary className="admin-summary-row">
+                <summary className="admin-summary-row admin-record-summary-row">
                   <span>
                     <strong>{lead.property_address || "No property address"}</strong>
                     <small>{lead.full_name || "No name"} - {lead.email || lead.phone || "No contact listed"}</small>
@@ -3943,7 +3943,7 @@ export default async function AdminDashboardPage({
           <div className="admin-form-list">
             {teamMembers.map((member) => (
               <details className="admin-edit-panel" id={`team-member-${member.id}`} key={member.id} open={teamStatus === "saved" && savedTeamMemberId === member.id}>
-                <summary className="admin-summary-row">
+                <summary className="admin-summary-row admin-record-summary-row">
                   <span>
                     <strong>{member.full_name}</strong>
                     <small>{member.title}</small>
@@ -4088,7 +4088,7 @@ export default async function AdminDashboardPage({
           <div className="admin-form-list">
             {testimonials.map((testimonial) => (
               <details className="admin-edit-panel" id={`testimonial-${testimonial.id}`} key={testimonial.id} open={testimonialStatus === "saved" && savedTestimonialId === testimonial.id}>
-                <summary className="admin-summary-row">
+                <summary className="admin-summary-row admin-record-summary-row">
                   <span>
                     <strong>{testimonial.client_name}</strong>
                     <small>{truncateText(testimonial.quote)}</small>
