@@ -2380,16 +2380,7 @@ export default async function AdminDashboardPage({
             </div>
           ) : null}
           {settingsOnly ? (
-          <details className="admin-edit-panel" open>
-            <summary className="admin-summary-row">
-              <span>
-                <strong>{siteSettings.siteName}</strong>
-                <small>{siteSettings.brokerageName} - {siteSettings.contactEmail}</small>
-              </span>
-              <span>{siteSettings.primaryDomain}</span>
-              <span>{siteSettings.brandPrimary}</span>
-              <span>{siteSettings.brandAccent}</span>
-            </summary>
+            <>
             <form className="admin-form-card" action={updateSiteSettings} encType="multipart/form-data">
               <input name="siteSlug" type="hidden" value={siteSettings.slug} />
               <input name="siteSection" type="hidden" value="branding" />
@@ -3089,7 +3080,7 @@ export default async function AdminDashboardPage({
                 <button className="admin-save-button" type="submit">Save lead routing</button>
               </div>
             </form>
-          </details>
+            </>
           ) : (
             <Link
               className="admin-summary-row admin-maintenance-summary-row"
