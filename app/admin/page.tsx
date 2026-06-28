@@ -3091,7 +3091,11 @@ export default async function AdminDashboardPage({
             </form>
           </details>
           ) : (
-            <div className="admin-summary-row admin-maintenance-summary-row">
+            <Link
+              className="admin-summary-row admin-maintenance-summary-row"
+              href="/admin/site-settings"
+              aria-label="Open site settings"
+            >
               <span>
                 <strong>{siteSettings.siteName}</strong>
                 <small>{siteSettings.brokerageName} - {siteSettings.contactEmail}</small>
@@ -3099,8 +3103,8 @@ export default async function AdminDashboardPage({
               <span>{siteSettings.primaryDomain}</span>
               <span>{siteSettings.brandPrimary}</span>
               <span>{siteSettings.brandAccent}</span>
-              <Link className="admin-save-button" href="/admin/site-settings">Open settings</Link>
-            </div>
+              <em className="admin-maintenance-action">Open settings</em>
+            </Link>
           )}
         </article>
 

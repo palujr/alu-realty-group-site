@@ -1959,13 +1959,29 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
 }
 .admin-maintenance-summary-row {
   grid-template-columns: minmax(180px, 1.8fr) repeat(3, minmax(90px, .7fr)) auto;
-  cursor: default;
+  text-decoration: none;
+  cursor: pointer;
+}
+.admin-maintenance-summary-row:hover {
+  background: #f8f5ee;
 }
 .admin-maintenance-summary-row::after {
   display: none;
 }
-.admin-maintenance-summary-row .admin-save-button {
+.admin-maintenance-action {
   justify-self: end;
+  display: inline-flex;
+  min-height: 34px;
+  padding: 8px 12px;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: var(--ink);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 .admin-create-panel {
