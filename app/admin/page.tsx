@@ -34,6 +34,8 @@ type AdminLead = {
   team_members: { full_name: string | null } | { full_name: string | null }[] | null;
 };
 
+const adminLeadSelect = "id, lead_type, full_name, email, phone, property_address, message, source_page, lead_source_category, assigned_team_member_id, contact_status, preferred_contact_method, contact_notes, last_contacted_at, lead_priority, next_follow_up_at, lead_source_detail, created_at, team_members(full_name)";
+
 type AdminLeadWorkQueueItem = Pick<
   AdminLead,
   | "id"
@@ -474,6 +476,39 @@ function getLeadSourceLabel(lead: Pick<AdminLead, "lead_source_category" | "lead
   return categoryLabel || lead.source_page || "Website";
 }
 
+function getSearchLeadSummary(lead: Pick<AdminLead, "lead_type" | "lead_source_detail" | "message">) {
+  const isSearchLead = lead.lead_type === "buyer" || lead.lead_source_detail?.toLowerCase().includes("search");
+
+  if (!isSearchLead || !lead.message) {
+    return null;
+  }
+
+  const details = lead.message.split(/\r?\n/).reduce(
+    (summary, line) => {
+      const [rawLabel, ...rawValue] = line.split(":");
+      const label = rawLabel.trim().toLowerCase();
+      const value = rawValue.join(":").trim();
+
+      if (label === "search notes") {
+        summary.notes = value;
+      }
+
+      if (label === "listing alerts requested") {
+        summary.alerts = value;
+      }
+
+      return summary;
+    },
+    { notes: "", alerts: "" }
+  );
+
+  if (!details.notes && !details.alerts) {
+    return null;
+  }
+
+  return details;
+}
+
 function getLeadActivityTypeLabel(value?: string | null) {
   return leadActivityTypeOptions.find((option) => option.value === value)?.label || "Note";
 }
@@ -736,7 +771,7 @@ function AdminLeadQueueList({
       </div>
       <div className="admin-work-queue-list">
         {leads.map((lead) => (
-          <a className="admin-work-queue-row" href={`#lead-${lead.id}`} key={`${title}-${lead.id}`} data-open-lead-panel="true">
+          <a className="admin-work-queue-row" href={`/admin?leadId=${encodeURIComponent(lead.id)}#lead-${lead.id}`} key={`${title}-${lead.id}`} data-open-lead-panel="true">
             <span>
               <strong>{lead.property_address || "No property address"}</strong>
               <small>{lead.full_name || "No name"} - {getAssignedName(lead)}</small>
@@ -1597,7 +1632,7 @@ async function updateTestimonial(formData: FormData) {
   redirect(`/admin?testimonialStatus=saved&testimonialId=${testimonialId}#testimonial-${testimonialId}`);
 }
 
-async function getAdminData(leadFilters: LeadFilters, pages: AdminPages) {
+async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focusedLeadId = "") {
   const siteSettings = await getSiteSettings();
   const activeBanner = await getActiveSiteBanner(siteSettings.slug, siteSettings);
   const supabase = createClient();
@@ -1649,7 +1684,7 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages) {
     ? await (async () => {
         let leadsQuery = adminSupabase
           .from("lead_submissions")
-          .select("id, lead_type, full_name, email, phone, property_address, message, source_page, lead_source_category, assigned_team_member_id, contact_status, preferred_contact_method, contact_notes, last_contacted_at, lead_priority, next_follow_up_at, lead_source_detail, created_at, team_members(full_name)", { count: "exact" });
+          .select(adminLeadSelect, { count: "exact" });
 
         if (leadFilters.type) {
           leadsQuery = leadsQuery.eq("lead_type", leadFilters.type);
@@ -1709,7 +1744,19 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages) {
         .limit(250)
     : { data: [], error: null };
 
-  const leads = (leadsResult.data || []) as AdminLead[];
+  let leads = (leadsResult.data || []) as AdminLead[];
+  const focusedLeadResult = adminSupabase && focusedLeadId && !leads.some((lead) => lead.id === focusedLeadId)
+    ? await adminSupabase
+        .from("lead_submissions")
+        .select(adminLeadSelect)
+        .eq("id", focusedLeadId)
+        .maybeSingle()
+    : { data: null, error: null };
+
+  if (focusedLeadResult.data) {
+    leads = [focusedLeadResult.data as AdminLead, ...leads];
+  }
+
   const leadWorkQueueItems = (leadWorkQueueResult.data || []) as AdminLeadWorkQueueItem[];
   const byFollowUpTime = (first: AdminLeadWorkQueueItem, second: AdminLeadWorkQueueItem) =>
     new Date(first.next_follow_up_at || first.created_at).getTime() - new Date(second.next_follow_up_at || second.created_at).getTime();
@@ -1763,7 +1810,7 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages) {
       testimonials: getPagination(pages.testimonials.page, pages.testimonials.pageSize, testimonialsResult.count || 0, "testimonialPage", "testimonialPageSize", "testimonials")
     },
     errors: {
-      leads: leadsResult.error?.message || leadActivitiesResult.error?.message || leadWorkQueueResult.error?.message,
+      leads: leadsResult.error?.message || focusedLeadResult.error?.message || leadActivitiesResult.error?.message || leadWorkQueueResult.error?.message,
       banners: bannersResult.error?.message,
       teamMembers: teamMembersResult.error?.message || teamMemberOptionsResult.error?.message,
       testimonials: testimonialsResult.error?.message
@@ -1802,6 +1849,7 @@ export default async function AdminDashboardPage({
     testimonialPageSize?: string;
   };
 }) {
+  const savedLeadId = getSearchParamValue(searchParams, "leadId");
   const leadFilters: LeadFilters = {
     search: getSearchParamValue(searchParams, "leadSearch"),
     type: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterType"), leadTypeOptions.map((option) => option.value)),
@@ -1826,7 +1874,7 @@ export default async function AdminDashboardPage({
     }
   };
   const hasLeadFilters = Boolean(leadFilters.search || leadFilters.type || leadFilters.status || leadFilters.assigned || leadFilters.priority || leadFilters.source || leadFilters.followUp);
-  const { siteSettings, activeBanner, leads, leadWorkQueue, leadActivitiesByLeadId, banners, teamMembers, teamMemberOptions, testimonials, pagination, errors } = await getAdminData(leadFilters, adminPages);
+  const { siteSettings, activeBanner, leads, leadWorkQueue, leadActivitiesByLeadId, banners, teamMembers, teamMemberOptions, testimonials, pagination, errors } = await getAdminData(leadFilters, adminPages, savedLeadId);
   const visibleErrors = Object.values(errors).filter(Boolean);
   const siteStatus = getSearchParamValue(searchParams, "siteStatus");
   const siteError = getSearchParamValue(searchParams, "siteError");
@@ -1835,7 +1883,6 @@ export default async function AdminDashboardPage({
   const savedBannerId = getSearchParamValue(searchParams, "bannerId");
   const leadStatus = getSearchParamValue(searchParams, "leadStatus");
   const leadActivityStatus = getSearchParamValue(searchParams, "leadActivityStatus");
-  const savedLeadId = getSearchParamValue(searchParams, "leadId");
   const teamStatus = getSearchParamValue(searchParams, "teamStatus");
   const savedTeamMemberId = getSearchParamValue(searchParams, "teamMemberId");
   const testimonialStatus = getSearchParamValue(searchParams, "testimonialStatus");
@@ -2843,6 +2890,7 @@ export default async function AdminDashboardPage({
               const leadActivities = leadActivitiesByLeadId[lead.id] || [];
               const openActivityTasks = getOpenActivityTasks(leadActivities);
               const nextActivityTask = openActivityTasks[0];
+              const searchLeadSummary = getSearchLeadSummary(lead);
               const displayedLeadActivities = [
                 ...leadActivities.slice(0, 6),
                 ...openActivityTasks
@@ -2853,7 +2901,7 @@ export default async function AdminDashboardPage({
                 className="admin-edit-panel"
                 id={`lead-${lead.id}`}
                 key={lead.id}
-                open={savedLeadId === lead.id && (leadStatus === "saved" || leadActivityStatus === "saved" || leadActivityStatus === "updated" || leadActivityStatus === "deleted")}
+                open={savedLeadId === lead.id}
                 data-reset-on-close="true"
               >
                 <summary className="admin-summary-row">
@@ -3031,6 +3079,18 @@ export default async function AdminDashboardPage({
                     <p className="admin-kicker">Lead details</p>
                     <h4>{getLeadTypeLabel(lead.lead_type)} request</h4>
                   </div>
+                  {searchLeadSummary ? (
+                    <div className="admin-search-lead-summary">
+                      <div>
+                        <span>Search notes</span>
+                        <strong>{searchLeadSummary.notes || "No notes provided"}</strong>
+                      </div>
+                      <div>
+                        <span>Listing alerts</span>
+                        <strong>{searchLeadSummary.alerts || "Not specified"}</strong>
+                      </div>
+                    </div>
+                  ) : null}
                   <div className="admin-form-grid">
                     <label>
                       Lead type

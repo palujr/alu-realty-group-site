@@ -1393,6 +1393,30 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   font-size: 15px;
   line-height: 1.25;
 }
+.admin-search-lead-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(180px, .7fr);
+  gap: 10px;
+}
+.admin-search-lead-summary div {
+  padding: 13px 14px;
+  display: grid;
+  gap: 5px;
+  background: #f7f3ea;
+  border: 1px solid rgba(217, 120, 79, .28);
+}
+.admin-search-lead-summary span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.admin-search-lead-summary strong {
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.4;
+}
 .admin-contact-actions {
   display: flex;
   flex-wrap: wrap;
