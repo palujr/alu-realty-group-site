@@ -101,7 +101,7 @@ export default async function SearchHomesPage({ searchParams }: SearchHomesPageP
                   Open {siteSettings.idxProviderName} search
                 </a>
               ) : (
-                <a className="button button-accent" href="/#sell">
+                <a className="button button-accent" href="/#saved-search">
                   Request a custom property search
                 </a>
               )}

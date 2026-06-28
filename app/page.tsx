@@ -382,7 +382,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="saved-search-section">
+        <section className="saved-search-section" id="saved-search">
           <div className="saved-search-card">
             <div className="saved-icon" aria-hidden="true">
               <svg viewBox="0 0 64 64"><path d="M12 28 32 12l20 16v25H39V38H25v15H12V28Z" /><path d="M43 13v9" /></svg>
@@ -457,7 +457,9 @@ export default async function HomePage() {
           <form id="accountForm">
             <label>Full name<input name="name" type="text" placeholder="Your name" required /></label>
             <label>Email address<input name="email" type="email" placeholder="you@example.com" required /></label>
-            <label className="checkbox-label"><input type="checkbox" defaultChecked /> Email me new listings and price changes</label>
+            <label>Phone number<input name="phone" type="tel" placeholder="(480) 555-0124" /></label>
+            <label>What are you looking for?<input name="message" type="text" placeholder="Areas, price range, beds, timeline, or must-haves" /></label>
+            <label className="checkbox-label"><input name="wantsAlerts" type="checkbox" defaultChecked /> Email me new listings and price changes</label>
             <button className="button button-accent" type="submit">Create my account</button>
           </form>
           <small>By continuing, you agree to receive account-related email. You can unsubscribe from property alerts anytime.</small>
@@ -501,6 +503,18 @@ export default async function HomePage() {
           <div className="success-next-steps">
             <span>What happens next</span>
             <p>Phil or Denise will reach out using the contact information you provided.</p>
+          </div>
+          <button className="button button-accent" type="button" data-close-modal>Done</button>
+        </section>
+
+        <section className="modal success-modal" id="accountSuccessModal" role="dialog" aria-modal="true" aria-labelledby="accountSuccessTitle" hidden>
+          <button className="modal-close" data-close-modal aria-label="Close">Ã—</button>
+          <p className="eyebrow">SEARCH REQUEST RECEIVED</p>
+          <h2 id="accountSuccessTitle">Your search request is in.</h2>
+          <p className="modal-intro">We received your custom property search request and will follow up with matching homes and next steps.</p>
+          <div className="success-next-steps">
+            <span>What happens next</span>
+            <p>Phil or Denise will review your search details and reach out using the contact information you provided.</p>
           </div>
           <button className="button button-accent" type="button" data-close-modal>Done</button>
         </section>

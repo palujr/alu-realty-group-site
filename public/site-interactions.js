@@ -288,13 +288,44 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !backdrop.hidden) closeModal();
 });
 
-document.querySelector("#accountForm").addEventListener("submit", (event) => {
+document.querySelector("#accountForm").addEventListener("submit", async (event) => {
   event.preventDefault();
-  const data = new FormData(event.currentTarget);
-  localStorage.setItem("haven-account", JSON.stringify({ name: data.get("name"), email: data.get("email") }));
-  closeModal();
-  showToast("Account created. Your listing alerts are ready.");
-  event.currentTarget.reset();
+  const form = event.currentTarget;
+  const button = form.querySelector("button[type='submit']");
+  const data = new FormData(form);
+
+  button.disabled = true;
+  button.textContent = "Sending...";
+
+  try {
+    const response = await fetch("/api/search-lead", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: data.get("name"),
+        email: data.get("email"),
+        phone: data.get("phone"),
+        message: data.get("message"),
+        wantsAlerts: data.get("wantsAlerts") === "on",
+        sourcePage: `${window.location.pathname}${window.location.hash || ""}`
+      })
+    });
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      throw new Error(result.error || "Unable to send search request.");
+    }
+
+    localStorage.setItem("haven-account", JSON.stringify({ name: data.get("name"), email: data.get("email") }));
+    form.reset();
+    openModal("accountSuccess");
+    modalAutoCloseTimeout = setTimeout(closeModal, 10000);
+  } catch (error) {
+    showToast(error.message || "Something went wrong. Please try again.");
+  } finally {
+    button.disabled = false;
+    button.textContent = "Create my account";
+  }
 });
 
 document.querySelector("#valuationForm").addEventListener("submit", async (event) => {
