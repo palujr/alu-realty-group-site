@@ -2242,13 +2242,13 @@ export default async function AdminDashboardPage({
           <span>Overview</span>
           <small>Counts and follow-ups</small>
         </a>
-        <a href="#site-settings">
-          <span>Site settings</span>
-          <small>Branding and homepage</small>
-        </a>
         <a href="#lead-inbox">
           <span>Leads</span>
           <small>CRM workspace</small>
+        </a>
+        <a href="#site-settings">
+          <span>Site settings</span>
+          <small>Branding and homepage</small>
         </a>
         <a href="#team-members">
           <span>Team</span>
