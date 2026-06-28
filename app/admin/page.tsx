@@ -2114,6 +2114,7 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focused
     ...stage,
     count: leadWorkQueueItems.filter((lead) => lead.lead_stage === stage.value).length
   }));
+  const unassignedLeadCount = leadWorkQueueItems.filter((lead) => !lead.assigned_team_member_id).length;
   const leadIds = leads.map((lead) => lead.id);
   const leadActivitiesResult = adminSupabase && leadIds.length
     ? await adminSupabase
@@ -2141,6 +2142,7 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focused
       overdue: overdueLeads,
       today: todaysFollowUps,
       highPriority: highPriorityLeads,
+      unassignedCount: unassignedLeadCount,
       stageCounts: leadStageCounts
     },
     leadActivitiesByLeadId,
@@ -2280,6 +2282,7 @@ export default async function AdminDashboardPage({
     },
     {
       label: "Unassigned",
+      count: leadWorkQueue.unassignedCount,
       href: buildLeadQuickViewHref({ leadFilterAssigned: "unassigned" }),
       active: leadFilters.assigned === "unassigned"
     }
@@ -3188,7 +3191,7 @@ export default async function AdminDashboardPage({
           ) : null}
 
           <div className="admin-lead-quick-views" aria-label="Lead quick views">
-            <div>
+            <div className="admin-lead-quick-views-heading">
               <p className="admin-kicker">Quick views</p>
               <strong>Jump into the lead list you need most.</strong>
             </div>

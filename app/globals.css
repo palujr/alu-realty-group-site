@@ -1051,16 +1051,20 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   margin-bottom: 16px;
   padding: 16px;
   display: grid;
-  grid-template-columns: minmax(220px, .9fr) 2fr;
-  gap: 16px;
-  align-items: center;
+  gap: 14px;
+  align-items: start;
   background: #fbfaf6;
   border: 1px solid var(--line);
   box-shadow: 0 18px 40px rgba(23, 34, 31, .06);
 }
-.admin-lead-quick-views > div {
-  display: grid;
-  gap: 4px;
+.admin-lead-quick-views-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: baseline;
+}
+.admin-lead-quick-views-heading .admin-kicker {
+  margin: 0;
 }
 .admin-lead-quick-views strong {
   color: var(--ink);
@@ -1068,11 +1072,14 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
 }
 .admin-lead-quick-views nav {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 9px;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  overflow-x: auto;
+  padding-bottom: 2px;
 }
 .admin-lead-quick-view {
+  flex: 0 0 auto;
   min-height: 38px;
   padding: 8px 10px;
   display: inline-flex;
@@ -2673,7 +2680,9 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
     grid-template-columns: 1fr;
   }
   .admin-lead-quick-views nav {
+    flex-wrap: wrap;
     justify-content: flex-start;
+    overflow-x: visible;
   }
   .admin-active-filter-strip {
     align-items: flex-start;
