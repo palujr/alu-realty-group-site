@@ -3012,7 +3012,12 @@ export default async function AdminDashboardPage({
                   </span>
                   <span className={`admin-summary-followup admin-followup-${getFollowUpTone(lead.next_follow_up_at, siteSettings.timeZone)}`}>{getLeadFollowUpLabel(lead, siteSettings.timeZone)}</span>
                 </summary>
-              <form className="admin-form-card admin-lead-detail-card" action={updateLead}>
+              <form
+                className="admin-form-card admin-lead-detail-card"
+                action={updateLead}
+                autoComplete="off"
+                key={`${lead.id}-${lead.contact_status}-${lead.lead_priority}-${lead.assigned_team_member_id || "unassigned"}-${lead.next_follow_up_at || "none"}-${lead.last_contacted_at || "none"}`}
+              >
                 <input name="leadId" type="hidden" value={lead.id} />
                 <div className="admin-lead-detail-hero">
                   <div className="admin-lead-title">
@@ -3161,7 +3166,7 @@ export default async function AdminDashboardPage({
                     <div className="admin-form-grid admin-form-grid-compact">
                       <label>
                         Status
-                        <select name="contactStatus" defaultValue={lead.contact_status || "new"}>
+                        <select key={`status-${lead.contact_status || "new"}`} name="contactStatus" defaultValue={lead.contact_status || "new"}>
                           {leadStatusOptions.map((option) => (
                             <option key={option.value} value={option.value}>{option.label}</option>
                           ))}
@@ -3169,7 +3174,7 @@ export default async function AdminDashboardPage({
                       </label>
                       <label>
                         Priority
-                        <select name="leadPriority" defaultValue={lead.lead_priority || "normal"}>
+                        <select key={`priority-${lead.lead_priority || "normal"}`} name="leadPriority" defaultValue={lead.lead_priority || "normal"}>
                           {leadPriorityOptions.map((option) => (
                             <option key={option.value} value={option.value}>{option.label}</option>
                           ))}
@@ -3177,11 +3182,11 @@ export default async function AdminDashboardPage({
                       </label>
                       <label>
                         Last contacted
-                        <input name="lastContactedAt" type="datetime-local" defaultValue={formatDateTimeLocal(lead.last_contacted_at, siteSettings.timeZone)} />
+                        <input key={`last-contacted-${lead.last_contacted_at || "none"}`} name="lastContactedAt" type="datetime-local" defaultValue={formatDateTimeLocal(lead.last_contacted_at, siteSettings.timeZone)} />
                       </label>
                       <label>
                         Next follow-up
-                        <input name="nextFollowUpAt" type="datetime-local" defaultValue={formatDateTimeLocal(lead.next_follow_up_at, siteSettings.timeZone)} />
+                        <input key={`next-follow-up-${lead.next_follow_up_at || "none"}`} name="nextFollowUpAt" type="datetime-local" defaultValue={formatDateTimeLocal(lead.next_follow_up_at, siteSettings.timeZone)} />
                       </label>
                     </div>
                   </section>
