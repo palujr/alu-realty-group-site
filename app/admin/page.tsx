@@ -118,6 +118,8 @@ type LeadFilters = {
   followUp: string;
 };
 
+type LeadView = "" | "all" | "manual";
+
 type AdminPageRequest = {
   page: number;
   pageSize: number;
@@ -952,19 +954,23 @@ function AdminLeadQueueList({
   title,
   emptyText,
   leads,
+  href,
+  active,
   timeZone
 }: {
   title: string;
   emptyText: string;
   leads: AdminLeadWorkQueueItem[];
+  href: string;
+  active: boolean;
   timeZone: string;
 }) {
   return (
     <article className="admin-work-queue-card">
-      <div className="admin-work-queue-heading">
+      <Link className={`admin-work-queue-heading${active ? " is-active" : ""}`} href={href}>
         <span>{title}</span>
         <strong>{leads.length}</strong>
-      </div>
+      </Link>
       <div className="admin-work-queue-list">
         {leads.map((lead) => (
           <a className="admin-work-queue-row" href={`/admin?leadId=${encodeURIComponent(lead.id)}#lead-${lead.id}`} key={`${title}-${lead.id}`} data-open-lead-panel="true">
@@ -996,6 +1002,10 @@ function normalizeLeadAssignedFilter(value: string) {
   }
 
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value) ? value : "";
+}
+
+function normalizeLeadView(value: string): LeadView {
+  return value === "all" || value === "manual" ? value : "";
 }
 
 function sanitizeLeadSearch(value: string) {
@@ -2189,6 +2199,7 @@ export default async function AdminDashboardPage({
     leadFilterPriority?: string;
     leadFilterSource?: string;
     leadFilterFollowUp?: string;
+    leadView?: string;
     leadPage?: string;
     leadPageSize?: string;
     teamPage?: string;
@@ -2198,6 +2209,7 @@ export default async function AdminDashboardPage({
   };
 }) {
   const savedLeadId = getSearchParamValue(searchParams, "leadId");
+  const leadView = normalizeLeadView(getSearchParamValue(searchParams, "leadView"));
   const leadFilters: LeadFilters = {
     search: getSearchParamValue(searchParams, "leadSearch"),
     type: normalizeLeadFilter(getSearchParamValue(searchParams, "leadFilterType"), leadTypeOptions.map((option) => option.value)),
@@ -2223,6 +2235,7 @@ export default async function AdminDashboardPage({
     }
   };
   const hasLeadFilters = Boolean(leadFilters.search || leadFilters.type || leadFilters.status || leadFilters.stage || leadFilters.assigned || leadFilters.priority || leadFilters.source || leadFilters.followUp);
+  const hasLeadWorkspaceSelection = Boolean(savedLeadId || leadView || hasLeadFilters);
   const { siteSettings, activeBanner, leads, leadWorkQueue, leadActivitiesByLeadId, banners, teamMembers, teamMemberOptions, testimonials, pagination, errors } = await getAdminData(leadFilters, adminPages, savedLeadId);
   const settingsOnly = getSearchParamValue(searchParams, "settingsOnly") === "true";
   const visibleErrors = Object.values(settingsOnly ? {
@@ -2247,8 +2260,8 @@ export default async function AdminDashboardPage({
     {
       label: "All leads",
       count: pagination.leads.totalCount,
-      href: buildLeadQuickViewHref({}),
-      active: !hasLeadFilters
+      href: buildLeadQuickViewHref({ leadView: "all" }),
+      active: leadView === "all" && !hasLeadFilters
     },
     {
       label: "Overdue",
@@ -2406,10 +2419,14 @@ export default async function AdminDashboardPage({
       {!settingsOnly ? (
       <section className="admin-stage-overview" aria-label="Lead relationship stages">
         {leadWorkQueue.stageCounts.map((stage) => (
-          <article className={`admin-stage-card admin-stage-${getStageTone(stage.value)}`} key={stage.value}>
+          <Link
+            className={`admin-stage-card admin-stage-${getStageTone(stage.value)}${leadFilters.stage === stage.value ? " is-active" : ""}`}
+            href={buildLeadQuickViewHref({ leadFilterStage: stage.value })}
+            key={stage.value}
+          >
             <span>{stage.label}</span>
             <strong>{stage.count}</strong>
-          </article>
+          </Link>
         ))}
       </section>
       ) : null}
@@ -2420,18 +2437,24 @@ export default async function AdminDashboardPage({
           title="Overdue follow-ups"
           emptyText="Nothing overdue. Nice and clean."
           leads={leadWorkQueue.overdue}
+          href={buildLeadQuickViewHref({ leadFilterFollowUp: "overdue" })}
+          active={leadFilters.followUp === "overdue"}
           timeZone={siteSettings.timeZone}
         />
         <AdminLeadQueueList
           title="Today"
           emptyText="No follow-ups scheduled for today."
           leads={leadWorkQueue.today}
+          href={buildLeadQuickViewHref({ leadFilterFollowUp: "today" })}
+          active={leadFilters.followUp === "today"}
           timeZone={siteSettings.timeZone}
         />
         <AdminLeadQueueList
           title="High priority"
           emptyText="No high-priority leads right now."
           leads={leadWorkQueue.highPriority}
+          href={buildLeadQuickViewHref({ leadFilterPriority: "high" })}
+          active={leadFilters.priority === "high" && !leadFilters.followUp}
           timeZone={siteSettings.timeZone}
         />
       </section>
@@ -3180,7 +3203,7 @@ export default async function AdminDashboardPage({
               <p className="admin-kicker">Lead Workspace</p>
               <h2>Track buyer, seller, and valuation leads</h2>
             </div>
-            <span>{hasLeadFilters ? `${pagination.leads.totalCount} matching` : pagination.leads.totalCount ? "Live data" : "No leads visible"}</span>
+            <span>{hasLeadWorkspaceSelection ? (hasLeadFilters ? `${pagination.leads.totalCount} matching` : pagination.leads.totalCount ? "Live data" : "No leads visible") : "Choose a view"}</span>
           </div>
 
           {leadStatus === "error" ? (
@@ -3210,6 +3233,7 @@ export default async function AdminDashboardPage({
           </div>
 
           <form className="admin-filter-bar" action="/admin#lead-inbox">
+            <input name="leadView" type="hidden" value="manual" />
             <label>
               Search leads
               <input name="leadSearch" type="search" defaultValue={leadFilters.search} placeholder="Name, email, phone, or address" />
@@ -3279,7 +3303,7 @@ export default async function AdminDashboardPage({
             </label>
             <div className="admin-filter-actions">
               <button className="admin-save-button" type="submit">Apply filters</button>
-              {hasLeadFilters ? (
+              {hasLeadWorkspaceSelection ? (
                 <Link className="admin-reset-link" href="/admin#lead-inbox">Clear</Link>
               ) : null}
             </div>
@@ -3295,7 +3319,9 @@ export default async function AdminDashboardPage({
             </div>
           ) : null}
 
-          <AdminPaginationControls pagination={pagination.leads} searchParams={searchParams} />
+          {hasLeadWorkspaceSelection ? (
+            <AdminPaginationControls pagination={pagination.leads} searchParams={searchParams} />
+          ) : null}
 
           <details className="admin-create-panel" id="new-lead">
             <summary>Add lead from phone, text, email, or website follow-up</summary>
@@ -3405,6 +3431,13 @@ export default async function AdminDashboardPage({
             </form>
           </details>
 
+          {!hasLeadWorkspaceSelection ? (
+            <div className="admin-lead-empty-state">
+              <strong>Choose a lead view to begin.</strong>
+              <span>Use the stage cards, follow-up cards, quick views, or the filters above to load the lead list you want.</span>
+            </div>
+          ) : (
+          <>
           <div className="admin-form-list">
             {leads.map((lead) => {
               const leadActivities = leadActivitiesByLeadId[lead.id] || [];
@@ -3970,6 +4003,8 @@ export default async function AdminDashboardPage({
           </div>
 
           <AdminPaginationControls pagination={pagination.leads} searchParams={searchParams} />
+          </>
+          )}
         </article>
 
         <article className="admin-card admin-card-wide" id="team-members">
