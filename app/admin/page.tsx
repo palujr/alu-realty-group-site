@@ -1908,7 +1908,7 @@ async function createTestimonial(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect(`/admin?testimonialStatus=saved&testimonialId=${data.id}#testimonial-${data.id}`);
+  redirect("/admin?testimonialStatus=saved#testimonials");
 }
 
 async function updateTestimonial(formData: FormData) {
@@ -4007,6 +4007,12 @@ export default async function AdminDashboardPage({
               <span>Please check the required name and title fields or Supabase update permission.</span>
             </div>
           ) : null}
+          {teamStatus === "saved" && !teamMembers.some((member) => member.id === savedTeamMemberId) ? (
+            <div className="admin-inline-success" data-admin-status="saved" role="status">
+              <strong>Team member saved.</strong>
+              <span>The team profile was added or updated successfully.</span>
+            </div>
+          ) : null}
           <details className="admin-create-panel" id="new-team-member">
             <summary>Add new team member</summary>
             <form className="admin-form-card" action={createTeamMember} encType="multipart/form-data">
@@ -4152,6 +4158,12 @@ export default async function AdminDashboardPage({
             <div className="admin-inline-alert" role="alert">
               <strong>Testimonial could not be saved.</strong>
               <span>Please check the required client name and quote fields.</span>
+            </div>
+          ) : null}
+          {testimonialStatus === "saved" && !savedTestimonialId ? (
+            <div className="admin-inline-success" data-admin-status="saved" role="status">
+              <strong>Testimonial saved.</strong>
+              <span>The new testimonial was added successfully.</span>
             </div>
           ) : null}
           <details className="admin-create-panel" id="new-testimonial">
