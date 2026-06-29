@@ -2213,6 +2213,17 @@ export default async function AdminDashboardPage({
   };
   const hasLeadFilters = Boolean(leadFilters.search || leadFilters.type || leadFilters.status || leadFilters.stage || leadFilters.assigned || leadFilters.priority || leadFilters.source || leadFilters.followUp);
   const hasLeadWorkspaceSelection = Boolean(savedLeadId || leadView || hasLeadFilters);
+  const leadFilterFormKey = [
+    leadView || "none",
+    leadFilters.search,
+    leadFilters.type,
+    leadFilters.status,
+    leadFilters.stage,
+    leadFilters.assigned,
+    leadFilters.priority,
+    leadFilters.source,
+    leadFilters.followUp
+  ].join("|");
   const { siteSettings, activeBanner, leads, leadWorkQueue, leadActivitiesByLeadId, banners, teamMembers, teamMemberOptions, testimonials, pagination, errors } = await getAdminData(leadFilters, adminPages, savedLeadId);
   const settingsOnly = getSearchParamValue(searchParams, "settingsOnly") === "true";
   const visibleErrors = Object.values(settingsOnly ? {
@@ -3203,7 +3214,7 @@ export default async function AdminDashboardPage({
             </nav>
           </div>
 
-          <form className="admin-filter-bar" action="/admin#lead-inbox">
+          <form key={leadFilterFormKey} className="admin-filter-bar" action="/admin#lead-inbox">
             <input name="leadView" type="hidden" value="manual" />
             <label>
               Search leads
