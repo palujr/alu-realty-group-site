@@ -952,19 +952,19 @@ function AdminPaginationControls({
 
 function AdminLeadQueueList({
   title,
-  leads,
+  count,
   href,
   active
 }: {
   title: string;
-  leads: AdminLeadWorkQueueItem[];
+  count: number;
   href: string;
   active: boolean;
 }) {
   return (
     <Link className={`admin-work-queue-card${active ? " is-active" : ""}`} href={href}>
       <span>{title}</span>
-      <strong>{leads.length}</strong>
+      <strong>{count}</strong>
     </Link>
   );
 }
@@ -2086,17 +2086,17 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focused
   const leadWorkQueueItems = (leadWorkQueueResult.data || []) as AdminLeadWorkQueueItem[];
   const byFollowUpTime = (first: AdminLeadWorkQueueItem, second: AdminLeadWorkQueueItem) =>
     new Date(first.next_follow_up_at || first.created_at).getTime() - new Date(second.next_follow_up_at || second.created_at).getTime();
-  const overdueLeads = leadWorkQueueItems
+  const overdueLeadMatches = leadWorkQueueItems
     .filter((lead) => lead.next_follow_up_at && new Date(lead.next_follow_up_at) < now)
-    .sort(byFollowUpTime)
-    .slice(0, 5);
-  const todaysFollowUps = leadWorkQueueItems
+    .sort(byFollowUpTime);
+  const todaysFollowUpMatches = leadWorkQueueItems
     .filter((lead) => lead.next_follow_up_at && lead.next_follow_up_at >= startOfTodayIso && lead.next_follow_up_at < startOfTomorrowIso)
-    .sort(byFollowUpTime)
-    .slice(0, 5);
-  const highPriorityLeads = leadWorkQueueItems
-    .filter((lead) => lead.lead_priority === "high")
-    .slice(0, 5);
+    .sort(byFollowUpTime);
+  const highPriorityLeadMatches = leadWorkQueueItems
+    .filter((lead) => lead.lead_priority === "high");
+  const overdueLeads = overdueLeadMatches.slice(0, 5);
+  const todaysFollowUps = todaysFollowUpMatches.slice(0, 5);
+  const highPriorityLeads = highPriorityLeadMatches.slice(0, 5);
   const leadStageCounts = leadStageOptions.map((stage) => ({
     ...stage,
     count: leadWorkQueueItems.filter((lead) => lead.lead_stage === stage.value).length
@@ -2127,8 +2127,11 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focused
     leads,
     leadWorkQueue: {
       overdue: overdueLeads,
+      overdueCount: overdueLeadMatches.length,
       today: todaysFollowUps,
+      todayCount: todaysFollowUpMatches.length,
       highPriority: highPriorityLeads,
+      highPriorityCount: highPriorityLeadMatches.length,
       unassignedCount: unassignedLeadCount,
       stageCounts: leadStageCounts
     },
@@ -2253,19 +2256,19 @@ export default async function AdminDashboardPage({
     },
     {
       label: "Overdue",
-      count: leadWorkQueue.overdue.length,
+      count: leadWorkQueue.overdueCount,
       href: buildLeadQuickViewHref({ leadFilterFollowUp: "overdue" }),
       active: leadFilters.followUp === "overdue"
     },
     {
       label: "Today",
-      count: leadWorkQueue.today.length,
+      count: leadWorkQueue.todayCount,
       href: buildLeadQuickViewHref({ leadFilterFollowUp: "today" }),
       active: leadFilters.followUp === "today"
     },
     {
       label: "High priority",
-      count: leadWorkQueue.highPriority.length,
+      count: leadWorkQueue.highPriorityCount,
       href: buildLeadQuickViewHref({ leadFilterPriority: "high" }),
       active: leadFilters.priority === "high" && !leadFilters.followUp
     },
@@ -2423,19 +2426,19 @@ export default async function AdminDashboardPage({
       <section className="admin-work-queue" aria-label="Lead follow-up work queue">
         <AdminLeadQueueList
           title="Overdue follow-ups"
-          leads={leadWorkQueue.overdue}
+          count={leadWorkQueue.overdueCount}
           href={buildLeadQuickViewHref({ leadFilterFollowUp: "overdue" })}
           active={leadFilters.followUp === "overdue"}
         />
         <AdminLeadQueueList
           title="Today"
-          leads={leadWorkQueue.today}
+          count={leadWorkQueue.todayCount}
           href={buildLeadQuickViewHref({ leadFilterFollowUp: "today" })}
           active={leadFilters.followUp === "today"}
         />
         <AdminLeadQueueList
           title="High priority"
-          leads={leadWorkQueue.highPriority}
+          count={leadWorkQueue.highPriorityCount}
           href={buildLeadQuickViewHref({ leadFilterPriority: "high" })}
           active={leadFilters.priority === "high" && !leadFilters.followUp}
         />
@@ -3438,6 +3441,7 @@ export default async function AdminDashboardPage({
                 className="admin-edit-panel"
                 id={`lead-${lead.id}`}
                 key={lead.id}
+                name="admin-lead-detail"
                 open={savedLeadId === lead.id}
                 data-reset-on-close="true"
               >
