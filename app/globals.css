@@ -737,6 +737,7 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   gap: 10px;
 }
 .admin-stage-card {
+  --stage-accent: rgba(27, 45, 38, .16);
   min-width: 0;
   padding: 16px;
   display: flex;
@@ -744,7 +745,7 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   justify-content: space-between;
   gap: 12px;
   background: #fff;
-  border-top: 4px solid rgba(27, 45, 38, .16);
+  border-top: 4px solid var(--stage-accent);
   box-shadow: 0 10px 25px rgba(25, 38, 33, .07);
   color: var(--ink);
   text-decoration: none;
@@ -752,7 +753,7 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
 }
 .admin-stage-card:hover,
 .admin-stage-card.is-active {
-  border-left: 4px solid var(--accent);
+  border-left: 4px solid var(--stage-accent);
   box-shadow: 0 16px 32px rgba(25, 38, 33, .12);
   transform: translateY(-1px);
 }
@@ -779,20 +780,20 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   letter-spacing: -.05em;
 }
 .admin-stage-card.admin-stage-complete {
-  border-top-color: #5b8f5f;
+  --stage-accent: #5b8f5f;
   background: #f3f8f2;
 }
 .admin-stage-card.admin-stage-active,
 .admin-stage-card.admin-stage-upcoming {
-  border-top-color: #63809e;
+  --stage-accent: #63809e;
   background: #f4f8fb;
 }
 .admin-stage-card.admin-stage-today {
-  border-top-color: #d79b39;
+  --stage-accent: #d79b39;
   background: #fff8e8;
 }
 .admin-stage-card.admin-stage-muted {
-  border-top-color: #b7b1a6;
+  --stage-accent: #b7b1a6;
   background: #f1eee7;
 }
 .admin-stage-card.is-active {
@@ -806,63 +807,56 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   margin-bottom: 22px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 10px;
   align-items: stretch;
 }
 .admin-work-queue-card {
+  --queue-accent: #b33a27;
   min-width: 0;
+  min-height: 102px;
   padding: 18px;
-  display: grid;
-  grid-template-rows: auto auto;
-  align-content: start;
-  gap: 12px;
-  background: #fff;
-  box-shadow: 0 10px 25px rgba(25, 38, 33, .07);
-}
-.admin-work-queue-heading {
-  min-height: 46px;
-  margin: -6px -6px 0;
-  padding: 10px 10px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border-bottom: 1px solid var(--line);
   color: var(--ink);
   text-decoration: none;
-  transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
+  background: #fff3ef;
+  border-top: 4px solid var(--queue-accent);
+  box-shadow: 0 10px 25px rgba(25, 38, 33, .07);
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease, background .18s ease;
 }
-.admin-work-queue-heading:hover,
-.admin-work-queue-heading.is-active {
-  background: #fffaf5;
-  border-color: rgba(217, 120, 79, .38);
-  box-shadow: inset 4px 0 0 var(--accent);
+.admin-work-queue-card:hover,
+.admin-work-queue-card.is-active {
+  border-left: 4px solid var(--queue-accent);
+  box-shadow: 0 16px 32px rgba(25, 38, 33, .12);
+  transform: translateY(-1px);
 }
-.admin-work-queue-heading.is-active {
+.admin-work-queue-card.is-active {
   background: var(--ink);
 }
-.admin-work-queue-heading.is-active span,
-.admin-work-queue-heading.is-active strong {
+.admin-work-queue-card.is-active span,
+.admin-work-queue-card.is-active strong {
   color: #fff;
 }
-.admin-work-queue-heading.is-active strong {
+.admin-work-queue-card.is-active strong {
   background: rgba(255, 255, 255, .14);
 }
-.admin-work-queue-heading span {
+.admin-work-queue-card span {
   color: var(--muted);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: .1em;
   text-transform: uppercase;
 }
-.admin-work-queue-heading strong {
-  min-width: 30px;
-  min-height: 30px;
+.admin-work-queue-card strong {
+  min-width: 42px;
+  min-height: 42px;
   display: inline-grid;
   place-items: center;
   color: var(--ink);
-  background: #eef0ea;
-  font-size: 13px;
+  background: rgba(179, 58, 39, .1);
+  font-size: 24px;
   font-weight: 900;
 }
 .admin-work-queue-list {

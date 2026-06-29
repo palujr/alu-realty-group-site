@@ -952,43 +952,20 @@ function AdminPaginationControls({
 
 function AdminLeadQueueList({
   title,
-  emptyText,
   leads,
   href,
-  active,
-  timeZone
+  active
 }: {
   title: string;
-  emptyText: string;
   leads: AdminLeadWorkQueueItem[];
   href: string;
   active: boolean;
-  timeZone: string;
 }) {
   return (
-    <article className="admin-work-queue-card">
-      <Link className={`admin-work-queue-heading${active ? " is-active" : ""}`} href={href}>
-        <span>{title}</span>
-        <strong>{leads.length}</strong>
-      </Link>
-      <div className="admin-work-queue-list">
-        {leads.map((lead) => (
-          <a className="admin-work-queue-row" href={`/admin?leadId=${encodeURIComponent(lead.id)}#lead-${lead.id}`} key={`${title}-${lead.id}`} data-open-lead-panel="true">
-            <span>
-              <strong>{lead.property_address || "No property address"}</strong>
-              <small>{lead.full_name || "No name"} - {getAssignedName(lead)}</small>
-            </span>
-            <span>
-              <strong>{formatDateTime(lead.next_follow_up_at, timeZone)}</strong>
-              <small>{getLeadPriorityLabel(lead.lead_priority)} - {getLeadStageLabel(lead.lead_stage)}</small>
-            </span>
-          </a>
-        ))}
-        {!leads.length ? (
-          <p>{emptyText}</p>
-        ) : null}
-      </div>
-    </article>
+    <Link className={`admin-work-queue-card${active ? " is-active" : ""}`} href={href}>
+      <span>{title}</span>
+      <strong>{leads.length}</strong>
+    </Link>
   );
 }
 
@@ -2435,27 +2412,21 @@ export default async function AdminDashboardPage({
       <section className="admin-work-queue" aria-label="Lead follow-up work queue">
         <AdminLeadQueueList
           title="Overdue follow-ups"
-          emptyText="Nothing overdue. Nice and clean."
           leads={leadWorkQueue.overdue}
           href={buildLeadQuickViewHref({ leadFilterFollowUp: "overdue" })}
           active={leadFilters.followUp === "overdue"}
-          timeZone={siteSettings.timeZone}
         />
         <AdminLeadQueueList
           title="Today"
-          emptyText="No follow-ups scheduled for today."
           leads={leadWorkQueue.today}
           href={buildLeadQuickViewHref({ leadFilterFollowUp: "today" })}
           active={leadFilters.followUp === "today"}
-          timeZone={siteSettings.timeZone}
         />
         <AdminLeadQueueList
           title="High priority"
-          emptyText="No high-priority leads right now."
           leads={leadWorkQueue.highPriority}
           href={buildLeadQuickViewHref({ leadFilterPriority: "high" })}
           active={leadFilters.priority === "high" && !leadFilters.followUp}
-          timeZone={siteSettings.timeZone}
         />
       </section>
       ) : null}
