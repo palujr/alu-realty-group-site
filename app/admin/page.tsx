@@ -7,6 +7,7 @@ import { getActiveSiteBanner, getSiteSettings } from "@/lib/site-settings";
 import { AdminDataFreshness } from "./AdminDataFreshness";
 import { AdminLeadFormReset } from "./AdminLeadFormReset";
 import { AdminStatusCleanup } from "./AdminStatusCleanup";
+import { AdminTeamFormReset } from "./AdminTeamFormReset";
 import { BrandColorField } from "./BrandColorField";
 
 export const revalidate = 0;
@@ -1813,7 +1814,7 @@ async function createTeamMember(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect(`/admin?teamStatus=saved&teamMemberId=${data.id}#team-members`);
+  redirect(`/admin?teamStatus=saved&teamMemberId=${data.id}#team-member-${data.id}`);
 }
 
 async function updateTeamMember(formData: FormData) {
@@ -2312,6 +2313,10 @@ export default async function AdminDashboardPage({
         activitySaved={leadActivityStatus === "saved" || leadActivityStatus === "shortcut"}
         activityUpdated={leadActivityStatus === "updated" || leadActivityStatus === "completed"}
         savedLeadId={savedLeadId}
+      />
+      <AdminTeamFormReset
+        teamSaved={teamStatus === "saved"}
+        savedTeamMemberId={savedTeamMemberId}
       />
       <header className="admin-hero">
         <div>
