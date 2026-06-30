@@ -94,6 +94,7 @@ type AdminTeamMember = {
   specialties: string[];
   display_order: number;
   is_active: boolean;
+  deleted_at: string | null;
 };
 
 type AdminTestimonial = {
@@ -471,7 +472,8 @@ async function getTeamMemberNamesByIds(
   const { data } = await adminSupabase
     .from("team_members")
     .select("id, full_name")
-    .in("id", ids);
+    .in("id", ids)
+    .is("deleted_at", null);
   const namesById = new Map((data || []).map((member) => [member.id, member.full_name]));
 
   return ids
@@ -1906,7 +1908,11 @@ async function deleteTeamMember(formData: FormData) {
 
   const { error } = await adminSupabase
     .from("team_members")
-    .delete()
+    .update({
+      is_active: false,
+      deleted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
     .eq("id", memberId);
 
   if (error) {
@@ -2037,12 +2043,14 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focused
       .limit(10),
     adminDataClient
       .from("team_members")
-      .select("id, slug, full_name, title, phone, email, bio, photo_url, specialties, display_order, is_active", { count: "exact" })
+      .select("id, slug, full_name, title, phone, email, bio, photo_url, specialties, display_order, is_active, deleted_at", { count: "exact" })
+      .is("deleted_at", null)
       .order("display_order", { ascending: true })
       .range(teamRangeStart, teamRangeEnd ?? 9999),
     adminDataClient
       .from("team_members")
-      .select("id, slug, full_name, title, phone, email, bio, photo_url, specialties, display_order, is_active")
+      .select("id, slug, full_name, title, phone, email, bio, photo_url, specialties, display_order, is_active, deleted_at")
+      .is("deleted_at", null)
       .order("display_order", { ascending: true })
       .limit(200),
     adminDataClient
@@ -4066,7 +4074,7 @@ export default async function AdminDashboardPage({
           ) : null}
           {teamStatus === "delete-error" ? (
             <div className="admin-inline-alert" role="alert">
-              <strong>Team member could not be deleted.</strong>
+              <strong>Team member could not be removed.</strong>
               <span>
                 {teamError === "name"
                   ? "The typed name did not match this team member exactly."
@@ -4082,8 +4090,8 @@ export default async function AdminDashboardPage({
           ) : null}
           {teamStatus === "deleted" ? (
             <div className="admin-inline-success" data-admin-status="saved" role="status">
-              <strong>Team member deleted.</strong>
-              <span>The team profile was removed successfully.</span>
+              <strong>Team member removed.</strong>
+              <span>The team profile was hidden from the site and normal admin list.</span>
             </div>
           ) : null}
           <details className="admin-create-panel" id="new-team-member">
@@ -4214,11 +4222,11 @@ export default async function AdminDashboardPage({
                 </div>
               </form>
               <details className="admin-danger-panel">
-                <summary>Delete team member</summary>
+                <summary>Remove team member</summary>
                 <form className="admin-danger-form" action={deleteTeamMember}>
                   <input name="memberId" type="hidden" value={member.id} />
                   <input name="memberName" type="hidden" value={member.full_name} />
-                  <p>Deleting removes this profile from the public site. Existing leads and testimonials will stay in place, but they will no longer be assigned to this team member.</p>
+                  <p>Removing hides this profile from the public site and normal admin list. Existing leads and testimonials stay connected for a future restore option.</p>
                   <label>
                     Type {member.full_name} to confirm
                     <input name="confirmationName" type="text" required />
@@ -4227,7 +4235,7 @@ export default async function AdminDashboardPage({
                     Admin password
                     <input name="adminPassword" type="password" required />
                   </label>
-                  <button className="admin-danger-button" type="submit">Delete team member</button>
+                  <button className="admin-danger-button" type="submit">Remove team member</button>
                 </form>
               </details>
               </details>

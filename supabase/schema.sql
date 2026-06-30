@@ -56,6 +56,7 @@ create table if not exists public.team_members (
   specialties text[] not null default '{}',
   display_order integer not null default 100,
   is_active boolean not null default true,
+  deleted_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -233,7 +234,7 @@ create policy "Active site banners are public"
 
 create policy "Published team members are public"
   on public.team_members for select
-  using (is_active = true);
+  using (is_active = true and deleted_at is null);
 
 create policy "Published testimonials are public"
   on public.testimonials for select

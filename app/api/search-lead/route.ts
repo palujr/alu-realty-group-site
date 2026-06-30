@@ -142,7 +142,8 @@ export async function POST(request: Request) {
       .from("team_members")
       .select("id, slug, email")
       .in("slug", routingTeamMemberSlugs)
-      .eq("is_active", true);
+      .eq("is_active", true)
+      .is("deleted_at", null);
 
     assignedTeamMemberId = routingTeamMembers?.find((member) => member.slug === assignedTeamMemberSlug)?.id || null;
     teamMemberNotificationEmails = (routingTeamMembers || [])

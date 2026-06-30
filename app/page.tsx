@@ -19,6 +19,7 @@ async function getTeamMembers(): Promise<TeamMember[]> {
     .from("team_members")
     .select("slug, full_name, title, phone, email, bio, photo_url, specialties")
     .eq("is_active", true)
+    .is("deleted_at", null)
     .order("display_order", { ascending: true });
 
   if (error || !data?.length) {
