@@ -12,8 +12,6 @@ export function AdminTeamFormReset({
   savedAt?: string;
 }) {
   useEffect(() => {
-    const teamPanels = Array.from(document.querySelectorAll<HTMLDetailsElement>("details.admin-team-edit-panel"));
-
     const resetForms = (panel: HTMLDetailsElement) => {
       panel.querySelectorAll<HTMLFormElement>("form").forEach((form) => form.reset());
     };
@@ -33,9 +31,15 @@ export function AdminTeamFormReset({
     };
 
     const handleTeamPanelToggle = (event: Event) => {
-      const panel = event.currentTarget as HTMLDetailsElement;
+      const panel = event.target as HTMLDetailsElement;
+
+      if (!panel.matches("details.admin-team-edit-panel")) {
+        return;
+      }
 
       if (panel.open) {
+        const teamPanels = Array.from(document.querySelectorAll<HTMLDetailsElement>("details.admin-team-edit-panel"));
+
         teamPanels.forEach((otherPanel) => {
           if (otherPanel !== panel && otherPanel.open) {
             otherPanel.open = false;
@@ -51,10 +55,10 @@ export function AdminTeamFormReset({
       resetForms(panel);
     };
 
-    teamPanels.forEach((panel) => panel.addEventListener("toggle", handleTeamPanelToggle));
+    document.addEventListener("toggle", handleTeamPanelToggle, true);
 
     return () => {
-      teamPanels.forEach((panel) => panel.removeEventListener("toggle", handleTeamPanelToggle));
+      document.removeEventListener("toggle", handleTeamPanelToggle, true);
     };
   }, []);
 
