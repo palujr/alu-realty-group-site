@@ -12,6 +12,53 @@ export function AdminTeamFormReset({
   savedAt?: string;
 }) {
   useEffect(() => {
+    const teamPanels = Array.from(document.querySelectorAll<HTMLDetailsElement>("details.admin-team-edit-panel"));
+
+    const resetForms = (panel: HTMLDetailsElement) => {
+      panel.querySelectorAll<HTMLFormElement>("form").forEach((form) => form.reset());
+    };
+
+    const getStickyOffset = () => {
+      const sectionNav = document.querySelector<HTMLElement>(".admin-section-nav");
+      return (sectionNav?.getBoundingClientRect().height || 0) + 28;
+    };
+
+    const scrollPanelIntoPlace = (panel: HTMLDetailsElement) => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          const panelTop = panel.getBoundingClientRect().top + window.scrollY - getStickyOffset();
+          window.scrollTo({ top: Math.max(panelTop, 0), behavior: "smooth" });
+        });
+      });
+    };
+
+    const handleTeamPanelToggle = (event: Event) => {
+      const panel = event.currentTarget as HTMLDetailsElement;
+
+      if (panel.open) {
+        teamPanels.forEach((otherPanel) => {
+          if (otherPanel !== panel && otherPanel.open) {
+            otherPanel.open = false;
+            resetForms(otherPanel);
+          }
+        });
+
+        window.history.replaceState(null, "", `#${panel.id}`);
+        scrollPanelIntoPlace(panel);
+        return;
+      }
+
+      resetForms(panel);
+    };
+
+    teamPanels.forEach((panel) => panel.addEventListener("toggle", handleTeamPanelToggle));
+
+    return () => {
+      teamPanels.forEach((panel) => panel.removeEventListener("toggle", handleTeamPanelToggle));
+    };
+  }, []);
+
+  useEffect(() => {
     if (!teamSaved || !savedTeamMemberId) {
       return;
     }
@@ -38,9 +85,13 @@ export function AdminTeamFormReset({
     }
 
     savedPanel.open = true;
-
     window.requestAnimationFrame(() => {
-      savedPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+      window.requestAnimationFrame(() => {
+        const sectionNav = document.querySelector<HTMLElement>(".admin-section-nav");
+        const stickyOffset = (sectionNav?.getBoundingClientRect().height || 0) + 28;
+        const panelTop = savedPanel.getBoundingClientRect().top + window.scrollY - stickyOffset;
+        window.scrollTo({ top: Math.max(panelTop, 0), behavior: "smooth" });
+      });
     });
 
     return () => window.clearTimeout(hideConfirmation);
