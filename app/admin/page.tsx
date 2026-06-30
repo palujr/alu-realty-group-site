@@ -1813,7 +1813,7 @@ async function createTeamMember(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect(`/admin?teamStatus=saved&teamMemberId=${data.id}#team-member-${data.id}`);
+  redirect(`/admin?teamStatus=saved&teamMemberId=${data.id}#team-members`);
 }
 
 async function updateTeamMember(formData: FormData) {
@@ -4007,10 +4007,10 @@ export default async function AdminDashboardPage({
               <span>Please check the required name and title fields or Supabase update permission.</span>
             </div>
           ) : null}
-          {teamStatus === "saved" && !teamMembers.some((member) => member.id === savedTeamMemberId) ? (
+          {teamStatus === "saved" ? (
             <div className="admin-inline-success" data-admin-status="saved" role="status">
               <strong>Team member saved.</strong>
-              <span>The team profile was added or updated successfully.</span>
+              <span>The team profile was saved successfully.</span>
             </div>
           ) : null}
           <details className="admin-create-panel" id="new-team-member">
