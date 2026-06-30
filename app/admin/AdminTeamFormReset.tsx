@@ -14,6 +14,12 @@ export function AdminTeamFormReset({
       return;
     }
 
+    const hideConfirmation = window.setTimeout(() => {
+      document.querySelectorAll("[data-team-save-confirmation='true']").forEach((element) => {
+        element.setAttribute("hidden", "true");
+      });
+    }, 7000);
+
     const createPanel = document.querySelector<HTMLDetailsElement>("#new-team-member");
     createPanel?.querySelector<HTMLFormElement>("form")?.reset();
     if (createPanel) {
@@ -30,6 +36,8 @@ export function AdminTeamFormReset({
     window.requestAnimationFrame(() => {
       savedPanel.scrollIntoView({ behavior: "smooth", block: "center" });
     });
+
+    return () => window.clearTimeout(hideConfirmation);
   }, [teamSaved, savedTeamMemberId]);
 
   return null;

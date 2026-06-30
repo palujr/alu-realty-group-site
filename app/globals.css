@@ -2087,6 +2087,23 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   border-left-color: var(--accent);
   box-shadow: inset 4px 0 0 var(--accent), 0 10px 24px rgba(23, 34, 31, .06);
 }
+.admin-team-edit-panel[open] > .admin-team-summary-row {
+  color: #fff;
+  background: var(--ink);
+  border-color: var(--ink);
+  border-left-color: var(--accent);
+  box-shadow: inset 5px 0 0 var(--accent), 0 12px 26px rgba(23, 34, 31, .12);
+}
+.admin-team-edit-panel[open] > .admin-team-summary-row span,
+.admin-team-edit-panel[open] > .admin-team-summary-row strong,
+.admin-team-edit-panel[open] > .admin-team-summary-row small {
+  color: #fff;
+}
+.admin-team-edit-panel[open] > .admin-team-summary-row::after {
+  content: "Editing";
+  color: var(--ink);
+  background: #fff;
+}
 .admin-summary-row::-webkit-details-marker {
   display: none;
 }

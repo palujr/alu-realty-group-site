@@ -2208,7 +2208,9 @@ export default async function AdminDashboardPage({
     },
     teamMembers: {
       page: normalizePageParam(getSearchParamValue(searchParams, "teamPage")),
-      pageSize: normalizePageSizeParam(getSearchParamValue(searchParams, "teamPageSize"))
+      pageSize: getSearchParamValue(searchParams, "teamPageSize")
+        ? normalizePageSizeParam(getSearchParamValue(searchParams, "teamPageSize"))
+        : 0
     },
     testimonials: {
       page: normalizePageParam(getSearchParamValue(searchParams, "testimonialPage")),
@@ -4012,12 +4014,6 @@ export default async function AdminDashboardPage({
               <span>Please check the required name and title fields or Supabase update permission.</span>
             </div>
           ) : null}
-          {teamStatus === "saved" ? (
-            <div className="admin-inline-success" data-admin-status="saved" role="status">
-              <strong>Team member saved.</strong>
-              <span>The team profile was saved successfully.</span>
-            </div>
-          ) : null}
           <details className="admin-create-panel" id="new-team-member">
             <summary>Add new team member</summary>
             <form className="admin-form-card" action={createTeamMember} encType="multipart/form-data">
@@ -4076,8 +4072,8 @@ export default async function AdminDashboardPage({
           <AdminPaginationControls pagination={pagination.teamMembers} searchParams={searchParams} />
           <div className="admin-form-list">
             {teamMembers.map((member) => (
-              <details className="admin-edit-panel" id={`team-member-${member.id}`} key={member.id} open={teamStatus === "saved" && savedTeamMemberId === member.id}>
-                <summary className="admin-summary-row admin-record-summary-row">
+              <details className="admin-edit-panel admin-team-edit-panel" id={`team-member-${member.id}`} key={member.id} open={teamStatus === "saved" && savedTeamMemberId === member.id}>
+                <summary className="admin-summary-row admin-record-summary-row admin-team-summary-row">
                   <span>
                     <strong>{member.full_name}</strong>
                     <small>{member.title}</small>
@@ -4140,7 +4136,7 @@ export default async function AdminDashboardPage({
                 <div className="admin-form-footer">
                   <small>{member.is_active ? "Currently visible" : "Currently hidden"} - {member.slug}</small>
                   {teamStatus === "saved" && savedTeamMemberId === member.id ? (
-                    <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
+                    <span className="admin-save-confirmation" data-admin-status="saved" data-team-save-confirmation="true" role="status">Saved successfully</span>
                   ) : null}
                   <button className="admin-save-button" type="submit">Save team member</button>
                 </div>
