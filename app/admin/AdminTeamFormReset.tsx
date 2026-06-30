@@ -1,33 +1,41 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 
 export function AdminTeamFormReset({
   teamSaved,
   savedTeamMemberId,
-  savedAt
+  savedAt,
+  teamDeleted,
+  deletedAt
 }: {
   teamSaved: boolean;
   savedTeamMemberId?: string;
   savedAt?: string;
+  teamDeleted?: boolean;
+  deletedAt?: string;
 }) {
+  const getStickyOffset = useCallback(() => {
+    const sectionNav = document.querySelector<HTMLElement>(".admin-section-nav");
+    return (sectionNav?.getBoundingClientRect().height || 0) + 28;
+  }, []);
+
+  const scrollElementIntoPlace = useCallback((element: HTMLElement) => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        const elementTop = element.getBoundingClientRect().top + window.scrollY - getStickyOffset();
+        window.scrollTo({ top: Math.max(elementTop, 0), behavior: "smooth" });
+      });
+    });
+  }, [getStickyOffset]);
+
   useEffect(() => {
     const resetForms = (panel: HTMLDetailsElement) => {
       panel.querySelectorAll<HTMLFormElement>("form").forEach((form) => form.reset());
     };
 
-    const getStickyOffset = () => {
-      const sectionNav = document.querySelector<HTMLElement>(".admin-section-nav");
-      return (sectionNav?.getBoundingClientRect().height || 0) + 28;
-    };
-
     const scrollPanelIntoPlace = (panel: HTMLDetailsElement) => {
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          const panelTop = panel.getBoundingClientRect().top + window.scrollY - getStickyOffset();
-          window.scrollTo({ top: Math.max(panelTop, 0), behavior: "smooth" });
-        });
-      });
+      scrollElementIntoPlace(panel);
     };
 
     const handleTeamPanelToggle = (event: Event) => {
@@ -60,7 +68,26 @@ export function AdminTeamFormReset({
     return () => {
       document.removeEventListener("toggle", handleTeamPanelToggle, true);
     };
-  }, []);
+  }, [scrollElementIntoPlace]);
+
+  useEffect(() => {
+    if (!teamDeleted) {
+      return;
+    }
+
+    document.querySelectorAll<HTMLDetailsElement>("details.admin-team-edit-panel").forEach((panel) => {
+      panel.open = false;
+      panel.querySelectorAll<HTMLFormElement>("form").forEach((form) => form.reset());
+    });
+
+    const teamMembers = document.querySelector<HTMLElement>("#team-members");
+    if (!teamMembers) {
+      return;
+    }
+
+    window.history.replaceState(null, "", "#team-members");
+    scrollElementIntoPlace(teamMembers);
+  }, [teamDeleted, deletedAt, scrollElementIntoPlace]);
 
   useEffect(() => {
     if (!teamSaved || !savedTeamMemberId) {
@@ -89,17 +116,10 @@ export function AdminTeamFormReset({
     }
 
     savedPanel.open = true;
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        const sectionNav = document.querySelector<HTMLElement>(".admin-section-nav");
-        const stickyOffset = (sectionNav?.getBoundingClientRect().height || 0) + 28;
-        const panelTop = savedPanel.getBoundingClientRect().top + window.scrollY - stickyOffset;
-        window.scrollTo({ top: Math.max(panelTop, 0), behavior: "smooth" });
-      });
-    });
+    scrollElementIntoPlace(savedPanel);
 
     return () => window.clearTimeout(hideConfirmation);
-  }, [teamSaved, savedTeamMemberId, savedAt]);
+  }, [teamSaved, savedTeamMemberId, savedAt, scrollElementIntoPlace]);
 
   return null;
 }

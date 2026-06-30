@@ -2439,6 +2439,8 @@ export default async function AdminDashboardPage({
         teamSaved={teamStatus === "saved"}
         savedTeamMemberId={savedTeamMemberId}
         savedAt={teamSavedAt}
+        teamDeleted={teamStatus === "deleted"}
+        deletedAt={teamSavedAt}
       />
       <header className="admin-hero">
         <div>
