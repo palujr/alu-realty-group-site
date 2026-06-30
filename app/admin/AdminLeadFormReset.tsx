@@ -34,13 +34,28 @@ export function AdminLeadFormReset({
   }, [activityUpdated, savedLeadId]);
 
   useEffect(() => {
-    const leadPanels = Array.from(document.querySelectorAll<HTMLDetailsElement>("details[data-reset-on-close='true']"));
     const leadLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>("a[data-open-lead-panel='true']"));
     const activityPanels = Array.from(document.querySelectorAll<HTMLDetailsElement>("details[data-activity-edit-panel='true']"));
     const activityTaskLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>("a[data-open-activity-panel='true']"));
 
+    const getLeadPanels = () => Array.from(document.querySelectorAll<HTMLDetailsElement>("details[data-reset-on-close='true']"));
+
     const resetForms = (panel: HTMLDetailsElement) => {
       panel.querySelectorAll<HTMLFormElement>("form").forEach((form) => form.reset());
+    };
+
+    const getStickyOffset = () => {
+      const sectionNav = document.querySelector<HTMLElement>(".admin-section-nav");
+      return (sectionNav?.getBoundingClientRect().height || 0) + 28;
+    };
+
+    const scrollPanelIntoPlace = (panel: HTMLDetailsElement) => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          const panelTop = panel.getBoundingClientRect().top + window.scrollY - getStickyOffset();
+          window.scrollTo({ top: Math.max(panelTop, 0), behavior: "smooth" });
+        });
+      });
     };
 
     const closeOtherActivityPanels = (targetPanel: HTMLDetailsElement) => {
@@ -71,22 +86,29 @@ export function AdminLeadFormReset({
     };
 
     const handleLeadPanelToggle = (event: Event) => {
-      const panel = event.currentTarget as HTMLDetailsElement;
+      const panel = event.target as HTMLDetailsElement;
+
+      if (!panel.matches("details[data-reset-on-close='true']")) {
+        return;
+      }
 
       if (panel.open) {
-        leadPanels.forEach((otherPanel) => {
+        getLeadPanels().forEach((otherPanel) => {
           if (otherPanel !== panel && otherPanel.open) {
             otherPanel.open = false;
             resetForms(otherPanel);
           }
         });
+
+        window.history.replaceState(null, "", `#${panel.id}`);
+        scrollPanelIntoPlace(panel);
         return;
       }
 
       resetForms(panel);
     };
 
-    leadPanels.forEach((panel) => panel.addEventListener("toggle", handleLeadPanelToggle));
+    document.addEventListener("toggle", handleLeadPanelToggle, true);
 
     const handleActivityPanelToggle = (event: Event) => {
       const panel = event.currentTarget as HTMLDetailsElement;
@@ -114,7 +136,7 @@ export function AdminLeadFormReset({
 
       event.preventDefault();
 
-      leadPanels.forEach((panel) => {
+      getLeadPanels().forEach((panel) => {
         if (panel !== targetPanel && panel.open) {
           panel.open = false;
           resetForms(panel);
@@ -124,9 +146,7 @@ export function AdminLeadFormReset({
       targetPanel.open = true;
       window.history.replaceState(null, "", targetHash);
 
-      window.requestAnimationFrame(() => {
-        targetPanel.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
+      scrollPanelIntoPlace(targetPanel);
     };
 
     leadLinks.forEach((link) => link.addEventListener("click", openLeadPanel));
@@ -152,7 +172,7 @@ export function AdminLeadFormReset({
     activityTaskLinks.forEach((link) => link.addEventListener("click", openLinkedActivityPanel));
 
     return () => {
-      leadPanels.forEach((panel) => panel.removeEventListener("toggle", handleLeadPanelToggle));
+      document.removeEventListener("toggle", handleLeadPanelToggle, true);
       activityPanels.forEach((panel) => panel.removeEventListener("toggle", handleActivityPanelToggle));
       leadLinks.forEach((link) => link.removeEventListener("click", openLeadPanel));
       activityTaskLinks.forEach((link) => link.removeEventListener("click", openLinkedActivityPanel));

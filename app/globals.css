@@ -2104,6 +2104,28 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   color: var(--ink);
   background: #fff;
 }
+.admin-lead-edit-panel[open] > .admin-lead-summary-row {
+  color: #fff;
+  background: var(--ink);
+  border-color: var(--ink);
+  border-left-color: var(--accent);
+  box-shadow: inset 5px 0 0 var(--accent), 0 12px 26px rgba(23, 34, 31, .12);
+}
+.admin-lead-edit-panel[open] > .admin-lead-summary-row span,
+.admin-lead-edit-panel[open] > .admin-lead-summary-row strong,
+.admin-lead-edit-panel[open] > .admin-lead-summary-row small {
+  color: #fff;
+}
+.admin-lead-edit-panel[open] > .admin-lead-summary-row .admin-mini-status,
+.admin-lead-edit-panel[open] > .admin-lead-summary-row .admin-summary-followup {
+  color: var(--ink);
+  background: #fff;
+}
+.admin-lead-edit-panel[open] > .admin-lead-summary-row::after {
+  content: "Editing";
+  color: var(--ink);
+  background: #fff;
+}
 .admin-summary-row::-webkit-details-marker {
   display: none;
 }

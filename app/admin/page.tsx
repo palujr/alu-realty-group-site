@@ -3503,14 +3503,14 @@ export default async function AdminDashboardPage({
 
               return (
               <details
-                className="admin-edit-panel"
+                className="admin-edit-panel admin-lead-edit-panel"
                 id={`lead-${lead.id}`}
                 key={lead.id}
                 name="admin-lead-detail"
                 open={savedLeadId === lead.id}
                 data-reset-on-close="true"
               >
-                <summary className="admin-summary-row admin-record-summary-row">
+                <summary className="admin-summary-row admin-record-summary-row admin-lead-summary-row">
                   <span>
                     <strong>{lead.property_address || "No property address"}</strong>
                     <small>{lead.full_name || "No name"} - {lead.email || lead.phone || "No contact listed"}</small>
