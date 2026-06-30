@@ -16,6 +16,10 @@ export function AdminTeamFormReset({
       return;
     }
 
+    document.querySelectorAll("[data-team-save-confirmation='true']").forEach((element) => {
+      element.removeAttribute("hidden");
+    });
+
     const hideConfirmation = window.setTimeout(() => {
       document.querySelectorAll("[data-team-save-confirmation='true']").forEach((element) => {
         element.setAttribute("hidden", "true");

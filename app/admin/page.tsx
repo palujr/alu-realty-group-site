@@ -337,6 +337,7 @@ const transientAdminSearchParams = new Set([
   "teamStatus",
   "teamMemberId",
   "teamSavedAt",
+  "teamError",
   "testimonialStatus",
   "testimonialId"
 ]);
@@ -1874,18 +1875,33 @@ async function deleteTeamMember(formData: FormData) {
   "use server";
 
   const adminSupabase = createAdminClient();
-
-  if (!adminSupabase) {
-    redirect("/admin?teamStatus=error#team-members");
-  }
-
   const memberId = formData.get("memberId")?.toString();
   const memberName = formData.get("memberName")?.toString().trim();
-  const confirmationName = formData.get("confirmationName")?.toString().trim();
-  const adminPassword = formData.get("adminPassword")?.toString();
+  const memberHash = memberId ? `#team-member-${memberId}` : "#team-members";
+  const memberParam = memberId ? `&teamMemberId=${memberId}` : "";
 
-  if (!memberId || !memberName || confirmationName !== memberName || !process.env.ADMIN_DASHBOARD_PASSWORD || adminPassword !== process.env.ADMIN_DASHBOARD_PASSWORD) {
-    redirect("/admin?teamStatus=delete-error#team-members");
+  if (!adminSupabase) {
+    redirect(`/admin?teamStatus=delete-error&teamError=config${memberParam}${memberHash}`);
+  }
+
+  const confirmationName = formData.get("confirmationName")?.toString().trim();
+  const adminPassword = formData.get("adminPassword")?.toString().trim();
+  const deletePassword = process.env.ADMIN_DELETE_PASSWORD || process.env.ADMIN_DASHBOARD_PASSWORD;
+
+  if (!memberId || !memberName) {
+    redirect("/admin?teamStatus=delete-error&teamError=member#team-members");
+  }
+
+  if (confirmationName !== memberName) {
+    redirect(`/admin?teamStatus=delete-error&teamError=name${memberParam}${memberHash}`);
+  }
+
+  if (!deletePassword) {
+    redirect(`/admin?teamStatus=delete-error&teamError=config${memberParam}${memberHash}`);
+  }
+
+  if (adminPassword !== deletePassword) {
+    redirect(`/admin?teamStatus=delete-error&teamError=password${memberParam}${memberHash}`);
   }
 
   const { error } = await adminSupabase
@@ -1894,7 +1910,7 @@ async function deleteTeamMember(formData: FormData) {
     .eq("id", memberId);
 
   if (error) {
-    redirect("/admin?teamStatus=delete-error#team-members");
+    redirect(`/admin?teamStatus=delete-error&teamError=database${memberParam}${memberHash}`);
   }
 
   revalidatePath("/");
@@ -2277,6 +2293,7 @@ export default async function AdminDashboardPage({
   const teamStatus = getSearchParamValue(searchParams, "teamStatus");
   const savedTeamMemberId = getSearchParamValue(searchParams, "teamMemberId");
   const teamSavedAt = getSearchParamValue(searchParams, "teamSavedAt");
+  const teamError = getSearchParamValue(searchParams, "teamError");
   const testimonialStatus = getSearchParamValue(searchParams, "testimonialStatus");
   const savedTestimonialId = getSearchParamValue(searchParams, "testimonialId");
   const hasTransientStatus = siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error" || leadStatus === "saved" || leadStatus === "error" || leadActivityStatus === "saved" || leadActivityStatus === "shortcut" || leadActivityStatus === "updated" || leadActivityStatus === "completed" || leadActivityStatus === "deleted" || leadActivityStatus === "error" || teamStatus === "saved" || teamStatus === "deleted" || teamStatus === "error" || teamStatus === "delete-error" || testimonialStatus === "saved" || testimonialStatus === "error";
@@ -4050,7 +4067,17 @@ export default async function AdminDashboardPage({
           {teamStatus === "delete-error" ? (
             <div className="admin-inline-alert" role="alert">
               <strong>Team member could not be deleted.</strong>
-              <span>Confirm the exact name and admin password, then try again.</span>
+              <span>
+                {teamError === "name"
+                  ? "The typed name did not match this team member exactly."
+                  : teamError === "password"
+                    ? "The admin password did not match."
+                    : teamError === "config"
+                      ? "The admin delete password is not configured."
+                      : teamError === "database"
+                        ? "The database rejected the delete request."
+                        : "Confirm the exact name and admin password, then try again."}
+              </span>
             </div>
           ) : null}
           {teamStatus === "deleted" ? (
@@ -4117,7 +4144,7 @@ export default async function AdminDashboardPage({
           <AdminPaginationControls pagination={pagination.teamMembers} searchParams={searchParams} />
           <div className="admin-form-list">
             {teamMembers.map((member) => (
-              <details className="admin-edit-panel admin-team-edit-panel" id={`team-member-${member.id}`} key={member.id} open={teamStatus === "saved" && savedTeamMemberId === member.id}>
+              <details className="admin-edit-panel admin-team-edit-panel" id={`team-member-${member.id}`} key={member.id} open={(teamStatus === "saved" || teamStatus === "delete-error") && savedTeamMemberId === member.id}>
                 <summary className="admin-summary-row admin-record-summary-row admin-team-summary-row">
                   <span>
                     <strong>{member.full_name}</strong>
@@ -4181,7 +4208,7 @@ export default async function AdminDashboardPage({
                 <div className="admin-form-footer">
                   <small>{member.is_active ? "Currently visible" : "Currently hidden"} - {member.slug}</small>
                   {teamStatus === "saved" && savedTeamMemberId === member.id ? (
-                    <span className="admin-save-confirmation" data-admin-status="saved" data-team-save-confirmation="true" role="status">Saved successfully</span>
+                    <span className="admin-save-confirmation" data-admin-status="saved" data-team-save-confirmation="true" role="status" key={teamSavedAt || savedTeamMemberId}>Saved successfully</span>
                   ) : null}
                   <button className="admin-save-button" type="submit">Save team member</button>
                 </div>

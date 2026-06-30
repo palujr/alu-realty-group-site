@@ -14,6 +14,7 @@ const statusParams = [
   "teamStatus",
   "teamMemberId",
   "teamSavedAt",
+  "teamError",
   "testimonialStatus",
   "testimonialId"
 ];
