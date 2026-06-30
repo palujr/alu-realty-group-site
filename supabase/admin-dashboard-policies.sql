@@ -1,6 +1,9 @@
 alter table public.team_members
   add column if not exists deleted_at timestamptz;
 
+alter table public.lead_submissions
+  add column if not exists deleted_at timestamptz;
+
 grant usage on schema public to service_role;
 grant select, insert, update on public.lead_submissions to service_role;
 grant select, insert, update on public.team_members to service_role;

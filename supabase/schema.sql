@@ -140,6 +140,7 @@ create table if not exists public.lead_submissions (
   lead_priority text not null default 'normal' check (lead_priority in ('low', 'normal', 'high', 'urgent')),
   next_follow_up_at timestamptz,
   lead_source_detail text,
+  deleted_at timestamptz,
   created_at timestamptz not null default now()
 );
 

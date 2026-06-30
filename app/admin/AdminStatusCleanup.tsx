@@ -10,6 +10,8 @@ const statusParams = [
   "bannerId",
   "leadStatus",
   "leadId",
+  "leadSavedAt",
+  "leadError",
   "leadActivityStatus",
   "teamStatus",
   "teamMemberId",

@@ -33,10 +33,11 @@ type AdminLead = {
   next_follow_up_at: string | null;
   lead_source_detail: string | null;
   created_at: string;
+  deleted_at: string | null;
   team_members: { full_name: string | null } | { full_name: string | null }[] | null;
 };
 
-const adminLeadSelect = "id, lead_type, full_name, email, phone, property_address, message, source_page, lead_source_category, assigned_team_member_id, contact_status, lead_stage, preferred_contact_method, contact_notes, last_contacted_at, lead_priority, next_follow_up_at, lead_source_detail, created_at, team_members(full_name)";
+const adminLeadSelect = "id, lead_type, full_name, email, phone, property_address, message, source_page, lead_source_category, assigned_team_member_id, contact_status, lead_stage, preferred_contact_method, contact_notes, last_contacted_at, lead_priority, next_follow_up_at, lead_source_detail, created_at, deleted_at, team_members(full_name)";
 
 type AdminLeadWorkQueueItem = Pick<
   AdminLead,
@@ -334,6 +335,8 @@ const transientAdminSearchParams = new Set([
   "bannerId",
   "leadStatus",
   "leadId",
+  "leadSavedAt",
+  "leadError",
   "leadActivityStatus",
   "teamStatus",
   "teamMemberId",
@@ -1433,6 +1436,56 @@ async function updateLeadQuickAction(formData: FormData) {
   redirect(`/admin?leadStatus=saved&leadId=${leadId}#lead-${leadId}`);
 }
 
+async function removeLead(formData: FormData) {
+  "use server";
+
+  const adminSupabase = createAdminClient();
+  const leadId = formData.get("leadId")?.toString();
+  const leadLabel = formData.get("leadLabel")?.toString().trim();
+  const leadHash = leadId ? `#lead-${leadId}` : "#lead-inbox";
+  const leadParam = leadId ? `&leadId=${leadId}` : "";
+
+  if (!adminSupabase) {
+    redirect(`/admin?leadStatus=remove-error&leadError=config${leadParam}${leadHash}`);
+  }
+
+  const confirmationLabel = formData.get("confirmationLabel")?.toString().trim();
+  const adminPassword = formData.get("adminPassword")?.toString().trim();
+  const deletePassword = process.env.ADMIN_DELETE_PASSWORD || process.env.ADMIN_DASHBOARD_PASSWORD;
+
+  if (!leadId || !leadLabel) {
+    redirect("/admin?leadStatus=remove-error&leadError=lead#lead-inbox");
+  }
+
+  if (confirmationLabel !== leadLabel) {
+    redirect(`/admin?leadStatus=remove-error&leadError=label${leadParam}${leadHash}`);
+  }
+
+  if (!deletePassword) {
+    redirect(`/admin?leadStatus=remove-error&leadError=config${leadParam}${leadHash}`);
+  }
+
+  if (adminPassword !== deletePassword) {
+    redirect(`/admin?leadStatus=remove-error&leadError=password${leadParam}${leadHash}`);
+  }
+
+  const { error } = await adminSupabase
+    .from("lead_submissions")
+    .update({
+      contact_status: "archived",
+      next_follow_up_at: null,
+      deleted_at: new Date().toISOString()
+    })
+    .eq("id", leadId);
+
+  if (error) {
+    redirect(`/admin?leadStatus=remove-error&leadError=database${leadParam}${leadHash}`);
+  }
+
+  revalidatePath("/admin");
+  redirect(`/admin?leadStatus=removed&leadSavedAt=${Date.now()}#lead-inbox`);
+}
+
 async function createLeadOutcomeShortcut(formData: FormData) {
   "use server";
 
@@ -2064,7 +2117,8 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focused
     ? await (async () => {
         let leadsQuery = adminSupabase
           .from("lead_submissions")
-          .select(adminLeadSelect, { count: "exact" });
+          .select(adminLeadSelect, { count: "exact" })
+          .is("deleted_at", null);
 
         if (leadFilters.type) {
           leadsQuery = leadsQuery.eq("lead_type", leadFilters.type);
@@ -2124,6 +2178,7 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focused
     ? await adminSupabase
         .from("lead_submissions")
         .select("id, lead_type, full_name, email, phone, property_address, assigned_team_member_id, contact_status, lead_stage, lead_priority, next_follow_up_at, created_at, team_members(full_name)")
+        .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(250)
     : { data: [], error: null };
@@ -2134,6 +2189,7 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focused
         .from("lead_submissions")
         .select(adminLeadSelect)
         .eq("id", focusedLeadId)
+        .is("deleted_at", null)
         .maybeSingle()
     : { data: null, error: null };
 
@@ -2223,6 +2279,8 @@ export default async function AdminDashboardPage({
     bannerId?: string;
     leadStatus?: string;
     leadId?: string;
+    leadSavedAt?: string;
+    leadError?: string;
     leadActivityStatus?: string;
     teamStatus?: string;
     teamMemberId?: string;
@@ -2297,6 +2355,7 @@ export default async function AdminDashboardPage({
   const bannerStatus = getSearchParamValue(searchParams, "bannerStatus");
   const savedBannerId = getSearchParamValue(searchParams, "bannerId");
   const leadStatus = getSearchParamValue(searchParams, "leadStatus");
+  const leadError = getSearchParamValue(searchParams, "leadError");
   const leadActivityStatus = getSearchParamValue(searchParams, "leadActivityStatus");
   const teamStatus = getSearchParamValue(searchParams, "teamStatus");
   const savedTeamMemberId = getSearchParamValue(searchParams, "teamMemberId");
@@ -2304,7 +2363,7 @@ export default async function AdminDashboardPage({
   const teamError = getSearchParamValue(searchParams, "teamError");
   const testimonialStatus = getSearchParamValue(searchParams, "testimonialStatus");
   const savedTestimonialId = getSearchParamValue(searchParams, "testimonialId");
-  const hasTransientStatus = siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error" || leadStatus === "saved" || leadStatus === "error" || leadActivityStatus === "saved" || leadActivityStatus === "shortcut" || leadActivityStatus === "updated" || leadActivityStatus === "completed" || leadActivityStatus === "deleted" || leadActivityStatus === "error" || teamStatus === "saved" || teamStatus === "deleted" || teamStatus === "error" || teamStatus === "delete-error" || testimonialStatus === "saved" || testimonialStatus === "error";
+  const hasTransientStatus = siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error" || leadStatus === "saved" || leadStatus === "removed" || leadStatus === "error" || leadStatus === "remove-error" || leadActivityStatus === "saved" || leadActivityStatus === "shortcut" || leadActivityStatus === "updated" || leadActivityStatus === "completed" || leadActivityStatus === "deleted" || leadActivityStatus === "error" || teamStatus === "saved" || teamStatus === "deleted" || teamStatus === "error" || teamStatus === "delete-error" || testimonialStatus === "saved" || testimonialStatus === "error";
   const newLeadStageCount = leadWorkQueue.stageCounts.find((stage) => stage.value === "new")?.count || 0;
   const attemptingContactCount = leadWorkQueue.stageCounts.find((stage) => stage.value === "attempting_contact")?.count || 0;
   const leadQuickViews = [
@@ -3262,6 +3321,28 @@ export default async function AdminDashboardPage({
               <span>Please make sure there is a property address and at least one contact method.</span>
             </div>
           ) : null}
+          {leadStatus === "remove-error" ? (
+            <div className="admin-inline-alert" role="alert">
+              <strong>Lead could not be removed.</strong>
+              <span>
+                {leadError === "label"
+                  ? "The typed property address did not match this lead exactly."
+                  : leadError === "password"
+                    ? "The admin password did not match."
+                    : leadError === "config"
+                      ? "The admin remove password is not configured."
+                      : leadError === "database"
+                        ? "The database rejected the remove request."
+                        : "Confirm the exact property address and admin password, then try again."}
+              </span>
+            </div>
+          ) : null}
+          {leadStatus === "removed" ? (
+            <div className="admin-inline-success" data-admin-status="saved" role="status">
+              <strong>Lead removed.</strong>
+              <span>The lead was hidden from the normal lead workspace.</span>
+            </div>
+          ) : null}
 
           <div className="admin-lead-quick-views" aria-label="Lead quick views">
             <div className="admin-lead-quick-views-heading">
@@ -3801,6 +3882,23 @@ export default async function AdminDashboardPage({
                   <button className="admin-save-button" type="submit">Save lead</button>
                 </div>
               </form>
+              <details className="admin-danger-panel">
+                <summary>Remove lead</summary>
+                <form className="admin-danger-form" action={removeLead}>
+                  <input name="leadId" type="hidden" value={lead.id} />
+                  <input name="leadLabel" type="hidden" value={lead.property_address || "No property address"} />
+                  <p>Removing hides this lead from the normal workspace and clears it from follow-up queues. The lead record stays in the database for a future restore option.</p>
+                  <label>
+                    Type {lead.property_address || "No property address"} to confirm
+                    <input name="confirmationLabel" type="text" required />
+                  </label>
+                  <label>
+                    Admin password
+                    <input name="adminPassword" type="password" required />
+                  </label>
+                  <button className="admin-danger-button" type="submit">Remove lead</button>
+                </form>
+              </details>
               <form id={`lead-quick-contacted-${lead.id}`} className="admin-hidden-action-form" action={updateLeadQuickAction}>
                 <input name="leadId" type="hidden" value={lead.id} />
                 <input name="quickAction" type="hidden" value="mark-contacted" />
