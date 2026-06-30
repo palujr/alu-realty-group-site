@@ -1483,7 +1483,7 @@ async function removeLead(formData: FormData) {
   }
 
   revalidatePath("/admin");
-  redirect(`/admin?leadStatus=removed&leadSavedAt=${Date.now()}#lead-inbox`);
+  redirect(`/admin?leadStatus=removed&leadSavedAt=${Date.now()}#lead-overview`);
 }
 
 async function createLeadOutcomeShortcut(formData: FormData) {
@@ -2532,7 +2532,7 @@ export default async function AdminDashboardPage({
       ) : null}
 
       {!settingsOnly ? (
-      <section className="admin-stage-overview" aria-label="Lead relationship stages">
+      <section className="admin-stage-overview" id="lead-overview" aria-label="Lead relationship stages">
         {leadWorkQueue.stageCounts.map((stage) => (
           <Link
             className={`admin-stage-card admin-stage-${getStageTone(stage.value)}${leadFilters.stage === stage.value ? " is-active" : ""}`}
