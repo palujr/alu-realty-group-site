@@ -1,16 +1,34 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 
 export function AdminLeadFormReset({
   activitySaved,
   activityUpdated,
-  savedLeadId
+  savedLeadId,
+  leadRemoved,
+  leadRemovedAt
 }: {
   activitySaved: boolean;
   activityUpdated: boolean;
   savedLeadId?: string;
+  leadRemoved?: boolean;
+  leadRemovedAt?: string;
 }) {
+  const getStickyOffset = useCallback(() => {
+    const sectionNav = document.querySelector<HTMLElement>(".admin-section-nav");
+    return (sectionNav?.getBoundingClientRect().height || 0) + 28;
+  }, []);
+
+  const scrollElementIntoPlace = useCallback((element: HTMLElement) => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        const elementTop = element.getBoundingClientRect().top + window.scrollY - getStickyOffset();
+        window.scrollTo({ top: Math.max(elementTop, 0), behavior: "smooth" });
+      });
+    });
+  }, [getStickyOffset]);
+
   useEffect(() => {
     if (!activitySaved || !savedLeadId) {
       return;
@@ -34,6 +52,25 @@ export function AdminLeadFormReset({
   }, [activityUpdated, savedLeadId]);
 
   useEffect(() => {
+    if (!leadRemoved) {
+      return;
+    }
+
+    document.querySelectorAll<HTMLDetailsElement>("details[data-reset-on-close='true']").forEach((panel) => {
+      panel.open = false;
+      panel.querySelectorAll<HTMLFormElement>("form").forEach((form) => form.reset());
+    });
+
+    const leadOverview = document.querySelector<HTMLElement>("#lead-overview");
+    if (!leadOverview) {
+      return;
+    }
+
+    window.history.replaceState(null, "", "#lead-overview");
+    scrollElementIntoPlace(leadOverview);
+  }, [leadRemoved, leadRemovedAt, scrollElementIntoPlace]);
+
+  useEffect(() => {
     const leadLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>("a[data-open-lead-panel='true']"));
     const activityPanels = Array.from(document.querySelectorAll<HTMLDetailsElement>("details[data-activity-edit-panel='true']"));
     const activityTaskLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>("a[data-open-activity-panel='true']"));
@@ -44,18 +81,8 @@ export function AdminLeadFormReset({
       panel.querySelectorAll<HTMLFormElement>("form").forEach((form) => form.reset());
     };
 
-    const getStickyOffset = () => {
-      const sectionNav = document.querySelector<HTMLElement>(".admin-section-nav");
-      return (sectionNav?.getBoundingClientRect().height || 0) + 28;
-    };
-
     const scrollPanelIntoPlace = (panel: HTMLDetailsElement) => {
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          const panelTop = panel.getBoundingClientRect().top + window.scrollY - getStickyOffset();
-          window.scrollTo({ top: Math.max(panelTop, 0), behavior: "smooth" });
-        });
-      });
+      scrollElementIntoPlace(panel);
     };
 
     const closeOtherActivityPanels = (targetPanel: HTMLDetailsElement) => {
@@ -177,7 +204,7 @@ export function AdminLeadFormReset({
       leadLinks.forEach((link) => link.removeEventListener("click", openLeadPanel));
       activityTaskLinks.forEach((link) => link.removeEventListener("click", openLinkedActivityPanel));
     };
-  }, []);
+  }, [scrollElementIntoPlace]);
 
   return null;
 }

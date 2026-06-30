@@ -2305,6 +2305,7 @@ export default async function AdminDashboardPage({
   };
 }) {
   const savedLeadId = getSearchParamValue(searchParams, "leadId");
+  const leadSavedAt = getSearchParamValue(searchParams, "leadSavedAt");
   const leadView = normalizeLeadView(getSearchParamValue(searchParams, "leadView"));
   const leadFilters: LeadFilters = {
     search: getSearchParamValue(searchParams, "leadSearch"),
@@ -2431,6 +2432,8 @@ export default async function AdminDashboardPage({
         activitySaved={leadActivityStatus === "saved" || leadActivityStatus === "shortcut"}
         activityUpdated={leadActivityStatus === "updated" || leadActivityStatus === "completed"}
         savedLeadId={savedLeadId}
+        leadRemoved={leadStatus === "removed"}
+        leadRemovedAt={leadSavedAt}
       />
       <AdminTeamFormReset
         teamSaved={teamStatus === "saved"}
