@@ -4,10 +4,12 @@ import { useEffect } from "react";
 
 export function AdminTeamFormReset({
   teamSaved,
-  savedTeamMemberId
+  savedTeamMemberId,
+  savedAt
 }: {
   teamSaved: boolean;
   savedTeamMemberId?: string;
+  savedAt?: string;
 }) {
   useEffect(() => {
     if (!teamSaved || !savedTeamMemberId) {
@@ -38,7 +40,7 @@ export function AdminTeamFormReset({
     });
 
     return () => window.clearTimeout(hideConfirmation);
-  }, [teamSaved, savedTeamMemberId]);
+  }, [teamSaved, savedTeamMemberId, savedAt]);
 
   return null;
 }

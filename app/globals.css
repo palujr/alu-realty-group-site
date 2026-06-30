@@ -2499,6 +2499,67 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   letter-spacing: .06em;
   text-transform: uppercase;
 }
+.admin-danger-panel {
+  margin: 0 18px 18px;
+  border: 1px solid rgba(169, 69, 36, .28);
+  background: #fff8f4;
+}
+.admin-danger-panel summary {
+  padding: 12px 14px;
+  color: #8a2f18;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.admin-danger-panel[open] summary {
+  border-bottom: 1px solid rgba(169, 69, 36, .22);
+}
+.admin-danger-form {
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+.admin-danger-form p {
+  margin: 0;
+  color: #6d5148;
+  font-size: 11px;
+  line-height: 1.55;
+}
+.admin-danger-form label {
+  display: grid;
+  gap: 6px;
+  color: #5d463f;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.admin-danger-form input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid rgba(169, 69, 36, .24);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.admin-danger-button {
+  justify-self: start;
+  padding: 12px 15px;
+  color: #fff;
+  background: #8a2f18;
+  border: 0;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
 .admin-idx-grid {
   display: grid;
   grid-template-columns: .9fr 1.1fr;

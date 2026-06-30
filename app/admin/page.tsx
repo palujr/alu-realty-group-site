@@ -336,6 +336,7 @@ const transientAdminSearchParams = new Set([
   "leadActivityStatus",
   "teamStatus",
   "teamMemberId",
+  "teamSavedAt",
   "testimonialStatus",
   "testimonialId"
 ]);
@@ -1814,7 +1815,7 @@ async function createTeamMember(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect(`/admin?teamStatus=saved&teamMemberId=${data.id}#team-member-${data.id}`);
+  redirect(`/admin?teamStatus=saved&teamMemberId=${data.id}&teamSavedAt=${Date.now()}#team-member-${data.id}`);
 }
 
 async function updateTeamMember(formData: FormData) {
@@ -1866,7 +1867,39 @@ async function updateTeamMember(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect(`/admin?teamStatus=saved&teamMemberId=${memberId}#team-member-${memberId}`);
+  redirect(`/admin?teamStatus=saved&teamMemberId=${memberId}&teamSavedAt=${Date.now()}#team-member-${memberId}`);
+}
+
+async function deleteTeamMember(formData: FormData) {
+  "use server";
+
+  const adminSupabase = createAdminClient();
+
+  if (!adminSupabase) {
+    redirect("/admin?teamStatus=error#team-members");
+  }
+
+  const memberId = formData.get("memberId")?.toString();
+  const memberName = formData.get("memberName")?.toString().trim();
+  const confirmationName = formData.get("confirmationName")?.toString().trim();
+  const adminPassword = formData.get("adminPassword")?.toString();
+
+  if (!memberId || !memberName || confirmationName !== memberName || !process.env.ADMIN_DASHBOARD_PASSWORD || adminPassword !== process.env.ADMIN_DASHBOARD_PASSWORD) {
+    redirect("/admin?teamStatus=delete-error#team-members");
+  }
+
+  const { error } = await adminSupabase
+    .from("team_members")
+    .delete()
+    .eq("id", memberId);
+
+  if (error) {
+    redirect("/admin?teamStatus=delete-error#team-members");
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  redirect(`/admin?teamStatus=deleted&teamSavedAt=${Date.now()}#team-members`);
 }
 
 async function createTestimonial(formData: FormData) {
@@ -2208,9 +2241,7 @@ export default async function AdminDashboardPage({
     },
     teamMembers: {
       page: normalizePageParam(getSearchParamValue(searchParams, "teamPage")),
-      pageSize: getSearchParamValue(searchParams, "teamPageSize")
-        ? normalizePageSizeParam(getSearchParamValue(searchParams, "teamPageSize"))
-        : 0
+      pageSize: normalizePageSizeParam(getSearchParamValue(searchParams, "teamPageSize"))
     },
     testimonials: {
       page: normalizePageParam(getSearchParamValue(searchParams, "testimonialPage")),
@@ -2245,9 +2276,10 @@ export default async function AdminDashboardPage({
   const leadActivityStatus = getSearchParamValue(searchParams, "leadActivityStatus");
   const teamStatus = getSearchParamValue(searchParams, "teamStatus");
   const savedTeamMemberId = getSearchParamValue(searchParams, "teamMemberId");
+  const teamSavedAt = getSearchParamValue(searchParams, "teamSavedAt");
   const testimonialStatus = getSearchParamValue(searchParams, "testimonialStatus");
   const savedTestimonialId = getSearchParamValue(searchParams, "testimonialId");
-  const hasTransientStatus = siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error" || leadStatus === "saved" || leadStatus === "error" || leadActivityStatus === "saved" || leadActivityStatus === "shortcut" || leadActivityStatus === "updated" || leadActivityStatus === "completed" || leadActivityStatus === "deleted" || leadActivityStatus === "error" || teamStatus === "saved" || teamStatus === "error" || testimonialStatus === "saved" || testimonialStatus === "error";
+  const hasTransientStatus = siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error" || leadStatus === "saved" || leadStatus === "error" || leadActivityStatus === "saved" || leadActivityStatus === "shortcut" || leadActivityStatus === "updated" || leadActivityStatus === "completed" || leadActivityStatus === "deleted" || leadActivityStatus === "error" || teamStatus === "saved" || teamStatus === "deleted" || teamStatus === "error" || teamStatus === "delete-error" || testimonialStatus === "saved" || testimonialStatus === "error";
   const newLeadStageCount = leadWorkQueue.stageCounts.find((stage) => stage.value === "new")?.count || 0;
   const attemptingContactCount = leadWorkQueue.stageCounts.find((stage) => stage.value === "attempting_contact")?.count || 0;
   const leadQuickViews = [
@@ -2319,6 +2351,7 @@ export default async function AdminDashboardPage({
       <AdminTeamFormReset
         teamSaved={teamStatus === "saved"}
         savedTeamMemberId={savedTeamMemberId}
+        savedAt={teamSavedAt}
       />
       <header className="admin-hero">
         <div>
@@ -4014,6 +4047,18 @@ export default async function AdminDashboardPage({
               <span>Please check the required name and title fields or Supabase update permission.</span>
             </div>
           ) : null}
+          {teamStatus === "delete-error" ? (
+            <div className="admin-inline-alert" role="alert">
+              <strong>Team member could not be deleted.</strong>
+              <span>Confirm the exact name and admin password, then try again.</span>
+            </div>
+          ) : null}
+          {teamStatus === "deleted" ? (
+            <div className="admin-inline-success" data-admin-status="saved" role="status">
+              <strong>Team member deleted.</strong>
+              <span>The team profile was removed successfully.</span>
+            </div>
+          ) : null}
           <details className="admin-create-panel" id="new-team-member">
             <summary>Add new team member</summary>
             <form className="admin-form-card" action={createTeamMember} encType="multipart/form-data">
@@ -4141,6 +4186,23 @@ export default async function AdminDashboardPage({
                   <button className="admin-save-button" type="submit">Save team member</button>
                 </div>
               </form>
+              <details className="admin-danger-panel">
+                <summary>Delete team member</summary>
+                <form className="admin-danger-form" action={deleteTeamMember}>
+                  <input name="memberId" type="hidden" value={member.id} />
+                  <input name="memberName" type="hidden" value={member.full_name} />
+                  <p>Deleting removes this profile from the public site. Existing leads and testimonials will stay in place, but they will no longer be assigned to this team member.</p>
+                  <label>
+                    Type {member.full_name} to confirm
+                    <input name="confirmationName" type="text" required />
+                  </label>
+                  <label>
+                    Admin password
+                    <input name="adminPassword" type="password" required />
+                  </label>
+                  <button className="admin-danger-button" type="submit">Delete team member</button>
+                </form>
+              </details>
               </details>
             ))}
           </div>

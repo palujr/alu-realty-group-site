@@ -13,6 +13,7 @@ const statusParams = [
   "leadActivityStatus",
   "teamStatus",
   "teamMemberId",
+  "teamSavedAt",
   "testimonialStatus",
   "testimonialId"
 ];
