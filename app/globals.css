@@ -2273,24 +2273,36 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   border: 1px solid var(--line);
 }
 .admin-settings-section {
-  padding: 18px;
+  padding: 0 18px 18px;
   display: grid;
   gap: 14px;
   background: rgba(255, 255, 255, .68);
   border: 1px solid rgba(27, 45, 38, .12);
 }
-.admin-settings-section-heading {
-  padding-bottom: 10px;
+.admin-settings-section > .admin-settings-section-heading {
+  margin: 0 -18px 4px;
+  padding: 18px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  border-bottom: 1px solid rgba(27, 45, 38, .1);
+  color: #fff;
+  background: var(--ink);
+  border-bottom: 0;
 }
-.admin-settings-section-heading h3 {
+.admin-settings-section > .admin-settings-section-heading .admin-kicker {
+  color: #b8c8ad;
+}
+.admin-settings-section > .admin-settings-section-heading h3 {
   margin: 0;
+  color: #fff;
   font-size: 20px;
   line-height: 1.2;
+}
+.admin-settings-section > .admin-settings-section-heading span {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
 }
 .admin-form-title {
   margin-bottom: 0;
