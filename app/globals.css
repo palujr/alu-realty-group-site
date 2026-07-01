@@ -946,6 +946,22 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   font-weight: 800;
   text-transform: uppercase;
 }
+.admin-card-wide > .admin-card-header {
+  margin: -26px -26px 24px;
+  padding: 22px 26px;
+  color: #fff;
+  background: var(--ink);
+}
+.admin-card-wide > .admin-card-header .admin-kicker {
+  color: #b8c8ad;
+}
+.admin-card-wide > .admin-card-header h2 {
+  color: #fff;
+}
+.admin-card-wide > .admin-card-header > span {
+  color: var(--ink);
+  background: #fff;
+}
 .admin-card > p {
   margin: 0;
   color: var(--muted);
@@ -3067,4 +3083,8 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   }
   .admin-card { padding: 22px; }
   .admin-card-header { flex-direction: column; }
+  .admin-card-wide > .admin-card-header {
+    margin: -22px -22px 22px;
+    padding: 18px 22px;
+  }
 }
