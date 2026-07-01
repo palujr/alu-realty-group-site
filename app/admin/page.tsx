@@ -488,6 +488,26 @@ async function getTeamMemberNamesByIds(
     .join(", ") || null;
 }
 
+async function getActiveTeamMemberSlugs(
+  adminSupabase: NonNullable<ReturnType<typeof createAdminClient>>,
+  slugs: string[]
+) {
+  const uniqueSlugs = Array.from(new Set(slugs.map((slug) => slug.trim()).filter(Boolean)));
+
+  if (!uniqueSlugs.length) {
+    return new Set<string>();
+  }
+
+  const { data } = await adminSupabase
+    .from("team_members")
+    .select("slug")
+    .in("slug", uniqueSlugs)
+    .eq("is_active", true)
+    .is("deleted_at", null);
+
+  return new Set((data || []).map((member) => member.slug));
+}
+
 function truncateText(value?: string | null, maxLength = 86) {
   if (!value) {
     return "";
@@ -1305,13 +1325,24 @@ async function updateSiteSettings(formData: FormData) {
       }
     });
   } else if (siteSection === "lead-routing") {
+    const defaultNotificationSlugs = asFormStringArray(formData.getAll("defaultNotificationTeamMemberSlugs"));
+    const valuationNotificationSlugs = asFormStringArray(formData.getAll("valuationNotificationTeamMemberSlugs"));
+    const defaultAssignedSlug = formData.get("defaultAssignedTeamMemberSlug")?.toString().trim() || "";
+    const valuationAssignedSlug = formData.get("valuationAssignedTeamMemberSlug")?.toString().trim() || "";
+    const activeTeamMemberSlugs = await getActiveTeamMemberSlugs(adminSupabase, [
+      defaultAssignedSlug,
+      valuationAssignedSlug,
+      ...defaultNotificationSlugs,
+      ...valuationNotificationSlugs
+    ]);
+
     Object.assign(updatePayload, {
       lead_routing: {
         ...currentSiteSettings.leadRouting,
-        defaultNotificationTeamMemberSlugs: asFormStringArray(formData.getAll("defaultNotificationTeamMemberSlugs")),
-        valuationNotificationTeamMemberSlugs: asFormStringArray(formData.getAll("valuationNotificationTeamMemberSlugs")),
-        defaultAssignedTeamMemberSlug: formData.get("defaultAssignedTeamMemberSlug")?.toString().trim() || "",
-        valuationAssignedTeamMemberSlug: formData.get("valuationAssignedTeamMemberSlug")?.toString().trim() || "",
+        defaultNotificationTeamMemberSlugs: defaultNotificationSlugs.filter((slug) => activeTeamMemberSlugs.has(slug)),
+        valuationNotificationTeamMemberSlugs: valuationNotificationSlugs.filter((slug) => activeTeamMemberSlugs.has(slug)),
+        defaultAssignedTeamMemberSlug: activeTeamMemberSlugs.has(defaultAssignedSlug) ? defaultAssignedSlug : "",
+        valuationAssignedTeamMemberSlug: activeTeamMemberSlugs.has(valuationAssignedSlug) ? valuationAssignedSlug : "",
         sendClientConfirmation: formData.get("sendClientConfirmation") === "on",
         sendInternalNotification: formData.get("sendInternalNotification") === "on"
       }
@@ -2457,6 +2488,7 @@ export default async function AdminDashboardPage({
   ].join("|");
   const { siteSettings, activeBanner, leads, leadWorkQueue, leadActivitiesByLeadId, banners, teamMembers, teamMemberOptions, testimonials, pagination, errors } = await getAdminData(leadFilters, adminPages, savedLeadId);
   const settingsOnly = getSearchParamValue(searchParams, "settingsOnly") === "true";
+  const routingTeamMemberOptions = teamMemberOptions.filter((member) => member.is_active && !member.deleted_at);
   const visibleErrors = Object.values(settingsOnly ? {
     banners: errors.banners,
     teamMembers: errors.teamMembers
@@ -3354,7 +3386,7 @@ export default async function AdminDashboardPage({
                       Default assigned team member
                       <select name="defaultAssignedTeamMemberSlug" defaultValue={siteSettings.leadRouting.defaultAssignedTeamMemberSlug}>
                         <option value="">No default assignment</option>
-                        {teamMemberOptions.map((member) => (
+                        {routingTeamMemberOptions.map((member) => (
                           <option key={member.id} value={member.slug}>{member.full_name}</option>
                         ))}
                       </select>
@@ -3366,7 +3398,7 @@ export default async function AdminDashboardPage({
                         multiple
                         defaultValue={siteSettings.leadRouting.defaultNotificationTeamMemberSlugs}
                       >
-                        {teamMemberOptions.map((member) => (
+                        {routingTeamMemberOptions.map((member) => (
                           <option key={member.id} value={member.slug}>{member.full_name}</option>
                         ))}
                       </select>
@@ -3378,7 +3410,7 @@ export default async function AdminDashboardPage({
                       Valuation assigned team member
                       <select name="valuationAssignedTeamMemberSlug" defaultValue={siteSettings.leadRouting.valuationAssignedTeamMemberSlug}>
                         <option value="">Use default assignment</option>
-                        {teamMemberOptions.map((member) => (
+                        {routingTeamMemberOptions.map((member) => (
                           <option key={member.id} value={member.slug}>{member.full_name}</option>
                         ))}
                       </select>
@@ -3390,7 +3422,7 @@ export default async function AdminDashboardPage({
                         multiple
                         defaultValue={siteSettings.leadRouting.valuationNotificationTeamMemberSlugs}
                       >
-                        {teamMemberOptions.map((member) => (
+                        {routingTeamMemberOptions.map((member) => (
                           <option key={member.id} value={member.slug}>{member.full_name}</option>
                         ))}
                       </select>
