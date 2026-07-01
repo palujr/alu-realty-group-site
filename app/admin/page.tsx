@@ -816,6 +816,26 @@ function getSelectedPageSizeLabel(pageSize: number) {
   return pageSize === 0 ? "all" : pageSize.toString();
 }
 
+function getTeamMemberSavedRedirect(memberId: string, formData: FormData) {
+  const params = new URLSearchParams({
+    teamStatus: "saved",
+    teamMemberId: memberId,
+    teamSavedAt: Date.now().toString()
+  });
+  const teamPageSize = formData.get("teamPageSize")?.toString();
+  const teamPage = formData.get("teamPage")?.toString();
+
+  if (teamPageSize && teamPageSize !== adminPageSize.toString()) {
+    params.set("teamPageSize", teamPageSize);
+  }
+
+  if (teamPage && teamPage !== "1" && teamPageSize !== "all") {
+    params.set("teamPage", teamPage);
+  }
+
+  return `/admin?${params.toString()}#team-member-${memberId}`;
+}
+
 function getRangeEnd(start: number, pageSize: number) {
   return pageSize === 0 ? undefined : start + pageSize - 1;
 }
@@ -1871,7 +1891,7 @@ async function createTeamMember(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect(`/admin?teamStatus=saved&teamMemberId=${data.id}&teamSavedAt=${Date.now()}#team-member-${data.id}`);
+  redirect(getTeamMemberSavedRedirect(data.id, formData));
 }
 
 async function updateTeamMember(formData: FormData) {
@@ -1923,7 +1943,7 @@ async function updateTeamMember(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect(`/admin?teamStatus=saved&teamMemberId=${memberId}&teamSavedAt=${Date.now()}#team-member-${memberId}`);
+  redirect(getTeamMemberSavedRedirect(memberId, formData));
 }
 
 async function deleteTeamMember(formData: FormData) {
@@ -2099,12 +2119,16 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focused
       .select("id, slug, full_name, title, phone, email, bio, photo_url, specialties, display_order, is_active, deleted_at", { count: "exact" })
       .is("deleted_at", null)
       .order("display_order", { ascending: true })
+      .order("full_name", { ascending: true })
+      .order("id", { ascending: true })
       .range(teamRangeStart, teamRangeEnd ?? 9999),
     adminDataClient
       .from("team_members")
       .select("id, slug, full_name, title, phone, email, bio, photo_url, specialties, display_order, is_active, deleted_at")
       .is("deleted_at", null)
       .order("display_order", { ascending: true })
+      .order("full_name", { ascending: true })
+      .order("id", { ascending: true })
       .limit(200),
     adminDataClient
       .from("testimonials")
@@ -4200,6 +4224,8 @@ export default async function AdminDashboardPage({
           <details className="admin-create-panel" id="new-team-member">
             <summary>Add new team member</summary>
             <form className="admin-form-card" action={createTeamMember} encType="multipart/form-data">
+              <input name="teamPageSize" type="hidden" value={pagination.teamMembers.selectedPageSize} />
+              <input name="teamPage" type="hidden" value={pagination.teamMembers.page} />
               <div className="admin-form-grid">
                 <label>
                   Full name
@@ -4268,6 +4294,8 @@ export default async function AdminDashboardPage({
               <form className="admin-form-card" action={updateTeamMember} encType="multipart/form-data">
                 <input name="memberId" type="hidden" value={member.id} />
                 <input name="memberSlug" type="hidden" value={member.slug} />
+                <input name="teamPageSize" type="hidden" value={pagination.teamMembers.selectedPageSize} />
+                <input name="teamPage" type="hidden" value={pagination.teamMembers.page} />
                 <div className="admin-form-grid">
                   <label>
                     Full name

@@ -20,7 +20,9 @@ async function getTeamMembers(): Promise<TeamMember[]> {
     .select("slug, full_name, title, phone, email, bio, photo_url, specialties")
     .eq("is_active", true)
     .is("deleted_at", null)
-    .order("display_order", { ascending: true });
+    .order("display_order", { ascending: true })
+    .order("full_name", { ascending: true })
+    .order("slug", { ascending: true });
 
   if (error || !data?.length) {
     return fallbackTeamMembers;
