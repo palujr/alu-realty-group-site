@@ -4621,7 +4621,7 @@ export default async function AdminDashboardPage({
                 <div className="admin-form-footer">
                   <small>{testimonial.is_published ? "Currently published" : "Currently draft"} - {testimonial.scope}</small>
                   {testimonialStatus === "saved" && savedTestimonialId === testimonial.id ? (
-                    <span className="admin-save-confirmation" data-admin-status="saved" role="status" key={testimonialSavedAt || savedTestimonialId}>Saved successfully</span>
+                    <span className="admin-save-confirmation" data-admin-status="saved" data-testimonial-save-confirmation="true" role="status" key={testimonialSavedAt || savedTestimonialId}>Saved successfully</span>
                   ) : null}
                   <button className="admin-save-button" type="submit">Save testimonial</button>
                 </div>

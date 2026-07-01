@@ -67,6 +67,16 @@ export function AdminTestimonialFormReset({
       return;
     }
 
+    document.querySelectorAll("[data-testimonial-save-confirmation='true']").forEach((element) => {
+      element.removeAttribute("hidden");
+    });
+
+    const hideConfirmation = window.setTimeout(() => {
+      document.querySelectorAll("[data-testimonial-save-confirmation='true']").forEach((element) => {
+        element.setAttribute("hidden", "true");
+      });
+    }, 7000);
+
     const createPanel = document.querySelector<HTMLDetailsElement>("#new-testimonial");
     createPanel?.querySelector<HTMLFormElement>("form")?.reset();
     if (createPanel) {
@@ -84,7 +94,7 @@ export function AdminTestimonialFormReset({
         window.history.replaceState(null, "", "#testimonials");
         scrollElementIntoPlace(testimonials);
       }
-      return;
+      return () => window.clearTimeout(hideConfirmation);
     }
 
     document.querySelectorAll<HTMLDetailsElement>("details.admin-testimonial-edit-panel").forEach((panel) => {
@@ -96,11 +106,13 @@ export function AdminTestimonialFormReset({
 
     const savedPanel = document.querySelector<HTMLDetailsElement>(`#testimonial-${savedTestimonialId}`);
     if (!savedPanel) {
-      return;
+      return () => window.clearTimeout(hideConfirmation);
     }
 
     savedPanel.open = true;
     scrollElementIntoPlace(savedPanel);
+
+    return () => window.clearTimeout(hideConfirmation);
   }, [testimonialSaved, testimonialRemoved, savedTestimonialId, savedAt, scrollElementIntoPlace]);
 
   return null;
