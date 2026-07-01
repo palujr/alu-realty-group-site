@@ -1173,10 +1173,10 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   text-transform: uppercase;
   transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease, background .18s ease;
 }
-.admin-lead-quick-view-all,
-.admin-lead-quick-view-new {
+.admin-lead-quick-view-all {
   --quick-accent: rgba(27, 45, 38, .16);
 }
+.admin-lead-quick-view-new,
 .admin-lead-quick-view-complete {
   --quick-accent: #5b8f5f;
   background: #f3f8f2;
