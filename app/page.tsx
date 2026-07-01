@@ -50,6 +50,7 @@ async function getTestimonials(): Promise<Testimonial[]> {
     .from("testimonials")
     .select("id, scope, client_name, context, quote, team_members(slug)")
     .eq("is_published", true)
+    .is("deleted_at", null)
     .order("is_featured", { ascending: false })
     .order("created_at", { ascending: false });
 

@@ -18,7 +18,9 @@ const statusParams = [
   "teamSavedAt",
   "teamError",
   "testimonialStatus",
-  "testimonialId"
+  "testimonialId",
+  "testimonialSavedAt",
+  "testimonialError"
 ];
 
 export function AdminStatusCleanup({ active }: { active: boolean }) {

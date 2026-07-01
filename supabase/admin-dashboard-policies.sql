@@ -4,6 +4,9 @@ alter table public.team_members
 alter table public.lead_submissions
   add column if not exists deleted_at timestamptz;
 
+alter table public.testimonials
+  add column if not exists deleted_at timestamptz;
+
 grant usage on schema public to service_role;
 grant select, insert, update on public.lead_submissions to service_role;
 grant select, insert, update on public.team_members to service_role;
@@ -24,6 +27,7 @@ drop policy if exists "Service role can create team members" on public.team_memb
 drop policy if exists "Service role can view testimonials" on public.testimonials;
 drop policy if exists "Service role can update testimonials" on public.testimonials;
 drop policy if exists "Service role can create testimonials" on public.testimonials;
+drop policy if exists "Published testimonials are public" on public.testimonials;
 
 create policy "Authenticated users can view leads"
   on public.lead_submissions for select
@@ -77,3 +81,7 @@ create policy "Service role can update testimonials"
 create policy "Service role can create testimonials"
   on public.testimonials for insert
   with check (auth.role() = 'service_role');
+
+create policy "Published testimonials are public"
+  on public.testimonials for select
+  using (is_published = true and deleted_at is null);

@@ -87,6 +87,7 @@ create table if not exists public.testimonials (
   rating integer check (rating between 1 and 5),
   is_featured boolean not null default false,
   is_published boolean not null default false,
+  deleted_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -239,7 +240,7 @@ create policy "Published team members are public"
 
 create policy "Published testimonials are public"
   on public.testimonials for select
-  using (is_published = true);
+  using (is_published = true and deleted_at is null);
 
 create policy "Published listings are public"
   on public.manual_listings for select

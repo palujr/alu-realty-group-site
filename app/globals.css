@@ -2104,6 +2104,23 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   color: var(--ink);
   background: #fff;
 }
+.admin-testimonial-edit-panel[open] > .admin-testimonial-summary-row {
+  color: #fff;
+  background: var(--ink);
+  border-color: var(--ink);
+  border-left-color: var(--accent);
+  box-shadow: inset 5px 0 0 var(--accent), 0 12px 26px rgba(23, 34, 31, .12);
+}
+.admin-testimonial-edit-panel[open] > .admin-testimonial-summary-row span,
+.admin-testimonial-edit-panel[open] > .admin-testimonial-summary-row strong,
+.admin-testimonial-edit-panel[open] > .admin-testimonial-summary-row small {
+  color: #fff;
+}
+.admin-testimonial-edit-panel[open] > .admin-testimonial-summary-row::after {
+  content: "Editing";
+  color: var(--ink);
+  background: #fff;
+}
 .admin-lead-edit-panel[open] > .admin-lead-summary-row {
   color: #fff;
   background: var(--ink);

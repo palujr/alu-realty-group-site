@@ -8,6 +8,7 @@ import { AdminDataFreshness } from "./AdminDataFreshness";
 import { AdminLeadFormReset } from "./AdminLeadFormReset";
 import { AdminStatusCleanup } from "./AdminStatusCleanup";
 import { AdminTeamFormReset } from "./AdminTeamFormReset";
+import { AdminTestimonialFormReset } from "./AdminTestimonialFormReset";
 import { BrandColorField } from "./BrandColorField";
 
 export const revalidate = 0;
@@ -108,6 +109,7 @@ type AdminTestimonial = {
   rating: number | null;
   is_featured: boolean;
   is_published: boolean;
+  deleted_at: string | null;
 };
 
 type LeadFilters = {
@@ -834,6 +836,29 @@ function getTeamMemberSavedRedirect(memberId: string, formData: FormData) {
   }
 
   return `/admin?${params.toString()}#team-member-${memberId}`;
+}
+
+function getTestimonialRedirect(status: string, formData: FormData, testimonialId = "") {
+  const params = new URLSearchParams({
+    testimonialStatus: status,
+    testimonialSavedAt: Date.now().toString()
+  });
+  const testimonialPageSize = formData.get("testimonialPageSize")?.toString();
+  const testimonialPage = formData.get("testimonialPage")?.toString();
+
+  if (testimonialId) {
+    params.set("testimonialId", testimonialId);
+  }
+
+  if (testimonialPageSize && testimonialPageSize !== adminPageSize.toString()) {
+    params.set("testimonialPageSize", testimonialPageSize);
+  }
+
+  if (testimonialPage && testimonialPage !== "1" && testimonialPageSize !== "all") {
+    params.set("testimonialPage", testimonialPage);
+  }
+
+  return `/admin?${params.toString()}#${testimonialId ? `testimonial-${testimonialId}` : "testimonials"}`;
 }
 
 function getRangeEnd(start: number, pageSize: number) {
@@ -2037,7 +2062,7 @@ async function createTestimonial(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect("/admin?testimonialStatus=saved#testimonials");
+  redirect(getTestimonialRedirect("saved", formData));
 }
 
 async function updateTestimonial(formData: FormData) {
@@ -2080,7 +2105,58 @@ async function updateTestimonial(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect(`/admin?testimonialStatus=saved&testimonialId=${testimonialId}#testimonial-${testimonialId}`);
+  redirect(getTestimonialRedirect("saved", formData, testimonialId));
+}
+
+async function removeTestimonial(formData: FormData) {
+  "use server";
+
+  const adminSupabase = createAdminClient();
+  const testimonialId = formData.get("testimonialId")?.toString();
+  const clientName = formData.get("clientName")?.toString().trim();
+  const testimonialHash = testimonialId ? `#testimonial-${testimonialId}` : "#testimonials";
+  const testimonialParam = testimonialId ? `&testimonialId=${testimonialId}` : "";
+
+  if (!adminSupabase) {
+    redirect(`/admin?testimonialStatus=remove-error&testimonialError=config${testimonialParam}${testimonialHash}`);
+  }
+
+  const confirmationName = formData.get("confirmationName")?.toString().trim();
+  const adminPassword = formData.get("adminPassword")?.toString().trim();
+  const deletePassword = process.env.ADMIN_DELETE_PASSWORD || process.env.ADMIN_DASHBOARD_PASSWORD;
+
+  if (!testimonialId || !clientName) {
+    redirect("/admin?testimonialStatus=remove-error&testimonialError=testimonial#testimonials");
+  }
+
+  if (confirmationName !== clientName) {
+    redirect(`/admin?testimonialStatus=remove-error&testimonialError=name${testimonialParam}${testimonialHash}`);
+  }
+
+  if (!deletePassword) {
+    redirect(`/admin?testimonialStatus=remove-error&testimonialError=config${testimonialParam}${testimonialHash}`);
+  }
+
+  if (adminPassword !== deletePassword) {
+    redirect(`/admin?testimonialStatus=remove-error&testimonialError=password${testimonialParam}${testimonialHash}`);
+  }
+
+  const { error } = await adminSupabase
+    .from("testimonials")
+    .update({
+      is_featured: false,
+      is_published: false,
+      deleted_at: new Date().toISOString()
+    })
+    .eq("id", testimonialId);
+
+  if (error) {
+    redirect(`/admin?testimonialStatus=remove-error&testimonialError=database${testimonialParam}${testimonialHash}`);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  redirect(getTestimonialRedirect("removed", formData));
 }
 
 async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focusedLeadId = "") {
@@ -2132,7 +2208,8 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focused
       .limit(200),
     adminDataClient
       .from("testimonials")
-      .select("id, team_member_id, scope, client_name, context, quote, rating, is_featured, is_published", { count: "exact" })
+      .select("id, team_member_id, scope, client_name, context, quote, rating, is_featured, is_published, deleted_at", { count: "exact" })
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .range(testimonialRangeStart, testimonialRangeEnd ?? 9999)
   ]);
@@ -2388,7 +2465,9 @@ export default async function AdminDashboardPage({
   const teamError = getSearchParamValue(searchParams, "teamError");
   const testimonialStatus = getSearchParamValue(searchParams, "testimonialStatus");
   const savedTestimonialId = getSearchParamValue(searchParams, "testimonialId");
-  const hasTransientStatus = siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error" || leadStatus === "saved" || leadStatus === "removed" || leadStatus === "error" || leadStatus === "remove-error" || leadActivityStatus === "saved" || leadActivityStatus === "shortcut" || leadActivityStatus === "updated" || leadActivityStatus === "completed" || leadActivityStatus === "deleted" || leadActivityStatus === "error" || teamStatus === "saved" || teamStatus === "deleted" || teamStatus === "error" || teamStatus === "delete-error" || testimonialStatus === "saved" || testimonialStatus === "error";
+  const testimonialSavedAt = getSearchParamValue(searchParams, "testimonialSavedAt");
+  const testimonialError = getSearchParamValue(searchParams, "testimonialError");
+  const hasTransientStatus = siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error" || leadStatus === "saved" || leadStatus === "removed" || leadStatus === "error" || leadStatus === "remove-error" || leadActivityStatus === "saved" || leadActivityStatus === "shortcut" || leadActivityStatus === "updated" || leadActivityStatus === "completed" || leadActivityStatus === "deleted" || leadActivityStatus === "error" || teamStatus === "saved" || teamStatus === "deleted" || teamStatus === "error" || teamStatus === "delete-error" || testimonialStatus === "saved" || testimonialStatus === "removed" || testimonialStatus === "error" || testimonialStatus === "remove-error";
   const newLeadStageCount = leadWorkQueue.stageCounts.find((stage) => stage.value === "new")?.count || 0;
   const attemptingContactCount = leadWorkQueue.stageCounts.find((stage) => stage.value === "attempting_contact")?.count || 0;
   const leadQuickViews = [
@@ -2465,6 +2544,12 @@ export default async function AdminDashboardPage({
         savedAt={teamSavedAt}
         teamDeleted={teamStatus === "deleted"}
         deletedAt={teamSavedAt}
+      />
+      <AdminTestimonialFormReset
+        testimonialSaved={testimonialStatus === "saved"}
+        testimonialRemoved={testimonialStatus === "removed"}
+        savedTestimonialId={savedTestimonialId}
+        savedAt={testimonialSavedAt}
       />
       <header className="admin-hero">
         <div>
@@ -4389,15 +4474,39 @@ export default async function AdminDashboardPage({
               <span>Please check the required client name and quote fields.</span>
             </div>
           ) : null}
+          {testimonialStatus === "remove-error" ? (
+            <div className="admin-inline-alert" role="alert">
+              <strong>Testimonial could not be removed.</strong>
+              <span>
+                {testimonialError === "name"
+                  ? "The typed client name did not match this testimonial exactly."
+                  : testimonialError === "password"
+                    ? "The admin password did not match."
+                    : testimonialError === "config"
+                      ? "The admin delete password is not configured."
+                      : testimonialError === "database"
+                        ? "The database rejected the remove request."
+                        : "Confirm the exact client name and admin password, then try again."}
+              </span>
+            </div>
+          ) : null}
           {testimonialStatus === "saved" && !savedTestimonialId ? (
             <div className="admin-inline-success" data-admin-status="saved" role="status">
               <strong>Testimonial saved.</strong>
               <span>The new testimonial was added successfully.</span>
             </div>
           ) : null}
+          {testimonialStatus === "removed" ? (
+            <div className="admin-inline-success" data-admin-status="saved" role="status">
+              <strong>Testimonial removed.</strong>
+              <span>The testimonial was hidden from the public site and normal admin list.</span>
+            </div>
+          ) : null}
           <details className="admin-create-panel" id="new-testimonial">
             <summary>Add new testimonial</summary>
             <form className="admin-form-card" action={createTestimonial}>
+              <input name="testimonialPageSize" type="hidden" value={pagination.testimonials.selectedPageSize} />
+              <input name="testimonialPage" type="hidden" value={pagination.testimonials.page} />
               <div className="admin-form-grid">
                 <label>
                   Client name
@@ -4451,8 +4560,8 @@ export default async function AdminDashboardPage({
           <AdminPaginationControls pagination={pagination.testimonials} searchParams={searchParams} />
           <div className="admin-form-list">
             {testimonials.map((testimonial) => (
-              <details className="admin-edit-panel" id={`testimonial-${testimonial.id}`} key={testimonial.id} open={testimonialStatus === "saved" && savedTestimonialId === testimonial.id}>
-                <summary className="admin-summary-row admin-record-summary-row">
+              <details className="admin-edit-panel admin-testimonial-edit-panel" id={`testimonial-${testimonial.id}`} key={testimonial.id} open={(testimonialStatus === "saved" || testimonialStatus === "remove-error") && savedTestimonialId === testimonial.id}>
+                <summary className="admin-summary-row admin-record-summary-row admin-testimonial-summary-row">
                   <span>
                     <strong>{testimonial.client_name}</strong>
                     <small>{truncateText(testimonial.quote)}</small>
@@ -4463,6 +4572,8 @@ export default async function AdminDashboardPage({
                 </summary>
               <form className="admin-form-card" action={updateTestimonial}>
                 <input name="testimonialId" type="hidden" value={testimonial.id} />
+                <input name="testimonialPageSize" type="hidden" value={pagination.testimonials.selectedPageSize} />
+                <input name="testimonialPage" type="hidden" value={pagination.testimonials.page} />
                 <div className="admin-form-grid">
                   <label>
                     Client name
@@ -4510,11 +4621,30 @@ export default async function AdminDashboardPage({
                 <div className="admin-form-footer">
                   <small>{testimonial.is_published ? "Currently published" : "Currently draft"} - {testimonial.scope}</small>
                   {testimonialStatus === "saved" && savedTestimonialId === testimonial.id ? (
-                    <span className="admin-save-confirmation" data-admin-status="saved" role="status">Saved successfully</span>
+                    <span className="admin-save-confirmation" data-admin-status="saved" role="status" key={testimonialSavedAt || savedTestimonialId}>Saved successfully</span>
                   ) : null}
                   <button className="admin-save-button" type="submit">Save testimonial</button>
                 </div>
               </form>
+              <details className="admin-danger-panel">
+                <summary>Remove testimonial</summary>
+                <form className="admin-danger-form" action={removeTestimonial}>
+                  <input name="testimonialId" type="hidden" value={testimonial.id} />
+                  <input name="clientName" type="hidden" value={testimonial.client_name} />
+                  <input name="testimonialPageSize" type="hidden" value={pagination.testimonials.selectedPageSize} />
+                  <input name="testimonialPage" type="hidden" value={pagination.testimonials.page} />
+                  <p>Removing hides this testimonial from the public site and normal admin list. It can stay available for a future restore option.</p>
+                  <label>
+                    Type {testimonial.client_name} to confirm
+                    <input name="confirmationName" type="text" required />
+                  </label>
+                  <label>
+                    Admin password
+                    <input name="adminPassword" type="password" required />
+                  </label>
+                  <button className="admin-danger-button" type="submit">Remove testimonial</button>
+                </form>
+              </details>
               </details>
             ))}
           </div>
