@@ -54,6 +54,7 @@ export type SiteSettings = {
     teamBody: string;
     testimonialsEyebrow: string;
     testimonialsHeadline: string;
+    testimonialsShowSaleDate: boolean;
     insightsEyebrow: string;
     insightsHeadline: string;
     savedSearchEyebrow: string;
@@ -110,6 +111,7 @@ export const defaultHomepageSections: SiteSettings["homepageSections"] = {
   teamBody: "Start with Phil and Denise today, then add future agents with photos, contact details, bios, specialties, and reviews from the same database structure.",
   testimonialsEyebrow: "CLIENT FEEDBACK",
   testimonialsHeadline: "Stories from the people we serve.",
+  testimonialsShowSaleDate: false,
   insightsEyebrow: "THE MARKET, MADE CLEAR",
   insightsHeadline: "News & local insight.",
   savedSearchEyebrow: "DON'T MISS THE RIGHT ONE",

@@ -106,6 +106,7 @@ type AdminTestimonial = {
   client_name: string;
   context: string | null;
   quote: string;
+  sale_date: string | null;
   rating: number | null;
   is_featured: boolean;
   is_published: boolean;
@@ -498,6 +499,11 @@ function truncateText(value?: string | null, maxLength = 86) {
 function asOptionalString(value: FormDataEntryValue | null) {
   const stringValue = value?.toString().trim() || "";
   return stringValue || null;
+}
+
+function asOptionalDate(value: FormDataEntryValue | null) {
+  const stringValue = value?.toString().trim() || "";
+  return /^\d{4}-\d{2}-\d{2}$/.test(stringValue) ? stringValue : null;
 }
 
 function asHexColor(value: FormDataEntryValue | null, fallback: string) {
@@ -1286,6 +1292,7 @@ async function updateSiteSettings(formData: FormData) {
         teamBody: formData.get("teamBody")?.toString().trim(),
         testimonialsEyebrow: formData.get("testimonialsEyebrow")?.toString().trim(),
         testimonialsHeadline: formData.get("testimonialsHeadline")?.toString().trim(),
+        testimonialsShowSaleDate: formData.get("testimonialsShowSaleDate") === "on",
         insightsEyebrow: formData.get("insightsEyebrow")?.toString().trim(),
         insightsHeadline: formData.get("insightsHeadline")?.toString().trim(),
         savedSearchEyebrow: formData.get("savedSearchEyebrow")?.toString().trim(),
@@ -2049,6 +2056,7 @@ async function createTestimonial(formData: FormData) {
       client_name: clientName,
       context: asOptionalString(formData.get("context")),
       quote,
+      sale_date: asOptionalDate(formData.get("saleDate")),
       rating: Number.isNaN(ratingValue) ? null : ratingValue,
       is_featured: formData.get("isFeatured") === "on",
       is_published: formData.get("isPublished") === "on"
@@ -2093,6 +2101,7 @@ async function updateTestimonial(formData: FormData) {
       client_name: clientName,
       context: asOptionalString(formData.get("context")),
       quote,
+      sale_date: asOptionalDate(formData.get("saleDate")),
       rating: Number.isNaN(ratingValue) ? null : ratingValue,
       is_featured: formData.get("isFeatured") === "on",
       is_published: formData.get("isPublished") === "on"
@@ -2208,8 +2217,9 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focused
       .limit(200),
     adminDataClient
       .from("testimonials")
-      .select("id, team_member_id, scope, client_name, context, quote, rating, is_featured, is_published, deleted_at", { count: "exact" })
+      .select("id, team_member_id, scope, client_name, context, quote, sale_date, rating, is_featured, is_published, deleted_at", { count: "exact" })
       .is("deleted_at", null)
+      .order("sale_date", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
       .range(testimonialRangeStart, testimonialRangeEnd ?? 9999)
   ]);
@@ -3266,6 +3276,14 @@ export default async function AdminDashboardPage({
                   <label>
                     Testimonials headline
                     <input name="testimonialsHeadline" type="text" defaultValue={siteSettings.homepageSections.testimonialsHeadline} />
+                  </label>
+                  <label className="admin-checkbox admin-settings-checkbox">
+                    <input
+                      name="testimonialsShowSaleDate"
+                      type="checkbox"
+                      defaultChecked={siteSettings.homepageSections.testimonialsShowSaleDate}
+                    />
+                    Show sale date on public testimonials
                   </label>
                   <label>
                     Insights eyebrow
@@ -4536,6 +4554,10 @@ export default async function AdminDashboardPage({
                   Rating
                   <input name="rating" type="number" min="1" max="5" step="1" />
                 </label>
+                <label>
+                  Sale date
+                  <input name="saleDate" type="date" />
+                </label>
               </div>
               <label>
                 Quote
@@ -4602,6 +4624,10 @@ export default async function AdminDashboardPage({
                   <label>
                     Rating
                     <input name="rating" type="number" defaultValue={testimonial.rating || ""} min="1" max="5" step="1" />
+                  </label>
+                  <label>
+                    Sale date
+                    <input name="saleDate" type="date" defaultValue={testimonial.sale_date || ""} />
                   </label>
                 </div>
                 <label>

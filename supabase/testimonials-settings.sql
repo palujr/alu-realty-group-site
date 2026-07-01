@@ -7,6 +7,7 @@ create table if not exists public.testimonials (
   client_name text not null,
   context text,
   quote text not null,
+  sale_date date,
   rating integer check (rating between 1 and 5),
   is_featured boolean not null default false,
   is_published boolean not null default false,
@@ -16,6 +17,9 @@ create table if not exists public.testimonials (
 
 alter table public.testimonials
   add column if not exists deleted_at timestamptz;
+
+alter table public.testimonials
+  add column if not exists sale_date date;
 
 alter table public.testimonials enable row level security;
 

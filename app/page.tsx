@@ -48,9 +48,10 @@ async function getTestimonials(): Promise<Testimonial[]> {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
   const { data, error } = await supabase
     .from("testimonials")
-    .select("id, scope, client_name, context, quote, team_members(slug)")
+    .select("id, scope, client_name, context, quote, sale_date, team_members(slug)")
     .eq("is_published", true)
     .is("deleted_at", null)
+    .order("sale_date", { ascending: false, nullsFirst: false })
     .order("is_featured", { ascending: false })
     .order("created_at", { ascending: false });
 
@@ -69,9 +70,28 @@ async function getTestimonials(): Promise<Testimonial[]> {
       clientName: testimonial.client_name || "Client",
       context: testimonial.context || "Client experience",
       scope: testimonial.scope === "individual" ? "individual" : "team",
-      teamMemberId: teamMember?.slug
+      teamMemberId: teamMember?.slug,
+      saleDate: testimonial.sale_date || undefined
     };
   });
+}
+
+function formatDisplayDate(dateValue?: string) {
+  if (!dateValue) {
+    return "";
+  }
+
+  const date = new Date(`${dateValue}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC"
+  }).format(date);
 }
 
 export default async function HomePage() {
@@ -341,7 +361,13 @@ export default async function HomePage() {
                 <p>“{testimonial.quote}”</p>
                 <div>
                   <strong>{testimonial.clientName}</strong>
-                  <span>{testimonial.context} · {testimonial.scope === "team" ? "Team review" : "Agent review"}</span>
+                  <span>
+                    {[
+                      testimonial.context,
+                      testimonial.scope === "team" ? "Team review" : "Agent review",
+                      homepageSections.testimonialsShowSaleDate ? formatDisplayDate(testimonial.saleDate) : ""
+                    ].filter(Boolean).join(" · ")}
+                  </span>
                 </div>
               </article>
             ))}

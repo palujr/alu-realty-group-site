@@ -2512,6 +2512,10 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   height: 16px;
   padding: 0;
 }
+.admin-settings-checkbox {
+  min-height: 48px;
+  align-self: end;
+}
 .admin-checkbox-row {
   display: flex;
   flex-wrap: wrap;

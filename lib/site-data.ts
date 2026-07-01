@@ -29,6 +29,7 @@ export type Testimonial = {
   context: string;
   scope: "team" | "individual";
   teamMemberId?: string;
+  saleDate?: string;
 };
 
 export const listings: Listing[] = [

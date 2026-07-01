@@ -7,6 +7,9 @@ alter table public.lead_submissions
 alter table public.testimonials
   add column if not exists deleted_at timestamptz;
 
+alter table public.testimonials
+  add column if not exists sale_date date;
+
 grant usage on schema public to service_role;
 grant select, insert, update on public.lead_submissions to service_role;
 grant select, insert, update on public.team_members to service_role;
