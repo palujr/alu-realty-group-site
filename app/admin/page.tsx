@@ -1029,21 +1029,30 @@ function AdminPaginationControls({
   );
 }
 
-function AdminLeadQueueList({
-  title,
-  count,
-  href,
-  active
+function AdminLeadQuickViewLink({
+  view
 }: {
-  title: string;
-  count: number;
-  href: string;
-  active: boolean;
+  view: {
+    label: string;
+    count: number;
+    href: string;
+    active: boolean;
+    tone?: string;
+    priority?: boolean;
+  };
 }) {
   return (
-    <Link className={`admin-work-queue-card${active ? " is-active" : ""}`} href={href}>
-      <span>{title}</span>
-      <strong>{count}</strong>
+    <Link
+      className={[
+        "admin-lead-quick-view",
+        view.tone ? `admin-lead-quick-view-${view.tone}` : "",
+        view.priority ? "admin-lead-quick-view-priority" : "",
+        view.active ? "is-active" : ""
+      ].filter(Boolean).join(" ")}
+      href={view.href}
+    >
+      <span>{view.label}</span>
+      <em>{view.count}</em>
     </Link>
   );
 }
@@ -2510,50 +2519,51 @@ export default async function AdminDashboardPage({
   const testimonialSavedAt = getSearchParamValue(searchParams, "testimonialSavedAt");
   const testimonialError = getSearchParamValue(searchParams, "testimonialError");
   const hasTransientStatus = siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error" || leadStatus === "saved" || leadStatus === "removed" || leadStatus === "error" || leadStatus === "remove-error" || leadActivityStatus === "saved" || leadActivityStatus === "shortcut" || leadActivityStatus === "updated" || leadActivityStatus === "completed" || leadActivityStatus === "deleted" || leadActivityStatus === "error" || teamStatus === "saved" || teamStatus === "deleted" || teamStatus === "error" || teamStatus === "delete-error" || testimonialStatus === "saved" || testimonialStatus === "removed" || testimonialStatus === "error" || testimonialStatus === "remove-error";
-  const newLeadStageCount = leadWorkQueue.stageCounts.find((stage) => stage.value === "new")?.count || 0;
-  const attemptingContactCount = leadWorkQueue.stageCounts.find((stage) => stage.value === "attempting_contact")?.count || 0;
-  const leadQuickViews = [
+  const leadStageCountByValue = new Map(leadWorkQueue.stageCounts.map((stage) => [stage.value, stage.count]));
+  const leadPrimaryQuickViews = [
     {
       label: "All leads",
       count: pagination.leads.totalCount,
       href: buildLeadQuickViewHref({ leadView: "all" }),
-      active: leadView === "all" && !hasLeadFilters
+      active: leadView === "all" && !hasLeadFilters,
+      tone: "all"
     },
+    ...leadStageOptions.map((stage) => ({
+      label: stage.label,
+      count: leadStageCountByValue.get(stage.value) || 0,
+      href: buildLeadQuickViewHref({ leadFilterStage: stage.value }),
+      active: leadFilters.stage === stage.value,
+      tone: getStageTone(stage.value)
+    }))
+  ];
+  const leadPriorityQuickViews = [
     {
       label: "Overdue",
       count: leadWorkQueue.overdueCount,
       href: buildLeadQuickViewHref({ leadFilterFollowUp: "overdue" }),
-      active: leadFilters.followUp === "overdue"
+      active: leadFilters.followUp === "overdue",
+      priority: true
     },
     {
       label: "Today",
       count: leadWorkQueue.todayCount,
       href: buildLeadQuickViewHref({ leadFilterFollowUp: "today" }),
-      active: leadFilters.followUp === "today"
+      active: leadFilters.followUp === "today",
+      priority: true
     },
     {
       label: "High priority",
       count: leadWorkQueue.highPriorityCount,
       href: buildLeadQuickViewHref({ leadFilterPriority: "high" }),
-      active: leadFilters.priority === "high" && !leadFilters.followUp
-    },
-    {
-      label: "New",
-      count: newLeadStageCount,
-      href: buildLeadQuickViewHref({ leadFilterStage: "new" }),
-      active: leadFilters.stage === "new"
-    },
-    {
-      label: "Attempting contact",
-      count: attemptingContactCount,
-      href: buildLeadQuickViewHref({ leadFilterStage: "attempting_contact" }),
-      active: leadFilters.stage === "attempting_contact"
+      active: leadFilters.priority === "high" && !leadFilters.followUp,
+      priority: true
     },
     {
       label: "Unassigned",
       count: leadWorkQueue.unassignedCount,
       href: buildLeadQuickViewHref({ leadFilterAssigned: "unassigned" }),
-      active: leadFilters.assigned === "unassigned"
+      active: leadFilters.assigned === "unassigned",
+      priority: true
     }
   ];
   const activeLeadFilterLabels = [
@@ -2684,44 +2694,6 @@ export default async function AdminDashboardPage({
           <span>Testimonials</span>
           <strong>{pagination.testimonials.totalCount}</strong>
         </article>
-      </section>
-      ) : null}
-
-      {!settingsOnly ? (
-      <section className="admin-stage-overview" id="lead-overview" aria-label="Lead relationship stages">
-        {leadWorkQueue.stageCounts.map((stage) => (
-          <Link
-            className={`admin-stage-card admin-stage-${getStageTone(stage.value)}${leadFilters.stage === stage.value ? " is-active" : ""}`}
-            href={buildLeadQuickViewHref({ leadFilterStage: stage.value })}
-            key={stage.value}
-          >
-            <span>{stage.label}</span>
-            <strong>{stage.count}</strong>
-          </Link>
-        ))}
-      </section>
-      ) : null}
-
-      {!settingsOnly ? (
-      <section className="admin-work-queue" aria-label="Lead follow-up work queue">
-        <AdminLeadQueueList
-          title="Overdue follow-ups"
-          count={leadWorkQueue.overdueCount}
-          href={buildLeadQuickViewHref({ leadFilterFollowUp: "overdue" })}
-          active={leadFilters.followUp === "overdue"}
-        />
-        <AdminLeadQueueList
-          title="Today"
-          count={leadWorkQueue.todayCount}
-          href={buildLeadQuickViewHref({ leadFilterFollowUp: "today" })}
-          active={leadFilters.followUp === "today"}
-        />
-        <AdminLeadQueueList
-          title="High priority"
-          count={leadWorkQueue.highPriorityCount}
-          href={buildLeadQuickViewHref({ leadFilterPriority: "high" })}
-          active={leadFilters.priority === "high" && !leadFilters.followUp}
-        />
       </section>
       ) : null}
 
@@ -3513,16 +3485,14 @@ export default async function AdminDashboardPage({
               <p className="admin-kicker">Quick views</p>
               <strong>Jump into the lead list you need most.</strong>
             </div>
-            <nav>
-              {leadQuickViews.map((view) => (
-                <Link
-                  className={`admin-lead-quick-view${view.active ? " is-active" : ""}`}
-                  href={view.href}
-                  key={view.label}
-                >
-                  <span>{view.label}</span>
-                  {typeof view.count === "number" ? <em>{view.count}</em> : null}
-                </Link>
+            <nav className="admin-lead-quick-view-row admin-lead-quick-view-row-primary" aria-label="Lead stage quick views">
+              {leadPrimaryQuickViews.map((view) => (
+                <AdminLeadQuickViewLink view={view} key={view.label} />
+              ))}
+            </nav>
+            <nav className="admin-lead-quick-view-row admin-lead-quick-view-row-priority" aria-label="Priority lead quick views">
+              {leadPriorityQuickViews.map((view) => (
+                <AdminLeadQuickViewLink view={view} key={view.label} />
               ))}
             </nav>
           </div>
