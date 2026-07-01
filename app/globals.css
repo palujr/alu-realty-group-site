@@ -2189,11 +2189,18 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
 }
 .admin-maintenance-summary-row {
   grid-template-columns: minmax(180px, 1.8fr) repeat(3, minmax(90px, .7fr)) auto;
+  border: 1px solid transparent;
+  border-left: 5px solid transparent;
+  background: #fff;
   text-decoration: none;
   cursor: pointer;
+  transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
 .admin-maintenance-summary-row:hover {
-  background: #f8f5ee;
+  background: #fbfaf6;
+  border-color: rgba(217, 120, 79, .35);
+  border-left-color: var(--accent);
+  box-shadow: inset 4px 0 0 var(--accent), 0 10px 24px rgba(23, 34, 31, .06);
 }
 .admin-maintenance-summary-row::after {
   display: none;
