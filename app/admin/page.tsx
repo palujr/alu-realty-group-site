@@ -1574,8 +1574,31 @@ async function removeLead(formData: FormData) {
     redirect(`/admin?leadStatus=remove-error&leadError=database${leadParam}${leadHash}`);
   }
 
+  const redirectParams = new URLSearchParams({
+    leadStatus: "removed",
+    leadSavedAt: Date.now().toString()
+  });
+  [
+    ["returnLeadView", "leadView"],
+    ["returnLeadSearch", "leadSearch"],
+    ["returnLeadFilterType", "leadFilterType"],
+    ["returnLeadFilterStatus", "leadFilterStatus"],
+    ["returnLeadFilterStage", "leadFilterStage"],
+    ["returnLeadFilterAssigned", "leadFilterAssigned"],
+    ["returnLeadFilterPriority", "leadFilterPriority"],
+    ["returnLeadFilterSource", "leadFilterSource"],
+    ["returnLeadFilterFollowUp", "leadFilterFollowUp"],
+    ["returnLeadPageSize", "leadPageSize"]
+  ].forEach(([formKey, queryKey]) => {
+    const value = formData.get(formKey)?.toString().trim();
+
+    if (value) {
+      redirectParams.set(queryKey, value);
+    }
+  });
+
   revalidatePath("/admin");
-  redirect(`/admin?leadStatus=removed&leadSavedAt=${Date.now()}#lead-overview`);
+  redirect(`/admin?${redirectParams.toString()}#lead-inbox`);
 }
 
 async function createLeadOutcomeShortcut(formData: FormData) {
@@ -4022,6 +4045,16 @@ export default async function AdminDashboardPage({
                 <form className="admin-danger-form" action={removeLead}>
                   <input name="leadId" type="hidden" value={lead.id} />
                   <input name="leadLabel" type="hidden" value={lead.property_address || "No property address"} />
+                  <input name="returnLeadView" type="hidden" value={leadView} />
+                  <input name="returnLeadSearch" type="hidden" value={leadFilters.search} />
+                  <input name="returnLeadFilterType" type="hidden" value={leadFilters.type} />
+                  <input name="returnLeadFilterStatus" type="hidden" value={leadFilters.status} />
+                  <input name="returnLeadFilterStage" type="hidden" value={leadFilters.stage} />
+                  <input name="returnLeadFilterAssigned" type="hidden" value={leadFilters.assigned} />
+                  <input name="returnLeadFilterPriority" type="hidden" value={leadFilters.priority} />
+                  <input name="returnLeadFilterSource" type="hidden" value={leadFilters.source} />
+                  <input name="returnLeadFilterFollowUp" type="hidden" value={leadFilters.followUp} />
+                  <input name="returnLeadPageSize" type="hidden" value={adminPages.leads.pageSize ? adminPages.leads.pageSize.toString() : "all"} />
                   <p>Removing hides this lead from the normal workspace and clears it from follow-up queues. The lead record stays in the database for a future restore option.</p>
                   <label>
                     Type {lead.property_address || "No property address"} to confirm
