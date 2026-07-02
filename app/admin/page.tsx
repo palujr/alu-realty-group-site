@@ -2328,11 +2328,11 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focused
   const leadWorkQueueResult = adminSupabase
     ? await adminSupabase
         .from("lead_submissions")
-        .select("id, lead_type, full_name, email, phone, property_address, assigned_team_member_id, contact_status, lead_stage, lead_priority, next_follow_up_at, created_at, team_members(full_name)")
+        .select("id, lead_type, full_name, email, phone, property_address, assigned_team_member_id, contact_status, lead_stage, lead_priority, next_follow_up_at, created_at, team_members(full_name)", { count: "exact" })
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(250)
-    : { data: [], error: null };
+    : { data: [], count: 0, error: null };
 
   let leads = (leadsResult.data || []) as AdminLead[];
   const focusedLeadResult = adminSupabase && focusedLeadId && !leads.some((lead) => lead.id === focusedLeadId)
@@ -2391,6 +2391,7 @@ async function getAdminData(leadFilters: LeadFilters, pages: AdminPages, focused
     activeBanner,
     leads,
     leadWorkQueue: {
+      totalCount: leadWorkQueueResult.count || leadWorkQueueItems.length,
       overdue: overdueLeads,
       overdueCount: overdueLeadMatches.length,
       today: todaysFollowUps,
@@ -2523,7 +2524,7 @@ export default async function AdminDashboardPage({
   const leadPrimaryQuickViews = [
     {
       label: "All leads",
-      count: pagination.leads.totalCount,
+      count: leadWorkQueue.totalCount,
       href: buildLeadQuickViewHref({ leadView: "all" }),
       active: leadView === "all" && !hasLeadFilters,
       tone: "all"
