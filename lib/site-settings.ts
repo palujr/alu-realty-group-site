@@ -156,7 +156,7 @@ export const defaultSiteSettings: SiteSettings = {
   contactPhone: "",
   timeZone: "America/Phoenix",
   leadNotificationEmails: ["phil@alurealtygroup.com"],
-  resendFromEmail: "Alu Realty Group <noreply@contact.alurealtygroup.com>",
+  resendFromEmail: "Alu Realty Group <team@contact.alurealtygroup.com>",
   leadReplyToEmail: "phil@alurealtygroup.com",
   heroImageUrl: "/assets/desert-home-hero.png",
   heroEyebrow: "SCOTTSDALE · PARADISE VALLEY · PHOENIX",

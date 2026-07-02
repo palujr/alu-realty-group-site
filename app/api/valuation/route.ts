@@ -115,7 +115,7 @@ export async function POST(request: Request) {
   const sourcePage = body.sourcePage?.trim() || "home";
   const siteSettings = await getSiteSettings();
   const routing = siteSettings.leadRouting;
-  const resendFromEmail = process.env.RESEND_FROM_EMAIL || siteSettings.resendFromEmail;
+  const resendFromEmail = siteSettings.resendFromEmail || process.env.RESEND_FROM_EMAIL || "Alu Realty Group <team@contact.alurealtygroup.com>";
   const leadReplyToEmail = process.env.LEAD_REPLY_TO_EMAIL || siteSettings.leadReplyToEmail;
   const envLeadNotificationEmails = parseEmailList(process.env.LEAD_NOTIFICATION_EMAILS);
   const manualLeadNotificationEmails = routing.valuationNotificationEmails.length
