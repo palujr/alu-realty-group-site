@@ -1682,7 +1682,7 @@ async function createLeadOutcomeShortcut(formData: FormData) {
   }
 
   revalidatePath("/admin");
-  redirect(`/admin?leadActivityStatus=shortcut&leadId=${leadId}&leadActivitySavedAt=${Date.now()}#lead-${leadId}`);
+  redirect(`/admin?leadActivityStatus=shortcut&leadId=${leadId}&leadActivitySavedAt=${Date.now()}#lead-activity-${leadId}`);
 }
 
 async function createLeadActivity(formData: FormData) {
@@ -1727,7 +1727,7 @@ async function createLeadActivity(formData: FormData) {
   }
 
   revalidatePath("/admin");
-  redirect(`/admin?leadActivityStatus=saved&leadId=${leadId}&leadActivitySavedAt=${Date.now()}#lead-${leadId}`);
+  redirect(`/admin?leadActivityStatus=saved&leadId=${leadId}&leadActivitySavedAt=${Date.now()}#lead-activity-${leadId}`);
 }
 
 async function updateLeadActivity(formData: FormData) {
@@ -1775,7 +1775,7 @@ async function updateLeadActivity(formData: FormData) {
   }
 
   revalidatePath("/admin");
-  redirect(`/admin?leadActivityStatus=updated&leadId=${leadId}&leadActivitySavedAt=${Date.now()}#lead-${leadId}`);
+  redirect(`/admin?leadActivityStatus=updated&leadId=${leadId}&leadActivitySavedAt=${Date.now()}#lead-activity-${leadId}`);
 }
 
 async function completeLeadActivityTask(formData: FormData) {
@@ -1813,7 +1813,7 @@ async function completeLeadActivityTask(formData: FormData) {
   }
 
   revalidatePath("/admin");
-  redirect(`/admin?leadActivityStatus=completed&leadId=${leadId}&leadActivitySavedAt=${Date.now()}#lead-${leadId}`);
+  redirect(`/admin?leadActivityStatus=completed&leadId=${leadId}&leadActivitySavedAt=${Date.now()}#lead-activity-${leadId}`);
 }
 
 async function deleteLeadActivity(formData: FormData) {
@@ -1843,7 +1843,7 @@ async function deleteLeadActivity(formData: FormData) {
   }
 
   revalidatePath("/admin");
-  redirect(`/admin?leadActivityStatus=deleted&leadId=${leadId}&leadActivitySavedAt=${Date.now()}#lead-${leadId}`);
+  redirect(`/admin?leadActivityStatus=deleted&leadId=${leadId}&leadActivitySavedAt=${Date.now()}#lead-activity-${leadId}`);
 }
 
 async function createBannerCampaign(formData: FormData) {
@@ -4132,7 +4132,7 @@ export default async function AdminDashboardPage({
                   <input name="createdByTeamMemberId" type="hidden" value={lead.assigned_team_member_id || ""} />
                 </form>
               ))}
-              <section className="admin-timeline-panel">
+              <section className="admin-timeline-panel" id={`lead-activity-${lead.id}`}>
                 <div className="admin-card-header admin-form-title">
                   <div>
                     <p className="admin-kicker">Activity Timeline</p>

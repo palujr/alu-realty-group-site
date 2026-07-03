@@ -37,21 +37,34 @@ export function AdminLeadFormReset({
     }
 
     const activityForm = document.querySelector<HTMLFormElement>(`form[data-activity-form="${savedLeadId}"]`);
+    const activityTimeline = document.querySelector<HTMLElement>(`#lead-activity-${savedLeadId}`);
 
     activityForm?.reset();
     activityForm?.closest<HTMLDetailsElement>("details[data-activity-create-panel='true']")?.removeAttribute("open");
-  }, [activitySaved, activitySavedAt, savedLeadId]);
+
+    if (activityTimeline) {
+      window.history.replaceState(null, "", `#lead-activity-${savedLeadId}`);
+      scrollElementIntoPlace(activityTimeline);
+    }
+  }, [activitySaved, activitySavedAt, savedLeadId, scrollElementIntoPlace]);
 
   useEffect(() => {
     if (!activityUpdated || !savedLeadId) {
       return;
     }
 
+    const activityTimeline = document.querySelector<HTMLElement>(`#lead-activity-${savedLeadId}`);
+
     document.querySelectorAll<HTMLDetailsElement>(`#lead-${savedLeadId} details[data-activity-edit-panel='true']`).forEach((panel) => {
       panel.open = false;
       panel.querySelectorAll<HTMLFormElement>("form").forEach((form) => form.reset());
     });
-  }, [activityUpdated, activitySavedAt, savedLeadId]);
+
+    if (activityTimeline) {
+      window.history.replaceState(null, "", `#lead-activity-${savedLeadId}`);
+      scrollElementIntoPlace(activityTimeline);
+    }
+  }, [activityUpdated, activitySavedAt, savedLeadId, scrollElementIntoPlace]);
 
   useEffect(() => {
     if (!leadRemoved) {
@@ -75,6 +88,7 @@ export function AdminLeadFormReset({
   useEffect(() => {
     const leadLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>("a[data-open-lead-panel='true']"));
     const activityPanels = Array.from(document.querySelectorAll<HTMLDetailsElement>("details[data-activity-edit-panel='true']"));
+    const activityCreatePanels = Array.from(document.querySelectorAll<HTMLDetailsElement>("details[data-activity-create-panel='true']"));
     const activityTaskLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>("a[data-open-activity-panel='true']"));
 
     const getLeadPanels = () => Array.from(document.querySelectorAll<HTMLDetailsElement>("details[data-reset-on-close='true']"));
@@ -96,6 +110,33 @@ export function AdminLeadFormReset({
           panel.querySelectorAll<HTMLFormElement>("form").forEach((form) => form.reset());
         }
       });
+
+      timelinePanel?.querySelectorAll<HTMLDetailsElement>("details[data-activity-create-panel='true']").forEach((panel) => {
+        if (panel.open) {
+          panel.open = false;
+          panel.querySelectorAll<HTMLFormElement>("form").forEach((form) => form.reset());
+        }
+      });
+    };
+
+    const closeActivityEditPanels = (timelinePanel: Element | null) => {
+      timelinePanel?.querySelectorAll<HTMLDetailsElement>("details[data-activity-edit-panel='true']").forEach((panel) => {
+        if (panel.open) {
+          panel.open = false;
+          panel.querySelectorAll<HTMLFormElement>("form").forEach((form) => form.reset());
+        }
+      });
+    };
+
+    const scrollActivityTimelineIntoPlace = (element: Element | null) => {
+      const timelinePanel = element?.closest<HTMLElement>(".admin-timeline-panel");
+
+      if (!timelinePanel?.id) {
+        return;
+      }
+
+      window.history.replaceState(null, "", `#${timelinePanel.id}`);
+      scrollElementIntoPlace(timelinePanel);
     };
 
     const openActivityPanel = (targetPanel: HTMLDetailsElement) => {
@@ -107,11 +148,7 @@ export function AdminLeadFormReset({
 
       closeOtherActivityPanels(targetPanel);
       targetPanel.open = true;
-      window.history.replaceState(null, "", `#${targetPanel.id}`);
-
-      window.requestAnimationFrame(() => {
-        targetPanel.scrollIntoView({ behavior: "smooth", block: "center" });
-      });
+      scrollActivityTimelineIntoPlace(targetPanel);
     };
 
     const handleLeadPanelToggle = (event: Event) => {
@@ -144,10 +181,26 @@ export function AdminLeadFormReset({
 
       if (panel.open) {
         closeOtherActivityPanels(panel);
+        scrollActivityTimelineIntoPlace(panel);
       }
     };
 
     activityPanels.forEach((panel) => panel.addEventListener("toggle", handleActivityPanelToggle));
+
+    const handleActivityCreatePanelToggle = (event: Event) => {
+      const panel = event.currentTarget as HTMLDetailsElement;
+
+      if (!panel.open) {
+        panel.querySelectorAll<HTMLFormElement>("form").forEach((form) => form.reset());
+        return;
+      }
+
+      const timelinePanel = panel.closest(".admin-timeline-panel");
+      closeActivityEditPanels(timelinePanel);
+      scrollActivityTimelineIntoPlace(panel);
+    };
+
+    activityCreatePanels.forEach((panel) => panel.addEventListener("toggle", handleActivityCreatePanelToggle));
 
     const openLeadPanel = (event: MouseEvent) => {
       const link = event.currentTarget as HTMLAnchorElement;
@@ -203,6 +256,7 @@ export function AdminLeadFormReset({
     return () => {
       document.removeEventListener("toggle", handleLeadPanelToggle, true);
       activityPanels.forEach((panel) => panel.removeEventListener("toggle", handleActivityPanelToggle));
+      activityCreatePanels.forEach((panel) => panel.removeEventListener("toggle", handleActivityCreatePanelToggle));
       leadLinks.forEach((link) => link.removeEventListener("click", openLeadPanel));
       activityTaskLinks.forEach((link) => link.removeEventListener("click", openLinkedActivityPanel));
     };
