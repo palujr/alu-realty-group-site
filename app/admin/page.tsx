@@ -655,6 +655,38 @@ function getLeadActivityTypeLabel(value?: string | null) {
   return leadActivityTypeOptions.find((option) => option.value === value)?.label || "Note";
 }
 
+function getLeadActivityStatusCopy(status?: string | null) {
+  switch (status) {
+    case "saved":
+      return {
+        title: "Activity added.",
+        body: "The new activity was added to this lead timeline."
+      };
+    case "shortcut":
+      return {
+        title: "Outcome logged.",
+        body: "The quick follow-up outcome was added to this lead timeline."
+      };
+    case "updated":
+      return {
+        title: "Activity updated.",
+        body: "The activity changes were saved successfully."
+      };
+    case "completed":
+      return {
+        title: "Task completed.",
+        body: "The follow-up task was marked complete."
+      };
+    case "deleted":
+      return {
+        title: "Activity deleted.",
+        body: "The activity entry was removed from this lead timeline."
+      };
+    default:
+      return null;
+  }
+}
+
 function getLeadFollowUpLabel(lead: AdminLead, timeZone = defaultAdminTimeZone) {
   if (!lead.next_follow_up_at) {
     return "No follow-up";
@@ -3759,6 +3791,7 @@ export default async function AdminDashboardPage({
               const searchLeadSummary = getSearchLeadSummary(lead);
               const latestActivity = leadActivities[0];
               const crmFocus = getLeadCrmFocus(lead, openActivityTasks, searchLeadSummary, siteSettings.timeZone);
+              const leadActivityStatusCopy = savedLeadId === lead.id ? getLeadActivityStatusCopy(leadActivityStatus) : null;
               const displayedLeadActivities = [
                 ...leadActivities.slice(0, 6),
                 ...openActivityTasks
@@ -4140,6 +4173,12 @@ export default async function AdminDashboardPage({
                   </div>
                   <span>{leadActivities.length} items</span>
                 </div>
+                {leadActivityStatusCopy ? (
+                  <section className="admin-success admin-timeline-success" data-admin-status="saved" role="status" key={`timeline-${leadActivityStatus}-${leadActivitySavedAt || savedLeadId}`}>
+                    <strong>{leadActivityStatusCopy.title}</strong>
+                    <p>{leadActivityStatusCopy.body}</p>
+                  </section>
+                ) : null}
                 <div className="admin-timeline-toolbar">
                   <div className="admin-timeline-toolbar-card">
                     <strong>{leadActivities[0]?.outcome || "No recent outcome yet"}</strong>
