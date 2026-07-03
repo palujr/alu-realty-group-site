@@ -13,6 +13,7 @@ const statusParams = [
   "leadSavedAt",
   "leadError",
   "leadActivityStatus",
+  "leadActivitySavedAt",
   "teamStatus",
   "teamMemberId",
   "teamSavedAt",
@@ -23,7 +24,7 @@ const statusParams = [
   "testimonialError"
 ];
 
-export function AdminStatusCleanup({ active }: { active: boolean }) {
+export function AdminStatusCleanup({ active, statusKey }: { active: boolean; statusKey?: string }) {
   useEffect(() => {
     if (!active) {
       return;
@@ -42,7 +43,7 @@ export function AdminStatusCleanup({ active }: { active: boolean }) {
     }, 7000);
 
     return () => window.clearTimeout(timeout);
-  }, [active]);
+  }, [active, statusKey]);
 
   return null;
 }

@@ -4,12 +4,14 @@ import { useCallback, useEffect } from "react";
 
 export function AdminLeadFormReset({
   activitySaved,
+  activitySavedAt,
   activityUpdated,
   savedLeadId,
   leadRemoved,
   leadRemovedAt
 }: {
   activitySaved: boolean;
+  activitySavedAt?: string;
   activityUpdated: boolean;
   savedLeadId?: string;
   leadRemoved?: boolean;
@@ -38,7 +40,7 @@ export function AdminLeadFormReset({
 
     activityForm?.reset();
     activityForm?.closest<HTMLDetailsElement>("details[data-activity-create-panel='true']")?.removeAttribute("open");
-  }, [activitySaved, savedLeadId]);
+  }, [activitySaved, activitySavedAt, savedLeadId]);
 
   useEffect(() => {
     if (!activityUpdated || !savedLeadId) {
@@ -49,7 +51,7 @@ export function AdminLeadFormReset({
       panel.open = false;
       panel.querySelectorAll<HTMLFormElement>("form").forEach((form) => form.reset());
     });
-  }, [activityUpdated, savedLeadId]);
+  }, [activityUpdated, activitySavedAt, savedLeadId]);
 
   useEffect(() => {
     if (!leadRemoved) {

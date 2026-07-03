@@ -1423,7 +1423,7 @@ async function createLead(formData: FormData) {
   }
 
   revalidatePath("/admin");
-  redirect(`/admin?leadStatus=saved&leadId=${data.id}#lead-${data.id}`);
+  redirect(`/admin?leadStatus=saved&leadId=${data.id}&leadSavedAt=${Date.now()}#lead-${data.id}`);
 }
 
 async function updateLead(formData: FormData) {
@@ -1472,7 +1472,7 @@ async function updateLead(formData: FormData) {
   }
 
   revalidatePath("/admin");
-  redirect(`/admin?leadStatus=saved&leadId=${leadId}#lead-${leadId}`);
+  redirect(`/admin?leadStatus=saved&leadId=${leadId}&leadSavedAt=${Date.now()}#lead-${leadId}`);
 }
 
 async function updateLeadQuickAction(formData: FormData) {
@@ -1525,7 +1525,7 @@ async function updateLeadQuickAction(formData: FormData) {
   }
 
   revalidatePath("/admin");
-  redirect(`/admin?leadStatus=saved&leadId=${leadId}#lead-${leadId}`);
+  redirect(`/admin?leadStatus=saved&leadId=${leadId}&leadSavedAt=${Date.now()}#lead-${leadId}`);
 }
 
 async function removeLead(formData: FormData) {
@@ -1682,7 +1682,7 @@ async function createLeadOutcomeShortcut(formData: FormData) {
   }
 
   revalidatePath("/admin");
-  redirect(`/admin?leadActivityStatus=shortcut&leadId=${leadId}#lead-${leadId}`);
+  redirect(`/admin?leadActivityStatus=shortcut&leadId=${leadId}&leadActivitySavedAt=${Date.now()}#lead-${leadId}`);
 }
 
 async function createLeadActivity(formData: FormData) {
@@ -1727,7 +1727,7 @@ async function createLeadActivity(formData: FormData) {
   }
 
   revalidatePath("/admin");
-  redirect(`/admin?leadActivityStatus=saved&leadId=${leadId}#lead-${leadId}`);
+  redirect(`/admin?leadActivityStatus=saved&leadId=${leadId}&leadActivitySavedAt=${Date.now()}#lead-${leadId}`);
 }
 
 async function updateLeadActivity(formData: FormData) {
@@ -1775,7 +1775,7 @@ async function updateLeadActivity(formData: FormData) {
   }
 
   revalidatePath("/admin");
-  redirect(`/admin?leadActivityStatus=updated&leadId=${leadId}#lead-${leadId}`);
+  redirect(`/admin?leadActivityStatus=updated&leadId=${leadId}&leadActivitySavedAt=${Date.now()}#lead-${leadId}`);
 }
 
 async function completeLeadActivityTask(formData: FormData) {
@@ -1813,7 +1813,7 @@ async function completeLeadActivityTask(formData: FormData) {
   }
 
   revalidatePath("/admin");
-  redirect(`/admin?leadActivityStatus=completed&leadId=${leadId}#lead-${leadId}`);
+  redirect(`/admin?leadActivityStatus=completed&leadId=${leadId}&leadActivitySavedAt=${Date.now()}#lead-${leadId}`);
 }
 
 async function deleteLeadActivity(formData: FormData) {
@@ -1843,7 +1843,7 @@ async function deleteLeadActivity(formData: FormData) {
   }
 
   revalidatePath("/admin");
-  redirect(`/admin?leadActivityStatus=deleted&leadId=${leadId}#lead-${leadId}`);
+  redirect(`/admin?leadActivityStatus=deleted&leadId=${leadId}&leadActivitySavedAt=${Date.now()}#lead-${leadId}`);
 }
 
 async function createBannerCampaign(formData: FormData) {
@@ -2457,6 +2457,7 @@ export default async function AdminDashboardPage({
     leadSavedAt?: string;
     leadError?: string;
     leadActivityStatus?: string;
+    leadActivitySavedAt?: string;
     teamStatus?: string;
     teamMemberId?: string;
     testimonialStatus?: string;
@@ -2534,6 +2535,7 @@ export default async function AdminDashboardPage({
   const leadStatus = getSearchParamValue(searchParams, "leadStatus");
   const leadError = getSearchParamValue(searchParams, "leadError");
   const leadActivityStatus = getSearchParamValue(searchParams, "leadActivityStatus");
+  const leadActivitySavedAt = getSearchParamValue(searchParams, "leadActivitySavedAt");
   const teamStatus = getSearchParamValue(searchParams, "teamStatus");
   const savedTeamMemberId = getSearchParamValue(searchParams, "teamMemberId");
   const teamSavedAt = getSearchParamValue(searchParams, "teamSavedAt");
@@ -2543,6 +2545,27 @@ export default async function AdminDashboardPage({
   const testimonialSavedAt = getSearchParamValue(searchParams, "testimonialSavedAt");
   const testimonialError = getSearchParamValue(searchParams, "testimonialError");
   const hasTransientStatus = siteStatus === "saved" || siteStatus === "error" || bannerStatus === "saved" || bannerStatus === "error" || leadStatus === "saved" || leadStatus === "removed" || leadStatus === "error" || leadStatus === "remove-error" || leadActivityStatus === "saved" || leadActivityStatus === "shortcut" || leadActivityStatus === "updated" || leadActivityStatus === "completed" || leadActivityStatus === "deleted" || leadActivityStatus === "error" || teamStatus === "saved" || teamStatus === "deleted" || teamStatus === "error" || teamStatus === "delete-error" || testimonialStatus === "saved" || testimonialStatus === "removed" || testimonialStatus === "error" || testimonialStatus === "remove-error";
+  const transientStatusKey = [
+    siteStatus,
+    savedSiteSection,
+    siteError,
+    bannerStatus,
+    savedBannerId,
+    leadStatus,
+    savedLeadId,
+    leadSavedAt,
+    leadError,
+    leadActivityStatus,
+    leadActivitySavedAt,
+    teamStatus,
+    savedTeamMemberId,
+    teamSavedAt,
+    teamError,
+    testimonialStatus,
+    savedTestimonialId,
+    testimonialSavedAt,
+    testimonialError
+  ].filter(Boolean).join("|");
   const leadStageCountByValue = new Map(leadWorkQueue.stageCounts.map((stage) => [stage.value, stage.count]));
   const leadPrimaryQuickViews = [
     {
@@ -2606,9 +2629,10 @@ export default async function AdminDashboardPage({
   return (
     <main className="admin-shell">
       <AdminDataFreshness />
-      <AdminStatusCleanup active={hasTransientStatus} />
+      <AdminStatusCleanup active={hasTransientStatus} statusKey={transientStatusKey} />
       <AdminLeadFormReset
         activitySaved={leadActivityStatus === "saved" || leadActivityStatus === "shortcut"}
+        activitySavedAt={leadActivitySavedAt}
         activityUpdated={leadActivityStatus === "updated" || leadActivityStatus === "completed"}
         savedLeadId={savedLeadId}
         leadRemoved={leadStatus === "removed"}
@@ -4034,7 +4058,7 @@ export default async function AdminDashboardPage({
                 <div className="admin-form-footer">
                   <small>Assigned to {getAssignedName(lead)} - Priority: {getLeadPriorityLabel(lead.lead_priority)} - Next follow-up: {formatDateTime(lead.next_follow_up_at, siteSettings.timeZone)} - Source: {getLeadSourceLabel(lead)}</small>
                   {leadStatus === "saved" && savedLeadId === lead.id ? (
-                    <span className="admin-save-confirmation" data-admin-status="saved">Saved successfully</span>
+                    <span className="admin-save-confirmation" data-admin-status="saved" role="status" key={leadSavedAt || savedLeadId}>Saved successfully</span>
                   ) : null}
                   <button className="admin-secondary-button" type="reset">Reset changes</button>
                   <button className="admin-save-button" type="submit">Save lead</button>
@@ -4242,19 +4266,19 @@ export default async function AdminDashboardPage({
                   ) : null}
                 </div>
                 {leadActivityStatus === "saved" && savedLeadId === lead.id ? (
-                  <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status">Activity added</span>
+                  <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status" key={`saved-${leadActivitySavedAt || savedLeadId}`}>Activity added</span>
                 ) : null}
                 {leadActivityStatus === "shortcut" && savedLeadId === lead.id ? (
-                  <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status">Outcome logged</span>
+                  <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status" key={`shortcut-${leadActivitySavedAt || savedLeadId}`}>Outcome logged</span>
                 ) : null}
                 {leadActivityStatus === "updated" && savedLeadId === lead.id ? (
-                  <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status">Activity updated</span>
+                  <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status" key={`updated-${leadActivitySavedAt || savedLeadId}`}>Activity updated</span>
                 ) : null}
                 {leadActivityStatus === "completed" && savedLeadId === lead.id ? (
-                  <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status">Task completed</span>
+                  <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status" key={`completed-${leadActivitySavedAt || savedLeadId}`}>Task completed</span>
                 ) : null}
                 {leadActivityStatus === "deleted" && savedLeadId === lead.id ? (
-                  <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status">Activity deleted</span>
+                  <span className="admin-save-confirmation admin-timeline-confirmation" data-admin-status="saved" role="status" key={`deleted-${leadActivitySavedAt || savedLeadId}`}>Activity deleted</span>
                 ) : null}
                 <details className="admin-create-panel admin-activity-create-panel" data-activity-create-panel="true">
                   <summary>Add New Activity</summary>
