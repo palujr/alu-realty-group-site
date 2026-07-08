@@ -320,95 +320,14 @@ export async function getSiteSettings(slug = "alu-realty-group"): Promise<SiteSe
   }
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
-  const siteSettingsSelect = `
-      slug,
-      site_name,
-      brokerage_name,
-      primary_domain,
-      broker_logo_url,
-      team_logo_url,
-      footer_logo_display,
-      fair_housing_logo_url,
-      fair_housing_text,
-      fair_housing_show_text,
-      realtor_logo_url,
-      contact_email,
-      contact_phone,
-      time_zone,
-      lead_notification_emails,
-      resend_from_email,
-      lead_reply_to_email,
-      hero_image_url,
-      hero_eyebrow,
-      hero_headline,
-      hero_subheadline,
-      promo_enabled,
-      promo_eyebrow,
-      promo_headline,
-      promo_body,
-      idx_enabled,
-      idx_provider_name,
-      idx_embed_url,
-      idx_embed_code,
-      idx_search_url,
-      idx_fallback_message,
-      brand_primary,
-      brand_accent,
-      brand_header_footer,
-      brand_section_background,
-      homepage_sections,
-      lead_routing
-    `;
-  const legacySiteSettingsSelect = `
-      slug,
-      site_name,
-      brokerage_name,
-      primary_domain,
-      broker_logo_url,
-      team_logo_url,
-      contact_email,
-      contact_phone,
-      time_zone,
-      lead_notification_emails,
-      resend_from_email,
-      lead_reply_to_email,
-      hero_image_url,
-      hero_eyebrow,
-      hero_headline,
-      hero_subheadline,
-      promo_enabled,
-      promo_eyebrow,
-      promo_headline,
-      promo_body,
-      brand_primary,
-      brand_accent,
-      homepage_sections,
-      lead_routing
-    `;
-
   const { data, error } = await supabase
     .from("broker_sites")
-    .select(siteSettingsSelect)
+    .select("*")
     .eq("slug", slug)
     .eq("is_active", true)
     .single();
 
-  if (error) {
-    const { data: legacyData, error: legacyError } = await supabase
-      .from("broker_sites")
-      .select(legacySiteSettingsSelect)
-      .eq("slug", slug)
-      .eq("is_active", true)
-      .single();
-
-    if (legacyError || !legacyData) {
-      return defaultSiteSettings;
-    }
-
-    return mapBrokerSite(legacyData as BrokerSiteRow);
-  }
-
-  if (!data) {
+  if (error || !data) {
     return defaultSiteSettings;
   }
 
