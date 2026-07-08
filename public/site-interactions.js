@@ -197,13 +197,17 @@ document.querySelectorAll(".search-tab").forEach((tab) => {
 });
 
 document.querySelector("#heroSearch").addEventListener("submit", (event) => {
+  const form = event.currentTarget;
+  const params = new URLSearchParams(new FormData(form));
+
+  for (const [key, value] of Array.from(params.entries())) {
+    if (!value || value === "0") {
+      params.delete(key);
+    }
+  }
+
   event.preventDefault();
-  state.location = document.querySelector("#locationInput").value.trim();
-  state.maxPrice = Number(document.querySelector("#priceInput").value);
-  state.minBeds = Number(document.querySelector("#bedsInput").value);
-  state.visibleCount = 6;
-  renderListings();
-  document.querySelector("#properties").scrollIntoView({ behavior: "smooth" });
+  window.location.href = params.toString() ? `${form.action}?${params}` : form.action;
 });
 
 document.querySelector("#sortListings").addEventListener("change", (event) => {

@@ -2,20 +2,6 @@ import { getSiteSettings } from "@/lib/site-settings";
 
 export const revalidate = 60;
 
-function normalizeSearchType(value?: string | string[]) {
-  const searchType = Array.isArray(value) ? value[0] : value;
-
-  if (searchType === "rent") {
-    return "Lease";
-  }
-
-  if (searchType === "sold") {
-    return "Recently Sold";
-  }
-
-  return "Buy";
-}
-
 function isSafeEmbedUrl(value: string) {
   if (!value) {
     return false;
@@ -29,17 +15,26 @@ function isSafeEmbedUrl(value: string) {
   }
 }
 
-type SearchHomesPageProps = {
-  searchParams?: {
-    type?: string | string[];
-  };
-};
-
-export default async function SearchHomesPage({ searchParams }: SearchHomesPageProps) {
+export default async function SearchHomesPage() {
   const siteSettings = await getSiteSettings();
-  const searchType = normalizeSearchType(searchParams?.type);
   const hasLiveEmbed = siteSettings.idxEnabled && isSafeEmbedUrl(siteSettings.idxEmbedUrl);
   const hasExternalSearch = siteSettings.idxEnabled && isSafeEmbedUrl(siteSettings.idxSearchUrl);
+  const footerLogos = [
+    ...(siteSettings.footerLogoDisplay === "broker" || siteSettings.footerLogoDisplay === "both"
+      ? [{
+          href: "/",
+          imageUrl: siteSettings.footerBrokerLogoUrl || siteSettings.brokerLogoUrl,
+          label: siteSettings.brokerageName
+        }]
+      : []),
+    ...(siteSettings.footerLogoDisplay === "team" || siteSettings.footerLogoDisplay === "both"
+      ? [{
+          href: "/",
+          imageUrl: siteSettings.footerTeamLogoUrl || siteSettings.teamLogoUrl,
+          label: siteSettings.siteName
+        }]
+      : [])
+  ];
 
   return (
     <>
@@ -51,6 +46,8 @@ export default async function SearchHomesPage({ searchParams }: SearchHomesPageP
               --accent: ${siteSettings.brandAccent};
               --header-footer: ${siteSettings.brandHeaderFooter};
               --section-background: ${siteSettings.brandSectionBackground};
+              --footer-brand-logo-height: ${siteSettings.footerBrandLogoHeight}px;
+              --footer-compliance-logo-height: ${siteSettings.footerComplianceLogoHeight}px;
             }
           `
         }}
@@ -75,13 +72,9 @@ export default async function SearchHomesPage({ searchParams }: SearchHomesPageP
           <div className="idx-toolbar">
             <div>
               <p className="admin-kicker">Search Mode</p>
-              <h2>{searchType} homes</h2>
+              <h2>Buy homes</h2>
             </div>
-            <div className="idx-mode-links" aria-label="Search categories">
-              <a className={searchType === "Buy" ? "active" : ""} href="/search">Buy</a>
-              <a className={searchType === "Lease" ? "active" : ""} href="/search?type=rent">Rent / Lease</a>
-              <a className={searchType === "Recently Sold" ? "active" : ""} href="/search?type=sold">Recently Sold</a>
-            </div>
+            <a className="idx-mode-link active" href="/search">Buy</a>
           </div>
 
           {hasLiveEmbed ? (
@@ -108,20 +101,26 @@ export default async function SearchHomesPage({ searchParams }: SearchHomesPageP
             </div>
           )}
         </section>
-
-        <section className="idx-next-steps">
-          <div>
-            <p className="admin-kicker">Provider Flexible</p>
-            <h3>What this supports now</h3>
-            <p>Paste a SmartFrame or iframe URL in the admin dashboard and this page can display it without redesign work.</p>
-          </div>
-          <div>
-            <p className="admin-kicker">Future Ready</p>
-            <h3>What this supports later</h3>
-            <p>When you are ready for Spark API, this page can evolve from embedded search into a custom MLS search interface.</p>
-          </div>
-        </section>
       </main>
+      <footer>
+        <div className="footer-brands" aria-label="Footer logos">
+          {footerLogos.map((logo) => (
+            <a className="brand fathom-brand footer-brand" href={logo.href} aria-label={`${logo.label} home`} key={logo.label}>
+              <img src={logo.imageUrl} alt={logo.label} />
+            </a>
+          ))}
+        </div>
+        <p>A modern real estate experience for Arizona buyers, sellers, and investors.</p>
+        <div className="footer-links"><a href="/search">Properties</a><a href="/#rates">Mortgage</a><a href="/#team">Team</a><a href="/#sell">Contact</a></div>
+        <small className="footer-bottom-line">
+          <span>Copyright 2026 Alu Realty Group | Fathom Realty Elite | Equal Housing Opportunity | MLS listing data provided through authorized IDX display</span>
+          <span className="footer-compliance">
+            <img src={siteSettings.fairHousingLogoUrl} alt="" aria-hidden="true" />
+            {siteSettings.fairHousingShowText ? <span>{siteSettings.fairHousingText}</span> : null}
+            <img src={siteSettings.realtorLogoUrl} alt="Realtor logo" />
+          </span>
+        </small>
+      </footer>
     </>
   );
 }

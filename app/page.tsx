@@ -149,7 +149,6 @@ export default async function HomePage() {
           </a>
           <nav className="desktop-nav" aria-label="Primary navigation">
             <a href="/search">Buy</a>
-            <a href="/search?type=rent">Rent</a>
             <a href="#sell">Sell</a>
             <a href="#rates">Mortgage</a>
             <a href="#team">Team</a>
@@ -166,7 +165,6 @@ export default async function HomePage() {
 
         <nav className="mobile-nav" id="mobileNav" aria-label="Mobile navigation">
           <a href="/search">Buy</a>
-          <a href="/search?type=rent">Rent</a>
           <a href="#sell">Sell</a>
           <a href="#rates">Mortgage</a>
           <a href="#team">Team</a>
@@ -208,22 +206,20 @@ export default async function HomePage() {
             <div className="search-panel" aria-label="Property search">
               <div className="search-tabs" role="tablist">
                 <button className="search-tab active" data-mode="buy" role="tab" aria-selected="true">Buy</button>
-                <button className="search-tab" data-mode="rent" role="tab" aria-selected="false">Rent</button>
-                <button className="search-tab" data-mode="sold" role="tab" aria-selected="false">Recently sold</button>
               </div>
-              <form className="hero-search" id="heroSearch">
+              <form className="hero-search" id="heroSearch" action="/search" method="get">
                 <label className="search-field">
                   <span className="pin-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></svg>
                   </span>
                   <span>
                     <small>LOCATION</small>
-                    <input id="locationInput" type="search" placeholder="City, neighborhood, or ZIP" autoComplete="off" />
+                    <input id="locationInput" name="location" type="search" placeholder="City, neighborhood, or ZIP" autoComplete="off" />
                   </span>
                 </label>
                 <label className="select-field">
                   <small>PRICE</small>
-                  <select id="priceInput">
+                  <select id="priceInput" name="maxPrice">
                     <option value="">Any price</option>
                     <option value="750000">Under $750k</option>
                     <option value="1000000">Under $1M</option>
@@ -233,7 +229,7 @@ export default async function HomePage() {
                 </label>
                 <label className="select-field">
                   <small>BEDS &amp; BATHS</small>
-                  <select id="bedsInput">
+                  <select id="bedsInput" name="beds">
                     <option value="0">Any</option>
                     <option value="2">2+ beds</option>
                     <option value="3">3+ beds</option>
@@ -247,7 +243,7 @@ export default async function HomePage() {
               </form>
               <div className="idx-search-cta">
                 <a href="/search">Open full Search Homes page</a>
-                <span>IDX-ready for FlexMLS SmartFrame, IDX Broker, or a future Spark API connection.</span>
+                <span>Search the live FlexMLS SmartFrame property feed for Greater Phoenix homes.</span>
               </div>
             </div>
             <div className="market-pulse">
