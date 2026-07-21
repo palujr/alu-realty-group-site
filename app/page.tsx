@@ -95,6 +95,7 @@ function formatDisplayDate(dateValue?: string) {
 }
 
 export default async function HomePage() {
+  const flexmlsPortalUrl = "https://apps.flexmls.com/ticket?portal_slug=callphil";
   const siteSettings = await getSiteSettings();
   const activeBanner = await getActiveSiteBanner(siteSettings.slug, siteSettings);
   const teamMembers = await getTeamMembers();
@@ -155,8 +156,8 @@ export default async function HomePage() {
             <a href="#insights">Insights</a>
           </nav>
           <div className="header-actions">
-            <button className="text-button" data-open-modal="account">Sign in</button>
-            <button className="button button-dark" data-open-modal="account">Create account</button>
+            <a className="text-button" href={flexmlsPortalUrl} target="_blank" rel="noreferrer">Client portal</a>
+            <button className="button button-dark" data-open-modal="account">Request a custom search</button>
             <button className="menu-button" id="menuButton" aria-label="Open menu" aria-expanded="false">
               <span></span><span></span><span></span>
             </button>
@@ -169,6 +170,8 @@ export default async function HomePage() {
           <a href="#rates">Mortgage</a>
           <a href="#team">Team</a>
           <a href="#insights">Insights</a>
+          <a href={flexmlsPortalUrl} target="_blank" rel="noreferrer">Client portal</a>
+          <a href="#saved-search">Listing alerts</a>
         </nav>
 
         <div className="alu-brand-banner" aria-label={`${siteSettings.siteName} featured message`}>
@@ -430,7 +433,12 @@ export default async function HomePage() {
                 <span>✓ Save &amp; compare homes</span>
               </div>
             </div>
-            <button className="button button-dark" data-open-modal="account">Create a free account <span>→</span></button>
+            <div className="saved-search-actions">
+              <a className="button button-dark" href={flexmlsPortalUrl} target="_blank" rel="noreferrer">
+                Create a FlexMLS account <span aria-hidden="true">→</span>
+              </a>
+              <button className="button button-outline" data-open-modal="account">Request a custom search</button>
+            </div>
           </div>
         </section>
 
@@ -477,18 +485,22 @@ export default async function HomePage() {
       <div className="modal-backdrop" id="modalBackdrop" hidden>
         <section className="modal" id="accountModal" role="dialog" aria-modal="true" aria-labelledby="accountTitle" hidden>
           <button className="modal-close" data-close-modal aria-label="Close">×</button>
-          <p className="eyebrow">YOUR ALU REALTY GROUP ACCOUNT</p>
-          <h2 id="accountTitle">Save homes. Stay ahead.</h2>
-          <p className="modal-intro">Create a free account to save searches and receive matching-property alerts.</p>
+          <p className="eyebrow">PERSONALIZED HOME SEARCH</p>
+          <h2 id="accountTitle">Tell us what you&apos;re looking for.</h2>
+          <p className="modal-intro">Send your criteria to Alu Realty Group. A team member will contact you and can help set up a personalized FlexMLS search.</p>
           <form id="accountForm">
             <label>Full name<input name="name" type="text" placeholder="Your name" required /></label>
             <label>Email address<input name="email" type="email" placeholder="you@example.com" required /></label>
             <label>Phone number<input name="phone" type="tel" placeholder="(480) 555-0124" /></label>
             <label>What are you looking for?<input name="message" type="text" placeholder="Areas, price range, beds, timeline, or must-haves" /></label>
-            <label className="checkbox-label"><input name="wantsAlerts" type="checkbox" defaultChecked /> Email me new listings and price changes</label>
-            <button className="button button-accent" type="submit">Create my account</button>
+            <label className="checkbox-label"><input name="wantsAlerts" type="checkbox" defaultChecked /> I&apos;d like help setting up listing alerts</label>
+            <button className="button button-accent" type="submit">Request my custom search</button>
           </form>
-          <small>By continuing, you agree to receive account-related email. You can unsubscribe from property alerts anytime.</small>
+          <div className="modal-account-choice">
+            <span>Want to save homes and manage alerts yourself?</span>
+            <a href={flexmlsPortalUrl} target="_blank" rel="noreferrer">Create or sign in to FlexMLS <span aria-hidden="true">→</span></a>
+          </div>
+          <small>Submitting this form sends a personalized home-search request to Alu Realty Group; it does not create an online account. Alu Realty Group may contact you by email, phone, or text about your request.</small>
         </section>
 
         <section className="modal" id="calculatorModal" role="dialog" aria-modal="true" aria-labelledby="calculatorTitle" hidden>

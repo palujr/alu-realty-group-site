@@ -96,7 +96,7 @@ main section[id] {
 .desktop-nav a::after { content: ""; position: absolute; left: 0; right: 100%; bottom: -9px; height: 2px; background: var(--accent); transition: right .2s; }
 .desktop-nav a:hover::after { right: 0; }
 .header-actions { display: flex; align-items: center; gap: 14px; }
-.text-button { border: 0; background: transparent; color: var(--ink); font-size: 12px; font-weight: 700; }
+.text-button { border: 0; display: inline-flex; align-items: center; background: transparent; color: var(--ink); font-size: 12px; font-weight: 700; }
 .button {
   min-height: 44px;
   padding: 0 21px;
@@ -437,6 +437,8 @@ h1 { max-width: 680px; margin-bottom: 18px; font-size: clamp(50px, 6.8vw, 88px);
 .saved-icon svg { width: 43px; fill: none; stroke: currentColor; stroke-width: 1.2; }
 .saved-search-card h2 { font-size: 35px; }
 .saved-search-card > div:nth-child(2) > p:not(.eyebrow) { max-width: 650px; margin: 17px 0; color: var(--muted); font-size: 11px; line-height: 1.7; }
+.saved-search-actions { display: grid; gap: 10px; justify-items: stretch; }
+.saved-search-actions .button { min-width: 220px; text-align: center; }
 .benefits { display: flex; flex-wrap: wrap; gap: 21px; color: #56645e; font-size: 9px; font-weight: 700; }
 
 .sell-section { margin-bottom: 80px; padding: 70px; display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 70px; background: var(--section-background); }
@@ -520,6 +522,19 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
 .modal input:not([type="checkbox"]) { height: 47px; padding: 0 13px; border: 1px solid var(--line); outline: 0; background: #fff; font-size: 12px; text-transform: none; }
 .modal input:focus { border-color: var(--accent); }
 .checkbox-label { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 10px; }
+.modal-account-choice {
+  margin-top: 18px;
+  padding: 16px;
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  background: #fff;
+  border: 1px solid var(--line);
+  font-size: 10px;
+  line-height: 1.5;
+}
+.modal-account-choice a { color: var(--ink); font-size: 11px; font-weight: 800; }
+.modal-account-choice a:hover { color: var(--accent); }
 .modal > small { margin-top: 17px; display: block; color: #909893; font-size: 8px; line-height: 1.6; }
 .success-modal {
   width: min(625px, 100%);
@@ -2899,7 +2914,7 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   .team-grid { grid-template-columns: 1fr; }
   .testimonial-grid { grid-template-columns: 1fr; }
   .saved-search-card { grid-template-columns: 75px 1fr; }
-  .saved-search-card > .button { grid-column: 2; justify-self: start; }
+  .saved-search-actions { grid-column: 2; justify-self: start; }
   footer { grid-template-columns: 1fr 1fr; }
   footer > p { grid-column: 1 / -1; }
   .admin-hero { align-items: flex-start; flex-direction: column; }
@@ -3074,7 +3089,8 @@ footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #
   .team-photo { min-height: 190px; }
   .testimonial-card > p { min-height: 0; }
   .saved-search-card { padding: 37px 27px; grid-template-columns: 1fr; }
-  .saved-search-card > .button { grid-column: 1; }
+  .saved-search-actions { grid-column: 1; width: 100%; }
+  .saved-search-actions .button { width: 100%; min-width: 0; }
   .saved-search-card h2 { font-size: 29px; }
   .saved-icon { width: 64px; height: 64px; }
   .sell-section { padding: 45px 30px; grid-template-columns: 1fr; gap: 28px; }

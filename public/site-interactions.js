@@ -224,7 +224,7 @@ propertyGrid.addEventListener("click", (event) => {
     showToast("Removed from your saved homes.");
   } else {
     state.saved.add(id);
-    showToast("Home saved. Sign in to get price-change alerts.");
+    showToast("Saved on this device. Use the FlexMLS client portal for live favorites and alerts.");
   }
   localStorage.setItem("haven-saved", JSON.stringify([...state.saved]));
   renderListings();
@@ -320,7 +320,6 @@ document.querySelector("#accountForm").addEventListener("submit", async (event) 
       throw new Error(result.error || "Unable to send search request.");
     }
 
-    localStorage.setItem("haven-account", JSON.stringify({ name: data.get("name"), email: data.get("email") }));
     form.reset();
     openModal("accountSuccess");
     modalAutoCloseTimeout = setTimeout(closeModal, 10000);
@@ -328,7 +327,7 @@ document.querySelector("#accountForm").addEventListener("submit", async (event) 
     showToast(error.message || "Something went wrong. Please try again.");
   } finally {
     button.disabled = false;
-    button.textContent = "Create my account";
+    button.textContent = "Request my custom search";
   }
 });
 
