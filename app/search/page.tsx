@@ -2,6 +2,14 @@ import { getSiteSettings } from "@/lib/site-settings";
 
 export const revalidate = 60;
 
+const flexmlsPortalUrl = "https://apps.flexmls.com/ticket?portal_slug=callphil";
+
+type SearchHomesPageProps = {
+  searchParams?: {
+    view?: string;
+  };
+};
+
 function isSafeEmbedUrl(value: string) {
   if (!value) {
     return false;
@@ -15,9 +23,12 @@ function isSafeEmbedUrl(value: string) {
   }
 }
 
-export default async function SearchHomesPage() {
+export default async function SearchHomesPage({ searchParams }: SearchHomesPageProps) {
   const siteSettings = await getSiteSettings();
+  const isAccountView = searchParams?.view === "account";
   const hasLiveEmbed = siteSettings.idxEnabled && isSafeEmbedUrl(siteSettings.idxEmbedUrl);
+  const hasEmbeddedContent = isAccountView || hasLiveEmbed;
+  const embeddedUrl = isAccountView ? flexmlsPortalUrl : siteSettings.idxEmbedUrl;
   const hasExternalSearch = siteSettings.idxEnabled && isSafeEmbedUrl(siteSettings.idxSearchUrl);
   const footerLogos = [
     ...(siteSettings.footerLogoDisplay === "broker" || siteSettings.footerLogoDisplay === "both"
@@ -68,20 +79,23 @@ export default async function SearchHomesPage() {
           <a className="button button-light" href="/">Back to homepage</a>
         </section>
 
-        <section className="idx-shell" aria-label="Search homes">
+        <section className="idx-shell" aria-label={isAccountView ? "FlexMLS client portal" : "Search homes"}>
           <div className="idx-toolbar">
             <div>
-              <p className="admin-kicker">Search Mode</p>
-              <h2>Buy homes</h2>
+              <p className="admin-kicker">{isAccountView ? "Client Portal" : "Search Mode"}</p>
+              <h2>{isAccountView ? "FlexMLS account" : "Buy homes"}</h2>
             </div>
-            <a className="idx-mode-link active" href="/search">Buy</a>
+            <div className="idx-mode-links" aria-label="Search and account views">
+              <a className={`idx-mode-link${isAccountView ? "" : " active"}`} href="/search">Buy</a>
+              <a className={`idx-mode-link${isAccountView ? " active" : ""}`} href="/search?view=account">Account</a>
+            </div>
           </div>
 
-          {hasLiveEmbed ? (
+          {hasEmbeddedContent ? (
             <iframe
               className="idx-frame"
-              src={siteSettings.idxEmbedUrl}
-              title={`${siteSettings.idxProviderName} property search`}
+              src={embeddedUrl}
+              title={isAccountView ? "FlexMLS account signup and login" : `${siteSettings.idxProviderName} property search`}
               loading="lazy"
             />
           ) : (

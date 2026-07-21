@@ -95,7 +95,7 @@ function formatDisplayDate(dateValue?: string) {
 }
 
 export default async function HomePage() {
-  const flexmlsPortalUrl = "https://apps.flexmls.com/ticket?portal_slug=callphil";
+  const flexmlsPortalUrl = "/search?view=account";
   const siteSettings = await getSiteSettings();
   const activeBanner = await getActiveSiteBanner(siteSettings.slug, siteSettings);
   const teamMembers = await getTeamMembers();
@@ -156,7 +156,7 @@ export default async function HomePage() {
             <a href="#insights">Insights</a>
           </nav>
           <div className="header-actions">
-            <a className="text-button" href={flexmlsPortalUrl} target="_blank" rel="noreferrer">Client portal</a>
+            <a className="text-button" href={flexmlsPortalUrl}>Client portal</a>
             <button className="button button-dark" data-open-modal="account">Request a custom search</button>
             <button className="menu-button" id="menuButton" aria-label="Open menu" aria-expanded="false">
               <span></span><span></span><span></span>
@@ -170,7 +170,7 @@ export default async function HomePage() {
           <a href="#rates">Mortgage</a>
           <a href="#team">Team</a>
           <a href="#insights">Insights</a>
-          <a href={flexmlsPortalUrl} target="_blank" rel="noreferrer">Client portal</a>
+          <a href={flexmlsPortalUrl}>Client portal</a>
           <a href="#saved-search">Listing alerts</a>
         </nav>
 
@@ -434,7 +434,7 @@ export default async function HomePage() {
               </div>
             </div>
             <div className="saved-search-actions">
-              <a className="button button-dark" href={flexmlsPortalUrl} target="_blank" rel="noreferrer">
+              <a className="button button-dark" href={flexmlsPortalUrl}>
                 Create a FlexMLS account <span aria-hidden="true">→</span>
               </a>
               <button className="button button-outline" data-open-modal="account">Request a custom search</button>
@@ -498,7 +498,7 @@ export default async function HomePage() {
           </form>
           <div className="modal-account-choice">
             <span>Want to save homes and manage alerts yourself?</span>
-            <a href={flexmlsPortalUrl} target="_blank" rel="noreferrer">Create or sign in to FlexMLS <span aria-hidden="true">→</span></a>
+            <a href={flexmlsPortalUrl}>Create or sign in to FlexMLS <span aria-hidden="true">→</span></a>
           </div>
           <small>Submitting this form sends a personalized home-search request to Alu Realty Group; it does not create an online account. Alu Realty Group may contact you by email, phone, or text about your request.</small>
         </section>
